@@ -49,10 +49,20 @@ createApp({
 
         // DATA MOCKS
         const kpis = ref([
-            { label: 'Ventas Hoy', value: '$4,250', icon: 'fa-solid fa-dollar-sign', colorBg: 'bg-emerald-100', colorText: 'text-emerald-600' },
-            { label: 'Pedidos', value: '32', icon: 'fa-solid fa-receipt', colorBg: 'bg-blue-100', colorText: 'text-blue-600' },
-            { label: 'Usuarios', value: '150', icon: 'fa-solid fa-users', colorBg: 'bg-purple-100', colorText: 'text-purple-600' },
-            { label: 'Visitas', value: '1,024', icon: 'fa-solid fa-eye', colorBg: 'bg-orange-100', colorText: 'text-orange-600' },
+            { label: 'Ventas Hoy', value: '$0.00', icon: 'fa-solid fa-dollar-sign', colorBg: 'bg-emerald-100', colorText: 'text-emerald-600' },
+            { label: 'Pedidos', value: '0', icon: 'fa-solid fa-receipt', colorBg: 'bg-blue-100', colorText: 'text-blue-600' },
+            { label: 'Usuarios', value: '0', icon: 'fa-solid fa-users', colorBg: 'bg-purple-100', colorText: 'text-purple-600' },
+            { label: 'Visitas', value: '0', icon: 'fa-solid fa-eye', colorBg: 'bg-orange-100', colorText: 'text-orange-600' },
+        ]);
+
+        const kpiChart = ref([
+            0, // <-- Lunes
+            0, // <-- Martes 
+            0, // <-- Miercoles 
+            0, // <-- Jueves 
+            0, // <-- Viernes 
+            0, // <-- Sabado 
+            0 // <-- Domingo
         ]);
 
         const saasMenu = ref([
@@ -262,7 +272,7 @@ createApp({
         });
 
         return {
-            collapsed, mobileMenuOpen, currentView, kpis,
+            collapsed, mobileMenuOpen, currentView, kpis,kpiChart,
             activeMenuItems, currentUserRole,
             toggleSidebar, navigate, toggleSubmenu, toggleTheme,
             ...auth,   // isAuthenticated, username, login, logout...

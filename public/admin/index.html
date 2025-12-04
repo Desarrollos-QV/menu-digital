@@ -258,7 +258,7 @@
                                     <div
                                         class="h-64 flex items-end justify-between space-x-2 px-4 pb-2 border-b border-slate-100 dark:border-slate-700">
                                         <!-- Fake Chart Bars -->
-                                        <div v-for="h in [40, 65, 30, 80, 55, 90, 45]" :style="`height: ${h}%`"
+                                        <div v-for="h in kpiChart" :style="`height: ${h}%`"
                                             class="w-full bg-primary rounded-t-lg opacity-80 hover:opacity-100 transition-opacity relative group">
                                             <div
                                                 class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition">
@@ -273,7 +273,7 @@
                                     class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                                     <h3 class="font-bold text-lg text-slate-800 dark:text-white mb-4">Más Vendidos</h3>
                                     <ul class="space-y-4">
-                                        <li v-for="i in 4" :key="i" class="flex items-center">
+                                        <li v-for="i in 0" :key="i" class="flex items-center">
                                             <div
                                                 class="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 mr-3 overflow-hidden">
                                                 <img :src="`https://plus.unsplash.com/premium_photo-1673108852141-e8c3c22a4a22?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D`"
