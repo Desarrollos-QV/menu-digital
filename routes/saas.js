@@ -7,4 +7,7 @@ router.get('/businesses', saasController.getAllBusinesses);
 router.post('/businesses', saasController.createBusiness);
 router.put('/businesses/:id/toggle', saasController.toggleBusinessStatus);
 
+router.put('/businesses/:id', saasController.updateBusiness);
+router.delete('/businesses/:id', saasController.deleteBusiness);
+
 module.exports = router;
