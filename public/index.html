@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Menú Digital</title><!-- ID para el Favicon Dinámico -->
+    <link id="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Swiper JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+
+    <!-- Toastr & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="./assets/css/front.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+
+
+<div id="app" class="flex flex-col min-h-screen pb-20">
+
+    <!-- PANTALLA ERROR / NO BUSINESS -->
+    <div v-if="businessError" class="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-50 flex flex-col items-center justify-center p-8 text-center">
+        <div class="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-4xl text-slate-400">
+            <i class="fa-solid fa-store-slash"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">Negocio no encontrado</h1>
+        <p class="text-slate-500 dark:text-slate-400 mb-6">Parece que el enlace es incorrecto o el negocio no está disponible.</p>
+        <p class="text-xs text-slate-400">Prueba con ?slug=nombre-del-negocio</p>
+    </div>
+
+    <template v-else>
+        <!-- HEADER -->
+        <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm px-4 pt-4 pb-2 transition-all duration-300 border-b border-transparent dark:border-slate-800" 
+                :class="{'shadow-md dark:shadow-slate-900/50': scrollY > 10}">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-3">
+                    <!-- Avatar del Negocio -->
+                    <div v-if="config.avatar" class="w-10 h-10 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
+                        <img :src="config.avatar" class="w-full h-full object-cover">
+                    </div>
+                    <div v-else class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm shadow-primary/30">
+                        {{ (config.appName || 'M')[0] }}
+                    </div>
+                    
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-800 dark:text-white leading-none">{{ config.appName || 'Cargando...' }}</h1>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Menú Digital</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="toggleTheme" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 flex items-center justify-center transition-colors">
+                        <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="relative">
+                <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                <input v-model="searchQuery" type="text" placeholder="¿Qué se te antoja hoy?" 
+                       class="w-full bg-slate-100 dark:bg-slate-800 dark:text-white rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition shadow-inner dark:placeholder-slate-500">
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-x-hidden">
+            
+            <!-- LOADING SKELETON -->
+            <div v-if="isLoading" class="mt-4 px-4 space-y-6">
+                <div class="w-full h-40 rounded-2xl skeleton"></div>
+                <div class="flex space-x-3 overflow-hidden"><div v-for="i in 4" :key="i" class="flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl skeleton"></div></div></div>
+                <div class="space-y-4"><div v-for="i in 3" :key="i" class="w-full h-28 rounded-2xl skeleton"></div></div>
+            </div>
+
+            <!-- REAL CONTENT -->
+            <div v-else class="animate-fade-in">
+                
+                <!-- BANNERS -->
+                <div v-if="banners.length > 0" class="mt-4 pl-4">
+                    <div class="swiper banner-swiper pr-4 !pb-8 rounded-2xl overflow-visible">
+                        <div class="swiper-wrapper">
+                            <div v-for="banner in banners" :key="banner._id" class="swiper-slide">
+                                <div class="relative h-40 w-full rounded-2xl overflow-hidden shadow-md group dark:shadow-none dark:border dark:border-slate-700">
+                                    <img :src="banner.imageUrl" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
+                                        <h3 class="text-white font-bold text-lg leading-tight drop-shadow-md">{{ banner.title }}</h3>
+                                        <p v-if="banner.description" class="text-white/90 text-xs mt-1 line-clamp-1 drop-shadow-md">{{ banner.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="swiper-pagination !bottom-0"></div>
+                    </div>
+                </div>
+
+                <!-- CATEGORIES -->
+                <div class="sticky top-[88px] z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur py-2 pl-4 border-b border-slate-100 dark:border-slate-800 mb-4 transition-colors duration-300">
+                    <div class="flex space-x-3 overflow-x-auto hide-scroll pr-4 pb-1">
+                        <button @click="selectedCategory = 'all'" class="flex flex-col items-center min-w-[70px] transition-all duration-200 group" :class="selectedCategory === 'all' ? 'opacity-100 scale-105' : 'opacity-60 hover:opacity-100'">
+                            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 shadow-sm transition-colors duration-300" :class="selectedCategory === 'all' ? 'bg-primary text-white shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"><i class="fa-solid fa-utensils text-xl"></i></div>
+                            <span class="text-xs font-medium truncate w-full text-center" :class="selectedCategory === 'all' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400'">Todo</span>
+                        </button>
+                        <button v-for="cat in categories" :key="cat._id" @click="selectedCategory = cat._id" class="flex flex-col items-center min-w-[70px] transition-all duration-200 group" :class="selectedCategory === cat._id ? 'opacity-100 scale-105' : 'opacity-60 hover:opacity-100'">
+                            <div class="w-14 h-14 rounded-2xl overflow-hidden mb-1 shadow-sm border-2 transition-colors duration-300 bg-slate-100 dark:bg-slate-800" :class="selectedCategory === cat._id ? 'border-primary' : 'border-transparent dark:border-slate-700'">
+                                <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover">
+                                <div v-else class="w-full h-full flex items-center justify-center text-slate-400"><i class="fa-solid fa-bowl-food"></i></div>
+                            </div>
+                            <span class="text-xs font-medium truncate w-full text-center" :class="selectedCategory === cat._id ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400'">{{ cat.name }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PRODUCTS GRID -->
+                <div class="px-4 pb-24">
+                    <div class="flex justify-between items-end mb-4">
+                        <h2 class="text-lg font-bold text-slate-800 dark:text-white">{{ selectedCategoryName }} <span class="text-xs font-normal text-slate-400 ml-1">({{ filteredProducts.length }})</span></h2>
+                        <span v-if="searchQuery" class="text-xs text-primary cursor-pointer" @click="searchQuery = ''">Borrar filtro</span>
+                    </div>
+
+                    <div v-if="filteredProducts.length > 0" class="grid grid-cols-1 gap-4">
+                        <div v-for="prod in filteredProducts" :key="prod._id" class="bg-white dark:bg-slate-900 rounded-2xl p-3 shadow-sm border border-slate-100 dark:border-slate-800 flex gap-4">
+                            <div class="w-28 h-28 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
+                                <img :src="prod.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover">
+                                <span v-if="prod.salesCount > 10" class="absolute top-1 left-1 bg-yellow-400 text-[10px] font-bold px-1.5 py-0.5 rounded text-black shadow-sm">TOP</span>
+                            </div>
+                            
+                            <div class="flex-1 flex flex-col justify-between py-1">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2">{{ prod.name }}</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{{ prod.description }}</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-lg font-bold text-slate-900 dark:text-white">${{ prod.price }}</span>
+                                    <button @click="initAddToCart(prod)" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-primary hover:bg-primary hover:text-white transition flex items-center justify-center shadow-sm">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="text-center py-10">
+                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 dark:text-slate-600"><i class="fa-solid fa-utensils text-3xl"></i></div>
+                        <p class="text-slate-500 dark:text-slate-400 font-medium">No encontramos productos.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- FLOATING CART BUTTON -->
+        <div v-if="cart.length > 0" class="fixed bottom-6 left-0 right-0 px-6 z-40 flex justify-center animate-slide-up">
+            <button @click="showCartModal = true" class="bg-slate-900 dark:bg-primary text-white w-full max-w-md shadow-2xl shadow-slate-900/30 dark:shadow-primary/40 rounded-2xl py-4 px-6 flex justify-between items-center transform transition active:scale-95">
+                <div class="flex items-center space-x-3">
+                    <span class="bg-primary dark:bg-white dark:text-primary text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">{{ cartTotalItems }}</span>
+                    <span class="font-medium">Ver mi pedido</span>
+                </div>
+                <span class="font-bold text-lg">${{ cartTotalPrice }}</span>
+            </button>
+        </div>
+
+        <!-- PRODUCT DETAILS MODAL -->
+        <div v-if="showProductModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
+            <div @click="showProductModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+            
+            <div class="bg-white dark:bg-slate-900 w-full max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl relative z-10 max-h-[90vh] flex flex-col animate-slide-up">
+                <!-- Header Image -->
+                <div class="h-48 w-full bg-slate-100 dark:bg-slate-800 relative rounded-t-3xl overflow-hidden shrink-0">
+                    <img :src="activeProduct.image || 'https://via.placeholder.com/400x200'" class="w-full h-full object-cover">
+                    <button @click="showProductModal = false" class="absolute top-4 right-4 bg-white/90 dark:bg-black/50 p-2 rounded-full shadow-sm text-slate-800 dark:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white leading-tight">{{ activeProduct.name }}</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-2">{{ activeProduct.description }}</p>
+                        <p class="text-xl font-bold text-primary mt-3">${{ activeProduct.price }}</p>
+                    </div>
+
+                    <!-- Addons List -->
+                    <div v-if="activeProductAddons.length > 0" class="space-y-6">
+                        <div v-for="addonGroup in activeProductAddons" :key="addonGroup._id" class="border-t border-slate-100 dark:border-slate-800 pt-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-slate-700 dark:text-slate-200">{{ addonGroup.name }}</h3>
+                                <span v-if="addonGroup.required" class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded font-bold uppercase">Obligatorio</span>
+                                <span v-else class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded font-bold uppercase">Opcional</span>
+                            </div>
+                            <div class="space-y-2">
+                                <div v-for="option in addonGroup.options" :key="option._id" 
+                                     class="flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
+                                     :class="isOptionSelected(addonGroup, option) ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900'"
+                                     @click="toggleOption(addonGroup, option)">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 rounded border flex items-center justify-center transition-colors"
+                                             :class="[ isOptionSelected(addonGroup, option) ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600', addonGroup.maxOptions === 1 ? 'rounded-full' : 'rounded-md' ]">
+                                            <i v-if="isOptionSelected(addonGroup, option)" class="fa-solid fa-check text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ option.name }}</span>
+                                    </div>
+                                    <span v-if="option.priceExtra > 0" class="text-xs font-bold text-slate-500 dark:text-slate-400">+${{ option.priceExtra }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 sm:rounded-b-2xl">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 h-12 px-2 shrink-0">
+                            <button @click="modalQuantity > 1 ? modalQuantity-- : null" class="w-8 h-full text-slate-500 hover:text-primary"><i class="fa-solid fa-minus"></i></button>
+                            <span class="w-8 text-center font-bold text-slate-800 dark:text-white">{{ modalQuantity }}</span>
+                            <button @click="modalQuantity++" class="w-8 h-full text-slate-500 hover:text-primary"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                        <button @click="confirmAddToCart" class="flex-1 bg-primary hover:bg-indigo-600 text-white font-bold h-12 rounded-xl shadow-lg shadow-indigo-500/30 flex justify-between items-center px-6 transition active:scale-95">
+                            <span>Agregar</span>
+                            <span>${{ modalTotalPrice }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CART MODAL -->
+        <div v-if="showCartModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
+            <div @click="showCartModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+            
+            <div class="bg-white dark:bg-slate-900 w-full max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl relative z-10 max-h-[90vh] flex flex-col animate-slide-up">
+                <div class="w-full flex justify-center pt-3 pb-1 sm:hidden" @click="showCartModal = false">
+                    <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                </div>
+
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Tu Pedido</h2>
+                    <button @click="showCartModal = false" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                    <div v-if="cart.length === 0" class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-basket-shopping text-4xl mb-3 opacity-50"></i>
+                        <p>Tu carrito está vacío.</p>
+                    </div>
+                    
+                    <div v-for="(item, idx) in cart" :key="idx" class="flex gap-4">
+                        <div class="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 overflow-hidden">
+                            <img :src="item.product.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="font-bold text-slate-800 dark:text-white text-sm line-clamp-1">{{ item.product.name }}</h4>
+                                <span class="font-bold text-slate-900 dark:text-white text-sm">${{ item.unitPrice * item.quantity }}</span>
+                            </div>
+                            <div v-if="item.selectedOptions && item.selectedOptions.length > 0" class="mb-2">
+                                <p v-for="opt in item.selectedOptions" :key="opt.name" class="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
+                                    <span>+ {{ opt.name }}</span>
+                                    <span v-if="opt.priceExtra > 0">${{ opt.priceExtra }}</span>
+                                </p>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-400">${{ item.unitPrice }} c/u</span>
+                                <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 h-7">
+                                    <button @click="decreaseCartItem(idx)" class="w-6 h-full flex items-center justify-center text-slate-500 hover:text-primary"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                                    <span class="mx-2 text-xs font-bold text-slate-800 dark:text-white">{{ item.quantity }}</span>
+                                    <button @click="item.quantity++" class="w-6 h-full flex items-center justify-center text-slate-500 hover:text-primary"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 sm:rounded-b-2xl">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Nombre</label>
+                        <input v-model="customerName" type="text" placeholder="Ej: Juan Pérez" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-slate-500 dark:text-slate-400 font-medium">Total a pagar</span>
+                        <span class="text-2xl font-bold text-slate-900 dark:text-white">${{ cartTotalPrice }}</span>
+                    </div>
+                    <button @click="checkout" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
+                        <i class="fa-brands fa-whatsapp text-xl"></i>
+                        <span>Enviar Pedido a WhatsApp</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</div>
+
+<script src="./assets/js/front/app.js"></script>
+</body>
+</html>
