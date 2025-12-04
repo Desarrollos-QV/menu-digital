@@ -67,12 +67,30 @@ createApp({
         const activeSelections = ref({});
         const modalQuantity = ref(1);
 
+        // --- LÓGICA DE SLUG ACTUALIZADA ---
+        const getSlug = () => {
+            // 1. Intentar obtener de ?slug=nombre
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('slug')) return urlParams.get('slug');
+
+            // 2. Intentar obtener de la ruta /nombre
+            const path = window.location.pathname.replace(/^\/|\/$/g, ''); // Quitar slashes
+            // Ignorar rutas reservadas
+            if (path && path !== 'admin' && path !== 'index.html') {
+                return path;
+            }
+            
+            return null;
+        };
+
+
         // Fetch
         const fetchData = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const slug = urlParams.get('slug');
-
-            if (!slug) { businessError.value = true; return; }
+            const slug = getSlug();   
+            if (!slug) { 
+                businessError.value = true; 
+                return; 
+            }
 
             isLoading.value = true;
             try {

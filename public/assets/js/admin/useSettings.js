@@ -11,7 +11,8 @@ export function useSettings(auth) {
         phone: '',
         ownerEmail: '',
         currency: 'MXN',
-        primaryColor: '#6366f1'
+        primaryColor: '#6366f1',
+        urlApp: ''
     });
     
     // Agregamos email al estado
@@ -20,6 +21,7 @@ export function useSettings(auth) {
         email: '', 
         newPassword: ''
     });
+
 
     
     // Estado para el loader del avatar
@@ -34,6 +36,7 @@ export function useSettings(auth) {
                 const data = await res.json();
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
+                console.log("All Settings: ", settings)
             }
         } catch (e) { console.error(e); }
         

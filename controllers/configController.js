@@ -1,6 +1,6 @@
 const Config = require('../models/Config');
 const Business = require('../models/Business');
-
+const os = require('os');
 exports.getConfig = async (req, res) => {
     try {
         // Buscamos la config, si no existe la creamos (Singleton)
@@ -63,10 +63,13 @@ exports.getAdminConfig = async (req, res) => {
             const business = await Business.findById(req.user.businessId);
             if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
 
+            
             return res.json({
                 role: 'admin_negocio',
                 appName: business.name, // El nombre del negocio será el nombre de la App para ellos
                 adminName: req.user.username, // O un campo específico si lo agregas
+                slug : business.slug || '',
+                urlApp: 'https://'+getLocalIpAddress()+'/'+business.slug,
                 // Campos extra de negocio
                 avatar: business.avatar || '',
                 phone: business.phone || '',
@@ -76,6 +79,21 @@ exports.getAdminConfig = async (req, res) => {
             });
         }
 
+        
+        function getLocalIpAddress() {
+            const interfaces = os.networkInterfaces();
+            for (const devName in interfaces) {
+                const iface = interfaces[devName];
+
+                for (let i = 0; i < iface.length; i++) {
+                    const alias = iface[i];
+                    if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                        return alias.address;
+                    }
+                }
+            }
+            return '0.0.0.0';
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

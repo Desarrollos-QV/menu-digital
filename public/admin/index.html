@@ -154,6 +154,17 @@
                         <button @click="toggleSidebar" class="text-slate-500 hover:text-primary"><i
                                 class="fa-solid fa-bars-staggered text-2xl"></i></button>
                         <div class="flex items-center space-x-6">
+                            <!-- Link to Visit Page -->
+                            <div v-if="currentUserRole === 'admin_negocio'" class="flex items-center space-x-2">
+                                <div class="text-right">
+                                    <a :href="'/'+settings.slug" target="_blank" 
+                                        class="px-3 py-1 rounded-full text-xs font-bold transition w-24 bg-green-100 text-green-700 hover:bg-green-200">
+                                        <i class="fa-solid fa-link"></i>
+                                        <span class="hidden md:inline-block">&nbsp;&nbsp;Visitar la página</span> 
+                                    </a>
+                                </div>
+                            </div>
+
                             <button @click="toggleTheme"
                                 class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 flex items-center justify-center hover:bg-slate-200 transition">
                                 <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
@@ -164,7 +175,7 @@
                                     <p class="text-xs text-slate-500">{{ currentUserRole === 'superadmin' ? 'Super Admin' : 'Gerente' }}</p>
                                 </div>
                                 <div class="w-10 h-10 rounded-full bg-danger flex items-center justify-center text-white font-bold">
-                                    F
+                                    <img :src="settings.avatar" alt="">
                                 </div>
                             </div>
                         </div>
@@ -195,7 +206,7 @@
                                         <tr v-for="biz in businesses" :key="biz._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                                             <td class="p-4 font-bold text-slate-800 dark:text-white">{{ biz.name }}</td>
                                             <td class="p-4 text-sm text-slate-500">
-                                                <a :href="'/?slug='+biz.slug" target="_blank" class="px-3 py-1 rounded-full text-xs font-bold transition w-24 bg-green-100 text-green-700 hover:bg-green-200">{{ biz.slug }}</a>
+                                                <a :href="'/'+biz.slug" target="_blank" class="px-3 py-1 rounded-full text-xs font-bold transition w-24 bg-green-100 text-green-700 hover:bg-green-200">/{{ biz.slug }}</a>
                                             </td>
                                             <td class="p-4"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded uppercase font-bold">{{ biz.plan }}</span></td>
                                             <td class="p-4 text-center">
@@ -676,11 +687,17 @@
                                         <div class="flex-1 space-y-4">
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <!-- Nombre (Compartido) -->
-                                                <div class="md:col-span-2">
+                                                <div>
                                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                         {{ settings.role === 'superadmin' ? 'Nombre Plataforma' : 'Nombre del Restaurante' }}
                                                     </label>
                                                     <input v-model="settings.appName" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                        SLUG / URL de tu app
+                                                    </label>
+                                                    <input v-model="settings.urlApp" readonly type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
                                                 </div>
 
                                                 <!-- Campos SOLO para Negocios -->

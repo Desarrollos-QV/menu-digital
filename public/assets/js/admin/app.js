@@ -41,7 +41,7 @@ createApp({
         // STATE
         const collapsed = ref(false);
         const mobileMenuOpen = ref(false);
-        const currentView = ref('dashboard');
+        const currentView = ref(localStorage.getItem('currentView') || 'dashboard');
         const isDark = ref(false);
 
         // Simular rol (en producción viene del token JWT decodificado)
@@ -99,7 +99,7 @@ createApp({
         const addons = useAddons(auth.isDark);
         const settings = useSettings(auth);
         const saas = useSaas();
-
+        
 
         // --- DATA TABLE LOGIC ---
         let dataTable = null;
@@ -222,6 +222,7 @@ createApp({
         const navigate = (item) => {
             if (!item.children) {
                 currentView.value = item.view;
+                localStorage.setItem('currentView', item.view);
                 mobileMenuOpen.value = false;
                 if (currentUserRole.value === 'superadmin') {
                     if (item.view === 'saas_clients') saas.fetchBusinesses();
