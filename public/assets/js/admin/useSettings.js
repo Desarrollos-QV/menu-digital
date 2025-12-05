@@ -29,6 +29,7 @@ export function useSettings(auth) {
     const avatarInput = ref(null);
 
     const fetchSettings = async () => {
+        settings.value = [];
         // 1. Configuración General (Pública/Global)
         try {
             const res = await authFetch('/api/config/admin');
@@ -36,7 +37,6 @@ export function useSettings(auth) {
                 const data = await res.json();
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
-                console.log("All Settings: ", settings)
             }
         } catch (e) { console.error(e); }
         

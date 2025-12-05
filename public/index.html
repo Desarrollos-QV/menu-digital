@@ -285,6 +285,10 @@
                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Nombre</label>
                         <input v-model="customerName" type="text" placeholder="Ej: Juan Pérez" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                     </div>
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Email</label>
+                        <input v-model="customerEmail" type="email" placeholder="Ej: juanperez@gmail.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
+                    </div>
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-slate-500 dark:text-slate-400 font-medium">Total a pagar</span>
                         <span class="text-2xl font-bold text-slate-900 dark:text-white">${{ cartTotalPrice }}</span>

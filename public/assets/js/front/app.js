@@ -59,6 +59,7 @@ createApp({
         const cart = ref([]);
         const showCartModal = ref(false);
         const customerName = ref('');
+        const customerEmail = ref('');
 
         // Product Logic
         const showProductModal = ref(false);
@@ -83,10 +84,19 @@ createApp({
             return null;
         };
 
+        // -- Función para generar/obtener ID único --
+        const getVisitorId = () => {
+            let vid = localStorage.getItem('visitor_id');
+            if (!vid) {
+                vid = crypto.randomUUID(); // Nativo del navegador
+                localStorage.setItem('visitor_id', vid);
+            }
+            return vid;
+        };
 
-        // Fetch
+        // --- Fetch ---
+        const slug = getSlug();
         const fetchData = async () => {
-            const slug = getSlug();   
             if (!slug) { 
                 businessError.value = true; 
                 return; 
@@ -128,7 +138,7 @@ createApp({
             finally { isLoading.value = false; }
         };
 
-        // Logic Helpers (Igual que antes)
+        // --- Logic Helpers for Cart ---
         const initAddToCart = (product) => {
             if (product.addons && product.addons.length > 0) openProductDetails(product);
             else addToCartSimple(product);
@@ -188,8 +198,12 @@ createApp({
             else { cart.value.splice(idx, 1); if (!cart.value.length) showCartModal.value = false; }
         };
 
+        // Checkout & Send Whatsapp
         const checkout = () => {
-            if (!customerName.value.trim()) return toastr.warning('Nombre requerido');
+            if (!customerName.value.trim() || !customerEmail.value.trim()) { // Validar Name and Email
+                return toastr.warning('Nombre y Email requeridos');
+            }
+
             const phone = config.value.phone;
             if (!phone) return toastr.error('Este negocio no tiene WhatsApp configurado');
 
@@ -199,9 +213,28 @@ createApp({
                 if (i.selectedOptions?.length) msg += `   _Extras: ${i.selectedOptions.map(o => o.name).join(', ')}_\n`;
             });
             msg += `\n💰 *TOTAL: ${config.value.currency || '$'}${cartTotalPrice.value}*`;
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-        };
 
+            // 1. Enviar datos al Backend (Sin esperar respuesta crítica)
+            fetch('/api/analytics/order', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    slug,
+                    customerName: customerName.value,
+                    customerEmail: customerEmail.value,
+                    cart: cart.value,
+                    total: cartTotalPrice.value
+                })
+            });
+
+            // 2. Abrir Whatsapp
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+
+            cart.value = [];          // Vaciamos el arreglo
+            showCartModal.value = false; // Cerramos el modal
+            toastr.success('¡Pedido enviado! Gracias por tu compra.');
+        };
+         
         const cartTotalItems = computed(() => cart.value.reduce((s, i) => s + i.quantity, 0));
         const cartTotalPrice = computed(() => cart.value.reduce((s, i) => s + (i.unitPrice * i.quantity), 0));
 
@@ -225,13 +258,26 @@ createApp({
         const updateHtmlClass = () => document.documentElement.classList.toggle('dark', isDark.value);
         const initTheme = () => { if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) isDark.value = true; updateHtmlClass(); };
 
-        onMounted(() => { initTheme(); fetchData(); window.addEventListener('scroll', () => scrollY.value = window.scrollY); });
+        onMounted(() => { 
+            initTheme(); 
+            fetchData(); 
+            window.addEventListener('scroll', () => scrollY.value = window.scrollY); 
+            
+            if (slug) {
+                // Registrar visita en background (fire and forget)
+                fetch('/api/analytics/visit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ slug, visitorId: getVisitorId() })
+                });
+            }
+        });
 
         return {
             banners, categories, products, config, isLoading, isDark, scrollY, businessError,
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout
+            cart, showCartModal, customerName,customerEmail, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout
         };
     }
 }).mount('#app');

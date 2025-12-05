@@ -8,6 +8,7 @@ import { useCategories } from './useCategories.js';
 import { useAddons } from './useAddons.js';
 import { useSettings } from './useSettings.js';
 import { useSaas } from './useSaas.js';
+import { useAnalytics } from './useAnalytics.js';
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -43,31 +44,11 @@ createApp({
         const mobileMenuOpen = ref(false);
         const currentView = ref(localStorage.getItem('currentView') || 'dashboard');
         const isDark = ref(false);
-
         // Simular rol (en producción viene del token JWT decodificado)
         const currentUserRole = ref('admin_negocio'); // Cambia a 'superadmin' para probar la otra vista
 
-        // DATA MOCKS
-        const kpis = ref([
-            { label: 'Ventas Hoy', value: '$0.00', icon: 'fa-solid fa-dollar-sign', colorBg: 'bg-emerald-100', colorText: 'text-emerald-600' },
-            { label: 'Pedidos', value: '0', icon: 'fa-solid fa-receipt', colorBg: 'bg-blue-100', colorText: 'text-blue-600' },
-            { label: 'Usuarios', value: '0', icon: 'fa-solid fa-users', colorBg: 'bg-purple-100', colorText: 'text-purple-600' },
-            { label: 'Visitas', value: '0', icon: 'fa-solid fa-eye', colorBg: 'bg-orange-100', colorText: 'text-orange-600' },
-        ]);
-
-        const kpiChart = ref([
-            0, // <-- Lunes
-            0, // <-- Martes 
-            0, // <-- Miercoles 
-            0, // <-- Jueves 
-            0, // <-- Viernes 
-            0, // <-- Sabado 
-            0 // <-- Domingo
-        ]);
-
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
-            // { id: 101, label: 'Suscripciones', icon: 'fa-solid fa-money-bill-wave', view: 'saas_subs' } // Futuro
         ]);
 
         const businessMenu = ref([
@@ -99,6 +80,7 @@ createApp({
         const addons = useAddons(auth.isDark);
         const settings = useSettings(auth);
         const saas = useSaas();
+        const analytics = useAnalytics();
         
 
         // --- DATA TABLE LOGIC ---
@@ -209,6 +191,7 @@ createApp({
                         saas.fetchBusinesses();
                     } else {
                         currentView.value = 'dashboard';
+                        analytics.fetchDashboardStats();
                     }
                 }
             }
@@ -227,6 +210,7 @@ createApp({
                 if (currentUserRole.value === 'superadmin') {
                     if (item.view === 'saas_clients') saas.fetchBusinesses();
                 } else {
+                    if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
                     if (item.view === 'media') media.showMediaSelector = false; media.fetchMedia();
                     if (item.view === 'ads') banners.showMediaSelector = false; banners.fetchBanners();
                     if (item.view === 'products') products.showMediaSelector = false; products.fetchProducts();
@@ -249,19 +233,21 @@ createApp({
             else document.documentElement.classList.remove('dark');
         };
 
+
         onMounted(() => {
             auth.checkSession();
             if (auth.isAuthenticated.value) {
                 const savedRole = localStorage.getItem('role');
                 if (savedRole) currentUserRole.value = savedRole;
+                settings.fetchSettings();
 
                 if (currentUserRole.value === 'superadmin') {
                     // Si estaba en dashboard, mandarlo a saas
                     if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
                     saas.fetchBusinesses();
                 } else {
-                    settings.fetchSettings();
                     // Cargar datos iniciales de negocio
+                    if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
                     if (currentView.value === 'media') media.fetchMedia();
                     if (currentView.value === 'ads') { banners.isUploadingBanner.value = false; banners.fetchBanners(); }
                     if (currentView.value === 'products') products.isUploadingProductImg.value = false; products.fetchProducts();
@@ -273,16 +259,17 @@ createApp({
         });
 
         return {
-            collapsed, mobileMenuOpen, currentView, kpis,kpiChart,
+            collapsed, mobileMenuOpen, currentView,
             activeMenuItems, currentUserRole,
             toggleSidebar, navigate, toggleSubmenu, toggleTheme,
+            ...analytics, // Analitica general
+            ...settings, // Configuraciones
             ...auth,   // isAuthenticated, username, login, logout...
             ...media,  // mediaFiles, uploadFile, deleteFile...
             ...banners, // banners, saveBanner...
             ...products, // products, saveProduct...
             ...categories, // categoriesList, saveCategory...
             ...addons, // addonsList, saveAddon, addOptionRow...
-            ...settings, // Configuraciones
             ...saas // Multinegocios
         };
     }

@@ -35,7 +35,8 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="../assets/css/main.css">
 </head>
 
@@ -44,15 +45,14 @@
     <div id="app" class="h-screen flex flex-col text-slate-800 dark:text-slate-100" v-cloak>
 
         <!-- LOGIN SCREEN (Simulado) -->
-        <div v-if="!isAuthenticated" class="flex-1 flex items-center justify-center bg-slate-900 bg-opacity-95">
+        <div v-if="!isAuthenticated" class="flex-1 flex items-center justify-center bg-slate-900 bg-opacity-95" style="background-image: url('../assets/images/background.jpg');background-position: center center;background-repeat: repeat-x;background-size: contain;">
             <div class="bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-2xl w-full max-w-md transform transition-all hover:scale-105 duration-300 border dark:border-slate-700">
                 <div class="text-center mb-8">
-                    <div
-                        class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg">
-                        <i class="fa-solid fa-utensils"></i>
+                    <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg">
+                        <img src="../assets/images/logo.jpg" alt="logo" class="rounded-full">
                     </div>
-                    <h2 class="text-3xl font-bold text-slate-800 dark:text-white">Bienvenido</h2>
-                    <p class="text-slate-500 dark:text-slate-400 mt-2">Panel de Control del Menú Digital</p>
+                    <h2 class="text-3xl font-bold text-slate-800 dark:text-white">Bienvenido(a)</h2>
+                    <p class="text-slate-500 dark:text-slate-400 mt-2">Panel de Control de Tengo Hambre</p>
                 </div>
                 <form @submit.prevent="login">
                     <div class="space-y-4">
@@ -88,7 +88,7 @@
 
                     <div class="h-20 flex items-center justify-center border-b border-slate-800">
                         <div class="flex items-center space-x-3" v-if="!collapsed">
-                            <i class="fa-solid fa-burger text-3xl text-primary"></i>
+                           <img :src="settings.avatar || '../assets/images/logo.jpg'" alt="logo" class="rounded-full h-10">
                             <div>
                                 <!-- Nombre de App Dinámico -->
                                 <h1 class="font-bold text-lg text-white leading-tight uppercase">
@@ -185,6 +185,7 @@
                     <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-8 transition-colors duration-300">
 
                         <!-- === VISTAS SUPER ADMIN === -->
+                        <!-- VIEW: Saas Clients -->
                         <div v-if="currentView === 'saas_clients'" class="space-y-6 animate-fade-in">
                             <div class="flex justify-between items-center">
                                 <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Gestión de Negocios (SaaS)</h2>
@@ -233,71 +234,47 @@
                             </div>
                         </div>
 
-
                         <!-- === VISTAS NEGOCIO === -->
+
                         <!-- VIEW: DASHBOARD -->
-                        <div v-if="currentView === 'dashboard'" class="space-y-8 animate-fade-in">
-                            <div>
-                                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Panel de Control</h2>
-                                <p class="text-slate-500 dark:text-slate-400">Resumen general de tu negocio hoy.</p>
-                            </div>
-
-                            <!-- KPI Cards -->
+                        <div v-if="currentView === 'dashboard'" class="animate-fade-in space-y-6">
+                            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Panel de Control</h2>
+                            
+                            <!-- KPIs -->
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div v-for="kpi in kpis" :key="kpi.label"
-                                    class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center hover:shadow-md transition-all">
-                                    <div
-                                        :class="`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mr-4 ${kpi.colorBg} dark:bg-opacity-20 ${kpi.colorText}`">
-                                        <i :class="kpi.icon"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpi.value }}
-                                        </h3>
-                                        <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">{{ kpi.label
-                                            }}
-                                        </p>
-                                    </div>
+                                <div v-for="kpi in kpis" :key="kpi.label" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center hover:shadow-md transition-shadow">
+                                    <div :class="`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mr-4 ${kpi.colorBg} ${kpi.colorText}`"><i :class="kpi.icon"></i></div>
+                                    <div><h3 class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpi.value }}</h3><p class="text-sm text-slate-500">{{ kpi.label }}</p></div>
                                 </div>
                             </div>
 
-                            <!-- Gráficos / Tablas (Placeholder) -->
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div
-                                    class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                                    <h3 class="font-bold text-lg text-slate-800 dark:text-white mb-4">Ventas Recientes
-                                    </h3>
-                                    <div
-                                        class="h-64 flex items-end justify-between space-x-2 px-4 pb-2 border-b border-slate-100 dark:border-slate-700">
-                                        <!-- Fake Chart Bars -->
-                                        <div v-for="h in kpiChart" :style="`height: ${h}%`"
-                                            class="w-full bg-primary rounded-t-lg opacity-80 hover:opacity-100 transition-opacity relative group">
-                                            <div
-                                                class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition">
-                                                {{h}}%</div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-between text-xs text-slate-400 mt-2 px-2">
-                                        <span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
+                            <!-- GRÁFICA & TOP PRODUCTS -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+                                <!-- Chart Container -->
+                                <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col h-80">
+                                    <h3 class="font-bold text-lg text-slate-800 dark:text-white mb-4">Ventas Última Semana</h3>
+                                    <div class="flex-1 relative w-full h-full">
+                                        <canvas id="salesChart"></canvas>
                                     </div>
                                 </div>
-                                <div
-                                    class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+
+                                <!-- Top Products -->
+                                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-80 overflow-y-auto">
                                     <h3 class="font-bold text-lg text-slate-800 dark:text-white mb-4">Más Vendidos</h3>
-                                    <ul class="space-y-4">
-                                        <li v-for="i in 0" :key="i" class="flex items-center">
-                                            <div
-                                                class="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 mr-3 overflow-hidden">
-                                                <img :src="`https://plus.unsplash.com/premium_photo-1673108852141-e8c3c22a4a22?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D`"
-                                                    class="w-full h-full object-cover">
+                                    <div v-if="topProducts.length === 0" class="text-center text-slate-400 py-10">
+                                        <i class="fa-solid fa-basket-shopping text-2xl mb-2"></i>
+                                        <p class="text-xs">Aún no hay ventas</p>
+                                    </div>
+                                    <ul v-else class="space-y-4">
+                                        <li v-for="(prod, idx) in topProducts" :key="idx" class="flex items-center">
+                                            <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 mr-3 overflow-hidden shrink-0">
+                                                <img :src="prod.image || 'https://via.placeholder.com/50'" class="w-full h-full object-cover">
                                             </div>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Producto
-                                                    Top
-                                                    #{{i}}</p>
-                                                <p class="text-xs text-slate-500 dark:text-slate-400">24 vendidos hoy
-                                                </p>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-bold text-slate-800 dark:text-white truncate">{{ prod.name }}</p>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400">{{ prod.salesCount }} vendidos</p>
                                             </div>
-                                            <span class="text-primary font-bold text-sm">$120</span>
+                                            <span class="text-primary font-bold text-sm">${{ prod.price }}</span>
                                         </li>
                                     </ul>
                                 </div>

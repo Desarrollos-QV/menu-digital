@@ -26,6 +26,7 @@ app.use('/api/products', require('./routes/products')); // <-- Productos
 app.use('/api/categories', require('./routes/categories')); // <-- Categorias
 app.use('/api/addons', require('./routes/addons')); // <-- Complementos
 app.use('/api/config', require('./routes/config')); // <-- Configuraciones
+app.use('/api/analytics', require('./routes/analytics')); // <-- Analitica de visitas y pedidos
 
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
