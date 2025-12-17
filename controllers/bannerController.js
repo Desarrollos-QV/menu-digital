@@ -2,10 +2,15 @@ const Banner = require('../models/Banner');
 
 exports.getBanners = async (req, res) => {
     try {
-        const filter = {};
-        // Si es un admin de negocio, filtramos. Si es superadmin, podría ver todo (opcional)
-        if (req.user.role === 'admin_negocio') {
-            filter.businessId = req.user.businessId; 
+        let filter = {};
+        
+        // Si es SuperAdmin, ve los banners del sistema
+        if (req.user.role === 'superadmin') {
+            filter = { isSystem: true };
+        } 
+        // Si es Negocio, ve SUS banners
+        else {
+            filter = { businessId: req.user.businessId };
         }
 
         const banners = await Banner.find(filter).sort({ createdAt: -1 });
@@ -17,10 +22,18 @@ exports.getBanners = async (req, res) => {
 
 exports.createBanner = async (req, res) => {
     try {
-        const newBanner = new Banner({
-            ...req.body,
-            businessId: req.user.businessId
-        });
+        const bannerData = { ...req.body };
+
+        // Lógica de asignación
+        if (req.user.role === 'superadmin') {
+            bannerData.isSystem = true;
+            bannerData.businessId = null;
+        } else {
+            bannerData.isSystem = false;
+            bannerData.businessId = req.user.businessId;
+        }
+
+        const newBanner = new Banner(bannerData);
         const savedBanner = await newBanner.save();
         res.status(201).json(savedBanner);
     } catch (error) {
@@ -28,20 +41,17 @@ exports.createBanner = async (req, res) => {
     }
 };
 
+// Update y Delete funcionan igual, solo asegúrate de validar permisos si quieres ser estricto
 exports.updateBanner = async (req, res) => {
     try {
         const updatedBanner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(updatedBanner);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
+    } catch (error) { res.status(400).json({ message: error.message }); }
 };
 
 exports.deleteBanner = async (req, res) => {
     try {
         await Banner.findByIdAndDelete(req.params.id);
         res.json({ message: 'Banner eliminado' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };

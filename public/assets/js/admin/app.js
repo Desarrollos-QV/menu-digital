@@ -49,12 +49,21 @@ createApp({
 
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
+            { id: 102, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' } 
         ]);
 
         const businessMenu = ref([
             { id: 1, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'dashboard' },
             { id: 2, label: 'Medios', icon: 'fa-solid fa-images', view: 'media' },
-            { id: 3, label: 'Publicidad', icon: 'fa-solid fa-bullhorn', view: 'ads' },
+            // PUBLICIDAD CONDICIONAL
+            { 
+                id: 3, 
+                label: 'Publicidad', 
+                icon: 'fa-solid fa-bullhorn', 
+                view: 'ads',
+                // Propiedad computada para bloqueo visual
+                get locked() { return settings.settings.value.plan === 'free'; } 
+            },
             {
                 id: 4, label: 'Productos', icon: 'fa-solid fa-burger', expanded: false, children: [
                     { id: 41, label: 'Listado', view: 'products' },

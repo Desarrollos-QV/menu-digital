@@ -55,27 +55,42 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
+        // El frontend envía el campo 'username', pero puede contener un correo
         const { username, password } = req.body;
         
-        // 1. Buscar usuario
-        const user = await User.findOne({ username });
+        // 1. Búsqueda Inteligente: Por username O por email
+        const user = await User.findOne({
+            $or: [
+                { username: username }, // Coincidencia exacta de usuario
+                { email: username.toLowerCase() } // Coincidencia de email (normalizado)
+            ]
+        });
+
         if (!user) return res.status(401).json({ message: 'Credenciales inválidas' });
 
-        // 2. Comparar contraseña
+        // 2. Verificar contraseña
         const isMatch = await user.comparePassword(password);
         if (!isMatch) return res.status(401).json({ message: 'Credenciales inválidas' });
 
         // 3. Generar Token
-        const token = jwt.sign({ id: user._id, role: user.role, businessId: user.businessId }, SECRET_KEY, { expiresIn: '8h' });
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                role: user.role, 
+                businessId: user.businessId 
+            }, 
+            SECRET_KEY, 
+            { expiresIn: '8h' }
+        );
 
         res.json({ 
             token, 
-            username: user.username,
-            role: user.role,
-            status: 200
+            username: user.username, 
+            role: user.role, 
+            message: 'Bienvenido' 
         });
     } catch (error) {
-        res.status(500).json({ message: error.message,status:500 });
+        res.status(500).json({ message: error.message });
     }
 };
 

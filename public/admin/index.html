@@ -72,7 +72,11 @@
                         loginError }}
                     </p>
                 </form>
+                <p class="text-center text-slate-500 text-sm mt-6">
+                    ¿Aún no tienes cuenta? <a href="/register" class="text-indigo-400 hover:text-indigo-300 font-medium">Registrate</a>
+                </p>
             </div>
+            
         </div>
 
         <div v-if="isAuthenticated">
@@ -103,11 +107,24 @@
                         <!-- RENDERIZADO DINÁMICO DE MENÚ SEGÚN ROL -->
                         <template v-for="item in activeMenuItems" :key="item.id">
                             <div v-if="!item.children">
-                                <a href="#" @click.prevent="navigate(item)" 
-                                class="flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group"
-                                :class="currentView === item.view ? 'bg-primary text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white'">
+                                <!-- BOTÓN MENÚ -->
+                                <a href="#" 
+                                @click.prevent="!item.locked && navigate(item)" 
+                                class="flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 group relative"
+                                :class="[
+                                    currentView === item.view ? 'bg-primary text-white shadow-lg' : 'hover:bg-slate-800 hover:text-white',
+                                    item.locked ? 'opacity-50 cursor-not-allowed bg-slate-800/50' : '']">
+                                    
                                     <i :class="item.icon" class="w-6 text-center text-lg" :class="currentView === item.view ? 'text-white' : 'text-slate-400'"></i>
                                     <span class="ml-3 font-medium" v-if="!collapsed">{{ item.label }}</span>
+                                    
+                                    <!-- CANDADO SI ES FREE -->
+                                    <i v-if="item.locked && !collapsed" class="fa-solid fa-lock text-xs text-yellow-500 absolute right-4"></i>
+                                    
+                                    <!-- Tooltip simple si está colapsado y bloqueado -->
+                                    <div v-if="item.locked && !collapsed" class="absolute left-full ml-2 bg-black text-white text-xs px-2 py-1 rounded hidden group-hover:block whitespace-nowrap z-50">
+                                        Requiere Plan PRO
+                                    </div>
                                 </a>
                             </div>
                             <div v-else>

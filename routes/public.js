@@ -6,4 +6,7 @@ const publicMenuController = require('../controllers/publicMenuController');
 // Ejemplo: /api/public/products?slug=tacos-pepe
 router.get('/:type', publicMenuController.getPublicData);
 
+// Ruta para registrar negocio
+router.post('/register', publicMenuController.registerBusiness);
+
 module.exports = router;

@@ -34,17 +34,24 @@ app.use('/api/public', require('./routes/public'));
 // --- NUEVO: MANEJO DE RUTAS AMIGABLES (SPA) ---
 // Esto permite entrar a tengo-hambre.com/buffalucas
 app.get(/.*/, (req, res) => {
-    // Ignorar si es una petición a la API o a una imagen que falló
+    // 1. Ignorar si es una petición a la API o a una imagen
     if (req.url.startsWith('/api') || req.url.startsWith('/uploads')) {
         return res.status(404).json({ message: 'No encontrado' });
     }
+
+    // 2. EXCEPCIÓN PARA REGISTRO (Solución al conflicto)
+    // Si la URL es /register, servimos el archivo de registro explícitamente
+    if (req.url === '/register' || req.url === '/register.html') {
+        return res.sendFile(path.join(__dirname, 'public', 'register.html'));
+    }
     
-    // Si intentan entrar a /admin y no cargó por estático, servir el index del admin
+    // 3. Rutas de Admin
     if (req.url.startsWith('/admin')) {
         return res.sendFile(path.join(__dirname, 'public/admin', 'index.html'));
     }
 
-    // Para cualquier otra ruta (ej: /buffalucas), servir la App del Cliente
+    // 4. Default: App del Cliente (Menú Digital)
+    // Cualquier otra ruta (ej: /tacos-pepe) se trata como un slug
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

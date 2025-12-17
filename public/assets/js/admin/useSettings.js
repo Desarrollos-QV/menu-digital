@@ -6,6 +6,7 @@ export function useSettings(auth) {
         role: '', // Para saber qué campos mostrar
         appName: '',
         adminName: '',
+        plan: 'free',
         // Campos Negocio
         avatar: '',
         phone: '',

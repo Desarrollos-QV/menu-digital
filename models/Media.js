@@ -7,7 +7,7 @@ const mediaSchema = new mongoose.Schema({
     type: { type: String, enum: ['image', 'video'], default: 'image' },
     
     // LA CLAVE DEL SAAS:
-    businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business' }, 
     
     createdAt: { type: Date, default: Date.now }
 });

@@ -7,8 +7,11 @@ exports.getMedia = async (req, res) => {
     try {
         // En lugar de fs.readdir, consultamos la BD filtrando por businessId
         // req.user viene del middleware de autenticación
-        const mediaFiles = await Media.find({ businessId: req.user.businessId }).sort({ createdAt: -1 });
+        // const mediaFiles = await Media.find({ businessId: req.user.businessId }).sort({ createdAt: -1 });
         
+        const filter = req.user.role === 'superadmin' ? { businessId: null } : { businessId: req.user.businessId };
+        const mediaFiles = await Media.find(filter).sort({ createdAt: -1 });
+
         res.status(200).send(mediaFiles);
     } catch (error) {
         res.status(500).send({ message: "Error al obtener medios: " + error.message });

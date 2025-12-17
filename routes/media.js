@@ -43,7 +43,8 @@ router.post('/', auth, upload.single('file'), async (req, res) => {
             originalName: req.file.originalname,
             url: `/uploads/${req.file.filename}`,
             type: isVideo ? 'video' : 'image',
-            businessId: req.user.businessId // <--- AISLAMIENTO SAAS
+            // businessId: req.user.businessId // <--- AISLAMIENTO SAAS
+            businessId: req.user.role === 'superadmin' ? null : req.user.businessId
         });
 
         await newMedia.save();
@@ -56,7 +57,7 @@ router.post('/', auth, upload.single('file'), async (req, res) => {
     } catch (error) {
         // Si falla la BD, borrar el archivo físico para no dejar basura
         fs.unlinkSync(req.file.path);
-        res.status(500).send({ message: 'Error registrando archivo en BD.' });
+        res.status(500).send({ message: 'Error registrando archivo en BD.'+error.message });
     }
 });
 

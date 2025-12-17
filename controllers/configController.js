@@ -68,6 +68,7 @@ exports.getAdminConfig = async (req, res) => {
                 adminName: req.user.username, // O un campo específico si lo agregas
                 slug : business.slug || '',
                 urlApp: 'https://'+req.hostname+'/'+business.slug,
+                plan: business.plan || 'free',
                 // Campos extra de negocio
                 avatar: business.avatar || '',
                 phone: business.phone || '',
