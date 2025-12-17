@@ -49,7 +49,9 @@ createApp({
 
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
-            { id: 102, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' } 
+            { id: 102, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
+            { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
+            { id: 103, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
 
         const businessMenu = ref([
@@ -216,18 +218,40 @@ createApp({
                 currentView.value = item.view;
                 localStorage.setItem('currentView', item.view);
                 mobileMenuOpen.value = false;
-                if (currentUserRole.value === 'superadmin') {
-                    if (item.view === 'saas_clients') saas.fetchBusinesses();
-                } else {
-                    if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
-                    if (item.view === 'media') media.showMediaSelector = false; media.fetchMedia();
-                    if (item.view === 'ads') banners.showMediaSelector = false; banners.fetchBanners();
-                    if (item.view === 'products') products.showMediaSelector = false; products.fetchProducts();
-                    if (item.view === 'categories') categories.showMediaSelector = false; categories.fetchCategories();
-                    if (item.view === 'addons') addons.fetchAddons();
-                    if (item.view === 'settings') settings.fetchSettings();
-                    if (item.view === 'saas_clients') saas.fetchBusinesses();
+                
+            
+                // CORRECCIÓN: Ejecutamos el fetch correspondiente SIN importar el rol.
+                // El backend ya sabe qué devolver basándose en el token del usuario.
+                
+                // Vistas Comunes (Admin y Negocio)
+                if(item.view === 'media') media.fetchMedia();
+                if(item.view === 'ads') banners.fetchBanners();
+                if(item.view === 'settings') settings.fetchSettings();
+
+                // Vistas Específicas
+                if(item.view === 'saas_clients') saas.fetchBusinesses();
+                
+                if(item.view === 'products') products.fetchProducts();
+                if(item.view === 'categories') categories.fetchCategories();
+                if(item.view === 'addons') addons.fetchAddons();
+                
+                if(item.view === 'dashboard' && currentUserRole.value !== 'superadmin') {
+                    analytics.fetchDashboardStats();
                 }
+
+
+                // if (currentUserRole.value === 'superadmin') {
+                //     if (item.view === 'saas_clients') saas.fetchBusinesses();
+                // } else {
+                //     if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
+                //     if (item.view === 'media') media.showMediaSelector = false; media.fetchMedia();
+                //     if (item.view === 'ads') banners.showMediaSelector = false; banners.fetchBanners();
+                //     if (item.view === 'products') products.showMediaSelector = false; products.fetchProducts();
+                //     if (item.view === 'categories') categories.showMediaSelector = false; categories.fetchCategories();
+                //     if (item.view === 'addons') addons.fetchAddons();
+                //     if (item.view === 'settings') settings.fetchSettings();
+                //     if (item.view === 'saas_clients') saas.fetchBusinesses();
+                // }
             }
         };
 
@@ -251,10 +275,16 @@ createApp({
                 settings.fetchSettings();
 
                 if (currentUserRole.value === 'superadmin') {
-                    // Si estaba en dashboard, mandarlo a saas
+                    // Si recargamos y estamos en dashboard, mover a saas
                     if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
-                    saas.fetchBusinesses();
+                    
+                    // Cargar datos según la vista inicial
+                    if(currentView.value === 'saas_clients') saas.fetchBusinesses();
+                    if(currentView.value === 'ads') banners.fetchBanners();
+                    if(currentView.value === 'media') media.fetchMedia();
+                    if(currentView.value === 'settings') settings.fetchSettings();
                 } else {
+                    
                     // Cargar datos iniciales de negocio
                     if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
                     if (currentView.value === 'media') media.fetchMedia();
@@ -264,6 +294,20 @@ createApp({
                     if (currentView.value === 'addons') addons.fetchAddons();
                     if (currentView.value === 'settings') settings.fetchSettings();
                 }
+                // if (currentUserRole.value === 'superadmin') {
+                //     // Si estaba en dashboard, mandarlo a saas
+                //     if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
+                //     saas.fetchBusinesses();
+                // } else {
+                //     // Cargar datos iniciales de negocio
+                //     if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
+                //     if (currentView.value === 'media') media.fetchMedia();
+                //     if (currentView.value === 'ads') { banners.isUploadingBanner.value = false; banners.fetchBanners(); }
+                //     if (currentView.value === 'products') products.isUploadingProductImg.value = false; products.fetchProducts();
+                //     if (currentView.value === 'categories') categories.isUploadingProductImg.value = false; categories.fetchCategories();
+                //     if (currentView.value === 'addons') addons.fetchAddons();
+                //     if (currentView.value === 'settings') settings.fetchSettings();
+                // }
             }
         });
 

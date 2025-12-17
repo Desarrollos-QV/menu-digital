@@ -1,14 +1,19 @@
 const Banner = require('../models/Banner');
 
+// Helper para detectar SuperAdmin (por rol o por nombre de usuario 'admin')
+const isSuperAdmin = (user) => {
+    return user.role === 'superadmin' || user.username === 'admin';
+};
+
 exports.getBanners = async (req, res) => {
     try {
         let filter = {};
         
-        // Si es SuperAdmin, ve los banners del sistema
-        if (req.user.role === 'superadmin') {
+        // Si es SuperAdmin (o el usuario 'admin' original)
+        if (isSuperAdmin(req.user)) {
             filter = { isSystem: true };
         } 
-        // Si es Negocio, ve SUS banners
+        // Si es Negocio
         else {
             filter = { businessId: req.user.businessId };
         }
@@ -24,10 +29,9 @@ exports.createBanner = async (req, res) => {
     try {
         const bannerData = { ...req.body };
 
-        // Lógica de asignación
-        if (req.user.role === 'superadmin') {
+        if (isSuperAdmin(req.user)) {
             bannerData.isSystem = true;
-            bannerData.businessId = null;
+            bannerData.businessId = null; // Banners globales no tienen negocio
         } else {
             bannerData.isSystem = false;
             bannerData.businessId = req.user.businessId;

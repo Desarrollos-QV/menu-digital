@@ -111,7 +111,7 @@ export function useSaas() {
         try {
             const res = await fetch('/api/saas/businesses');
             if (res.ok) businesses.value = await res.json();
-            console.log(businesses.value)
+            console.log("businesses ",businesses.value)
         } catch (e) { console.error(e); }
     };
 

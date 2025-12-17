@@ -37,6 +37,10 @@ router.post('/', auth, upload.single('file'), async (req, res) => {
         // Detectar tipo
         const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(req.file.originalname);
 
+        // CORRECCIÓN: Detectar si es admin o superadmin para poner businessId null
+        const isSuperAdmin = req.user.role === 'superadmin' || req.user.username === 'admin';
+        const businessId = isSuperAdmin ? null : req.user.businessId;
+
         // Guardar referencia en MongoDB vinculada al negocio
         const newMedia = new Media({
             name: req.file.filename,
@@ -44,7 +48,7 @@ router.post('/', auth, upload.single('file'), async (req, res) => {
             url: `/uploads/${req.file.filename}`,
             type: isVideo ? 'video' : 'image',
             // businessId: req.user.businessId // <--- AISLAMIENTO SAAS
-            businessId: req.user.role === 'superadmin' ? null : req.user.businessId
+            businessId: businessId
         });
 
         await newMedia.save();
