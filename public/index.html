@@ -27,6 +27,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <link rel="stylesheet" href="./assets/css/front.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
 
@@ -172,6 +174,11 @@
             </button>
         </div>
 
+        <!-- BOTÓN LEALTAD (Regalo Flotante) -->
+        <button @click="openLoyaltyModal" class="fixed bottom-24 right-6 z-40 w-14 h-14 bg-white dark:bg-slate-800 rounded-full shadow-xl flex items-center justify-center text-2xl border-2 border-yellow-400 animate-pulse-fast hover:scale-110 transition">
+            🎁
+        </button>
+
         <!-- PRODUCT DETAILS MODAL -->
         <div v-if="showProductModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
             <div @click="showProductModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
@@ -300,6 +307,80 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL LEALTAD -->
+        <div v-if="showLoyaltyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative">
+                <button @click="showLoyaltyModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-white z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
+                
+                <!-- Banner Color -->
+                <div class="h-32 w-full bg-primary flex items-center justify-center relative">
+                    <div class="absolute -bottom-8 w-20 h-20 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center border-4 border-primary">
+                        <i class="fa-solid fa-crown text-3xl text-yellow-400"></i>
+                    </div>
+                </div>
+
+                <div class="pt-12 pb-8 px-6 text-center">
+                    
+                    <!-- CASO 1: REGISTRO (Si no existe) -->
+                    <div v-if="!loyaltyState.registered">
+                        <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">¡Únete al Club!</h3>
+                        <p class="text-sm text-slate-500 mb-4">Regístrate para acumular puntos.</p>
+                        
+                        <div class="space-y-3">
+                            <input v-model="loyaltyForm.name" type="text" placeholder="Tu Nombre" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary">
+                            <input v-model="loyaltyForm.phone" type="tel" placeholder="Teléfono (Será tu ID)" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary">
+                            <!-- Campo PIN -->
+                            <input v-model="loyaltyForm.pin" type="password" maxlength="4" placeholder="Crea un PIN (4 dígitos)" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary tracking-widest">
+                            
+                            <button @click="registerLoyalty" class="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30">Crear Tarjeta</button>
+                            
+                            <!-- Botón Recuperar -->
+                            <p class="text-xs text-slate-400 mt-2 cursor-pointer hover:text-primary" @click="toggleRecoverMode">¿Ya tienes cuenta? Inicia sesión</p>
+                        </div>
+                    </div>
+
+                    <!-- CASO 2: LOGIN (Pide PIN) -->
+                    <div v-else-if="loyaltyState.authRequired">
+                        <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Bienvenido de nuevo</h3>
+                        <p class="text-sm text-slate-500 mb-4">Ingresa tu PIN para ver tus puntos.</p>
+                        
+                        <div class="space-y-3">
+                            <input v-model="loyaltyForm.phone" type="tel" readonly class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-center border-none">
+                            <input v-model="loyaltyForm.pin" type="password" maxlength="4" placeholder="PIN de 4 dígitos" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary tracking-widest">
+                            <button @click="loginLoyalty" class="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30">Ver Tarjeta</button>
+                            <p class="text-xs text-slate-400 mt-2 cursor-pointer hover:text-red-400" @click="resetLoyaltyState">No soy yo / Salir</p>
+                        </div>
+                    </div>
+
+                    <!-- CASO 3: TARJETA DIGITAL (Logueado) -->
+                    <div v-else>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Hola, {{ loyaltyState.customer.name }}</h3>
+                        <p class="text-xs text-slate-400 uppercase tracking-widest mb-6">Membresía Digital</p>
+
+                        <div class="bg-white p-4 rounded-xl shadow-inner inline-block mb-4 border border-slate-200">
+                            <canvas id="qr-code"></canvas>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-6">Muestra este código al pagar</p>
+
+                        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-end mb-2">
+                                <span class="text-3xl font-black text-primary">{{ loyaltyState.customer.points }}</span>
+                                <span class="text-xs text-slate-500 mb-1">/ {{ loyaltyState.program.goal }} Puntos</span>
+                            </div>
+                            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                                <div class="bg-yellow-400 h-2.5 rounded-full transition-all duration-1000" :style="`width: ${(loyaltyState.customer.points / loyaltyState.program.goal) * 100}%`"></div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 text-left">Premio: <span class="font-bold text-slate-700 dark:text-white">{{ loyaltyState.program.reward }}</span></p>
+                        </div>
+                        <button @click="logoutLoyalty" class="mt-4 text-xs text-red-400 hover:underline">Cerrar mi sesión</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
     </template>
 </div>
 

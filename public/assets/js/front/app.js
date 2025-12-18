@@ -68,6 +68,12 @@ createApp({
         const activeSelections = ref({});
         const modalQuantity = ref(1);
 
+        // Loyalty Logic
+        const showLoyaltyModal = ref(false);
+        const loyaltyForm = ref({ name: '', phone: '', pin: '' });
+        const loyaltyState = ref({ registered: false, authRequired: false, customer: {}, program: {} });
+        const isRecovering = ref(false); // Modo manual de poner teléfono
+
         // --- LÓGICA DE SLUG ACTUALIZADA ---
         const getSlug = () => {
             // 1. Intentar obtener de ?slug=nombre
@@ -80,7 +86,7 @@ createApp({
             if (path && path !== 'admin' && path !== 'index.html') {
                 return path;
             }
-            
+
             return null;
         };
 
@@ -97,9 +103,9 @@ createApp({
         // --- Fetch ---
         const slug = getSlug();
         const fetchData = async () => {
-            if (!slug) { 
-                businessError.value = true; 
-                return; 
+            if (!slug) {
+                businessError.value = true;
+                return;
             }
 
             isLoading.value = true;
@@ -132,7 +138,7 @@ createApp({
                     const favicon = document.getElementById('favicon');
                     if (favicon) favicon.href = configData.avatar;
                 }
-                
+
                 nextTick(() => { if (banners.value.length > 0) new Swiper('.banner-swiper', { slidesPerView: 1.1, spaceBetween: 10, loop: true, autoplay: { delay: 4000 } }); });
             } catch (e) { businessError.value = true; }
             finally { isLoading.value = false; }
@@ -217,7 +223,7 @@ createApp({
             // 1. Enviar datos al Backend (Sin esperar respuesta crítica)
             fetch('/api/analytics/order', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     slug,
                     customerName: customerName.value,
@@ -234,7 +240,7 @@ createApp({
             showCartModal.value = false; // Cerramos el modal
             toastr.success('¡Pedido enviado! Gracias por tu compra.');
         };
-         
+
         const cartTotalItems = computed(() => cart.value.reduce((s, i) => s + i.quantity, 0));
         const cartTotalPrice = computed(() => cart.value.reduce((s, i) => s + (i.unitPrice * i.quantity), 0));
 
@@ -254,20 +260,134 @@ createApp({
             return c ? c.name : 'Productos';
         });
 
+        const openLoyaltyModal = async () => {
+            showLoyaltyModal.value = true;
+            const savedPhone = localStorage.getItem('loyalty_phone');
+            const savedPin = localStorage.getItem('loyalty_pin');
+
+            if (savedPhone) {
+                loyaltyForm.value.phone = savedPhone;
+                if(savedPin){
+                    loyaltyForm.value.pin = savedPin;
+                }
+                await checkLoyaltyStatus(); 
+            } else {
+                loyaltyState.value = { registered: false, authRequired: false, customer: {}, program: {} };
+            }
+        };
+
+        const toggleRecoverMode = () => {
+            const phone = prompt("Ingresa tu número de celular registrado:");
+            if(phone) {
+                loyaltyForm.value.phone = phone;
+                checkLoyaltyStatus(); // Esto detectará si existe y pedirá PIN
+            }
+        };
+
+        const checkLoyaltyStatus = async () => {
+            try {
+                const res = await fetch('/api/loyalty/public/status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ slug, phone: loyaltyForm.value.phone, pin: loyaltyForm.value.pin})
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    loyaltyState.value = data; // Actualiza la UI (Pide PIN o muestra tarjeta)
+                    
+                    // Si ya está autenticado (se envió PIN antes o sesión viva?), generar QR
+                    if (data.authSuccess) {
+                        localStorage.setItem('loyalty_phone', loyaltyForm.value.phone);
+                        localStorage.setItem('loyalty_pin', loyaltyForm.value.pin);
+                        nextTick(() => generateQR(loyaltyForm.value.phone));
+                    }
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        const loginLoyalty = async () => {
+            // Reusamos el endpoint de status pero enviando el PIN
+            try {
+                const res = await fetch('/api/loyalty/public/status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        slug, 
+                        phone: loyaltyForm.value.phone,
+                        pin: loyaltyForm.value.pin 
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.authSuccess) {
+                        loyaltyState.value = data;
+                        localStorage.setItem('loyalty_phone', loyaltyForm.value.phone);
+                        localStorage.setItem('loyalty_pin', loyaltyForm.value.pin);
+                        nextTick(() => generateQR(loyaltyForm.value.phone));
+                        toastr.success('Sesión iniciada');
+                    } else {
+                        toastr.error('PIN incorrecto');
+                    }
+                } else {
+                    toastr.error('Error de autenticación');
+                }
+            } catch (e) { toastr.error('Error de conexión'); }
+        };
+
+
+        const registerLoyalty = async () => {
+            if(loyaltyForm.value.pin.length !== 4) return toastr.warning('El PIN debe ser de 4 dígitos');
+            
+            const res = await fetch('/api/loyalty/public/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ slug, ...loyaltyForm.value })
+            });
+            
+            if (res.ok) {
+                toastr.success('¡Tarjeta creada!');
+                // Auto-login tras registro
+                await loginLoyalty(); 
+            } else {
+                const err = await res.json();
+                toastr.error(err.message || 'Error al registrar (¿Ya existe el número?)');
+            }
+        };
+        
+        const logoutLoyalty = () => {
+            localStorage.removeItem('loyalty_phone');
+            localStorage.removeItem('loyalty_pin');
+            loyaltyForm.value = { name: '', phone: '', pin: '' };
+            loyaltyState.value = { registered: false, authRequired: false };
+        };
+        
+        const resetLoyaltyState = logoutLoyalty;
+
+
+        const generateQR = (text) => {
+            new QRious({
+                element: document.getElementById('qr-code'),
+                value: text, // El teléfono es el ID
+                size: 150
+            });
+        };
+
         const toggleTheme = () => { isDark.value = !isDark.value; updateHtmlClass(); localStorage.setItem('theme', isDark.value ? 'dark' : 'light'); };
         const updateHtmlClass = () => document.documentElement.classList.toggle('dark', isDark.value);
         const initTheme = () => { if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) isDark.value = true; updateHtmlClass(); };
 
-        onMounted(() => { 
-            initTheme(); 
-            fetchData(); 
-            window.addEventListener('scroll', () => scrollY.value = window.scrollY); 
-            
+        onMounted(() => {
+            initTheme();
+            fetchData();
+            window.addEventListener('scroll', () => scrollY.value = window.scrollY);
+
             if (slug) {
                 // Registrar visita en background (fire and forget)
                 fetch('/api/analytics/visit', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ slug, visitorId: getVisitorId() })
                 });
             }
@@ -277,7 +397,9 @@ createApp({
             banners, categories, products, config, isLoading, isDark, scrollY, businessError,
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName,customerEmail, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout
+            cart, showCartModal, customerName, customerEmail, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
+            showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
+            openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState
         };
     }
 }).mount('#app');

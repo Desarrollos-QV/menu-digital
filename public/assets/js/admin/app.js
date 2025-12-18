@@ -9,6 +9,7 @@ import { useAddons } from './useAddons.js';
 import { useSettings } from './useSettings.js';
 import { useSaas } from './useSaas.js';
 import { useAnalytics } from './useAnalytics.js';
+import { useLoyalty } from './useLoyalty.js';
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -73,8 +74,9 @@ createApp({
                     { id: 43, label: 'Categorías', view: 'categories' }
                 ]
             },
-            // { id: 5, label: 'Usuarios', icon: 'fa-solid fa-user-group', view: 'users' },
-            { id: 6, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
+            { id: 5, label: 'Lealtad', icon: 'fa-solid fa-gift', view: 'loyalty' },
+            { id: 6, label: 'Usuarios', icon: 'fa-solid fa-user-group', view: 'users' },
+            { id: 7, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
 
         // Computada para decidir qué menú mostrar
@@ -92,6 +94,7 @@ createApp({
         const settings = useSettings(auth);
         const saas = useSaas();
         const analytics = useAnalytics();
+        const useloyalty = useLoyalty();
         
 
         // --- DATA TABLE LOGIC ---
@@ -234,24 +237,11 @@ createApp({
                 if(item.view === 'products') products.fetchProducts();
                 if(item.view === 'categories') categories.fetchCategories();
                 if(item.view === 'addons') addons.fetchAddons();
-                
+                if(item.view === 'loyalty') useloyalty.fetchProgram();
                 if(item.view === 'dashboard' && currentUserRole.value !== 'superadmin') {
                     analytics.fetchDashboardStats();
                 }
 
-
-                // if (currentUserRole.value === 'superadmin') {
-                //     if (item.view === 'saas_clients') saas.fetchBusinesses();
-                // } else {
-                //     if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
-                //     if (item.view === 'media') media.showMediaSelector = false; media.fetchMedia();
-                //     if (item.view === 'ads') banners.showMediaSelector = false; banners.fetchBanners();
-                //     if (item.view === 'products') products.showMediaSelector = false; products.fetchProducts();
-                //     if (item.view === 'categories') categories.showMediaSelector = false; categories.fetchCategories();
-                //     if (item.view === 'addons') addons.fetchAddons();
-                //     if (item.view === 'settings') settings.fetchSettings();
-                //     if (item.view === 'saas_clients') saas.fetchBusinesses();
-                // }
             }
         };
 
@@ -273,7 +263,7 @@ createApp({
                 const savedRole = localStorage.getItem('role');
                 if (savedRole) currentUserRole.value = savedRole;
                 settings.fetchSettings();
-
+                
                 if (currentUserRole.value === 'superadmin') {
                     // Si recargamos y estamos en dashboard, mover a saas
                     if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
@@ -293,21 +283,10 @@ createApp({
                     if (currentView.value === 'categories') categories.isUploadingProductImg.value = false; categories.fetchCategories();
                     if (currentView.value === 'addons') addons.fetchAddons();
                     if (currentView.value === 'settings') settings.fetchSettings();
+                    if (currentView.value === 'loyalty') useloyalty.fetchProgram();
+                
                 }
-                // if (currentUserRole.value === 'superadmin') {
-                //     // Si estaba en dashboard, mandarlo a saas
-                //     if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
-                //     saas.fetchBusinesses();
-                // } else {
-                //     // Cargar datos iniciales de negocio
-                //     if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
-                //     if (currentView.value === 'media') media.fetchMedia();
-                //     if (currentView.value === 'ads') { banners.isUploadingBanner.value = false; banners.fetchBanners(); }
-                //     if (currentView.value === 'products') products.isUploadingProductImg.value = false; products.fetchProducts();
-                //     if (currentView.value === 'categories') categories.isUploadingProductImg.value = false; categories.fetchCategories();
-                //     if (currentView.value === 'addons') addons.fetchAddons();
-                //     if (currentView.value === 'settings') settings.fetchSettings();
-                // }
+                
             }
         });
 
@@ -323,7 +302,9 @@ createApp({
             ...products, // products, saveProduct...
             ...categories, // categoriesList, saveCategory...
             ...addons, // addonsList, saveAddon, addOptionRow...
-            ...saas // Multinegocios
+            ...saas, // Multinegocios
+            ...useloyalty // Loyalty
+        
         };
     }
 }).mount('#app');

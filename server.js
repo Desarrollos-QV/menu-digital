@@ -30,6 +30,7 @@ app.use('/api/analytics', require('./routes/analytics')); // <-- Analitica de vi
 
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
+app.use('/api/loyalty', require('./routes/loyalty'));
 
 // --- NUEVO: MANEJO DE RUTAS AMIGABLES (SPA) ---
 // Esto permite entrar a tengo-hambre.com/buffalucas
