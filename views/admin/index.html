@@ -256,7 +256,7 @@
                             <!-- 1. BUSCADOR TIPO AUTOCOMPLETE -->
                             <div class="relative w-full z-40">
                                 <div class="relative shadow-sm">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-4 md:left-5 top-3 md:top-4 text-slate-400 text-lg"></i>
+                                    <i class="fa-solid fa-magnifying-glass absolute left-4 md:left-5 top-2 md:top-4 text-slate-400 text-lg"></i>
                                     
                                     <input 
                                         v-model="pos.searchQuery.value" 
@@ -268,7 +268,7 @@
                                         class="w-full pl-12 md:pl-14 pr-12 md:pr-14 py-3 md:py-4 rounded-2xl border-none bg-white dark:bg-slate-700 text-sm md:text-lg shadow-lg focus:ring-4 focus:ring-primary/20 outline-none transition-all">
                                     
                                     <!-- Botón Cámara -->
-                                    <button @click="pos.startCameraScanner" class="absolute right-3 top-2.5 md:top-2 p-2 text-slate-400 hover:text-primary transition flex-shrink-0">
+                                    <button @click="pos.startCameraScanner" class="absolute right-3 top-0 md:top-1.5 p-2 text-slate-400 hover:text-primary transition flex-shrink-0">
                                         <i class="fa-solid fa-barcode text-xl"></i>
                                     </button>
                                 </div>
@@ -1000,18 +1000,18 @@
                 <div v-if="currentView === 'finance'" class="animate-fade-in space-y-6">
                     
                     <!-- Header -->
-                    <div class="flex justify-between items-center">
+                    <div class="lg:flex justify-between items-center">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Control de Caja</h2>
                             <p class="text-slate-500 dark:text-slate-400">Gestión de flujo de efectivo y cortes</p>
                         </div>
-                        <div class="flex gap-3">
-                            <button @click="finance.fetchCurrentStatus" class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow text-slate-500 hover:text-primary transition flex items-center justify-center"><i class="fa-solid fa-rotate"></i></button>
-                            <button v-if="finance.shiftStatus.value === 'closed'" @click="finance.showOpenModal.value = true" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/30 font-bold transition">
-                                <i class="fa-solid fa-lock-open mr-2"></i> Abrir Caja
+                        <div class="flex gap-3 lg:mt-4">
+                            <button @click="finance.fetchCurrentStatus" class="w-10 h-10 hidden md:inline rounded-full bg-white dark:bg-slate-800 shadow text-slate-500 hover:text-primary transition flex items-center justify-center"><i class="fa-solid fa-rotate"></i></button>
+                            <button v-if="finance.shiftStatus.value === 'closed'" @click="finance.showOpenModal.value = true" class="hidden md:inline bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/30 font-bold transition">
+                                <i class="fa-solid fa-lock-open lg:mr-2"></i> <span> Abrir Caja</span>
                             </button>
-                            <button v-if="finance.shiftStatus.value === 'open'" @click="closeFinanceShift()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-red-500/30 font-bold transition">
-                                <i class="fa-solid fa-lock mr-2"></i> Cerrar Caja (Corte)
+                            <button v-if="finance.shiftStatus.value === 'open'" @click="closeFinanceShift()" class="hidden md:inline bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-red-500/30 font-bold transition">
+                                <i class="fa-solid fa-lock lg:mr-2"></i> <span> Cerrar Caja (Corte)</span>
                             </button>
                         </div>
                     </div>

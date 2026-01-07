@@ -120,8 +120,7 @@ createApp({
                 ],
                 get locked() { return (settings.settings.value.plan == 'free') ? true : false; }
             },
-            { id: 12, label: 'Caja', icon: 'fa-solid fa-box', view: 'finance',
-                get locked() { return (settings.settings.value.plan == 'free') ? true : false; } },
+            { id: 12, label: 'Caja', icon: 'fa-solid fa-box', view: 'finance', get locked() { return (settings.settings.value.plan == 'free') ? true : false; } },
             { id: 13, label: 'Usuarios', icon: 'fa-solid fa-user-group', view: 'users' },
             { id: 14, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
@@ -406,8 +405,13 @@ createApp({
             // Optimizamos el espacio del POS
             if (item.view == 'pos') {
                 products.fetchProducts();
-                if (window.innerWidth < 768) mobileMenuOpen.value = true;
-                else collapsed.value = true;
+                if (window.innerWidth < 768) {
+                     mobileMenuOpen.value = false;
+                    collapsed.value = false;
+                }else {
+                    mobileMenuOpen.value = true;
+                    collapsed.value = true;
+                } 
             } else {
                 if (window.innerWidth < 768) mobileMenuOpen.value = false;
                 else collapsed.value = false;
