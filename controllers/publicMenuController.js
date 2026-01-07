@@ -72,7 +72,7 @@ exports.getPublicData = async (req, res) => {
                     ownerEmail: business.ownerEmail,
                     currency: business.settings?.currency || 'MXN',
                     primaryColor: business.settings?.primaryColor || '#6366f1',
-                    avatar: business.settings?.avatar || '',
+                    avatar: business?.avatar || '',
                     plan: business.plan // Enviamos el plan por si el front quiere ocultar/mostrar cosas extra
                 });
 

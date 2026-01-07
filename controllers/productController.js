@@ -8,7 +8,13 @@ exports.getProducts = async (req, res) => {
         if (req.user.role === 'admin_negocio') {
             filter.businessId = req.user.businessId; 
         }
-        const products = await Product.find(filter).sort({ createdAt: -1 });
+        // const products = await Product.find(filter).sort({ createdAt: -1 });
+        // res.json(products);
+
+        const products = await Product.find(filter)
+            .populate('addons') // <--- ESTA LÍNEA ES LA CLAVE
+            .populate('categories') // También poblamos categorías por si acaso
+            .sort({ createdAt: -1 });
         res.json(products);
     } catch (error) {
         res.status(500).json({ message: error.message });

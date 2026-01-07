@@ -12,5 +12,8 @@ router.get('/config', auth, loyaltyController.getProgramConfig);
 router.post('/config', auth, loyaltyController.updateProgramConfig);
 router.post('/add', auth, loyaltyController.addPoints);
 router.post('/redeem', auth, loyaltyController.redeemReward);
+// NUEVA RUTA PARA POS
+router.get('/customers', auth, loyaltyController.searchCustomers);
+
 
 module.exports = router;

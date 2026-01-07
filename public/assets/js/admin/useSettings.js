@@ -23,8 +23,6 @@ export function useSettings(auth) {
         newPassword: ''
     });
 
-
-    
     // Estado para el loader del avatar
     const isUploadingAvatar = ref(false);
     const avatarInput = ref(null);

@@ -12,7 +12,7 @@ exports.getCustomerStatus = async (req, res) => {
         if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
 
         const program = await LoyaltyProgram.findOne({ businessId: business._id });
-        if (!program || !program.active) return res.status(404).json({ message: 'No hay programa activo' });
+        if (!program) return res.status(404).json({ message: 'No hay programa activo' });
 
         const customer = await Customer.findOne({ businessId: business._id, phone });
         
@@ -25,8 +25,9 @@ exports.getCustomerStatus = async (req, res) => {
         if (!pin) {
             return res.json({ 
                 registered: true, 
+                active: (program.active) ? true : false, 
                 authRequired: true, // Bandera para que el front pida PIN
-                program 
+                program
                 // NO enviamos datos sensibles del cliente aun
             });
         }
@@ -39,6 +40,7 @@ exports.getCustomerStatus = async (req, res) => {
         // Login Exitoso
         res.json({ 
             registered: true, 
+            active: (program.active) ? true : false, 
             authSuccess: true,
             customer, 
             program 
@@ -68,7 +70,6 @@ exports.registerCustomer = async (req, res) => {
         res.json({ success: true, customer: newCustomer });
     } catch (e) { res.status(400).json({ error: 'Error al registrar o ya existe' }); }
 };
-
 exports.getProgramConfig = async (req, res) => {  
     try {
         let program = await LoyaltyProgram.findOne({ businessId: req.user.businessId });
@@ -105,4 +106,30 @@ exports.redeemReward = async (req, res) => {
         await customer.save();
         res.json({ success: true, message: 'Premio canjeado', newBalance: customer.points });
     } catch (e) { res.status(500).json({ error: e.message }); }
+};
+// Buscar Clientes (Para el POS)
+exports.searchCustomers = async (req, res) => {
+    try {
+        const { q } = req.query; // q = término de búsqueda
+        const businessId = req.user.businessId;
+        
+        let query = { businessId };
+        
+        if (q) {
+            // Buscar por Nombre O Teléfono
+            query.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { phone: { $regex: q, $options: 'i' } }
+            ];
+        }
+
+        // Traer los últimos 5 si no hay búsqueda, o los coincidentes
+        const customers = await Customer.find(query)
+            .sort({ lastVisit: -1 }) // Los más recientes primero
+            .limit(10);
+            
+        res.json(customers);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 };

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const bannerSchema = new mongoose.Schema({
-    title: { type: String, required: true },
+    title: { type: String },
     businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true },
     description: String,
     imageUrl: { type: String, required: true },

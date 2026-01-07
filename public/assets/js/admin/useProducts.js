@@ -10,6 +10,8 @@ export function useProducts(isDark, fetchMedia) {
     // Formulario Base
     const defaultForm = {
         name: '', price: 0, description: '', image: '', imageName: '',
+        barcode: '',
+        stock: 0,
         categories: [], addons: [], active: true,
         isTrending: false 
     };
@@ -25,7 +27,7 @@ export function useProducts(isDark, fetchMedia) {
     const isUploadingProductImg = ref(false);
     const productFileInput = ref(null);
 
-    // Cargar listas auxiliares (Categorías y Addons)
+    // Cargar listas (Categorías y Addons)
     const fetchAuxData = async () => {
         try {
             const [catRes, addRes] = await Promise.all([
@@ -40,7 +42,6 @@ export function useProducts(isDark, fetchMedia) {
         }
     };
 
-
     const fetchProducts = async () => {
         try {
             // Cargamos auxiliares primero para que la tabla pueda resolver los nombres de categorías
@@ -48,6 +49,7 @@ export function useProducts(isDark, fetchMedia) {
 
             const res = await authFetch('/api/products');
             if (res.ok) products.value = await res.json();
+            
         } catch (e) { console.error("Error fetching products", e); }
     };
 
@@ -100,10 +102,11 @@ export function useProducts(isDark, fetchMedia) {
             if (fetchMedia) await fetchMedia();
             productForm.value.image = data.url;
             productForm.value.imageName = data.name;
+            isUploadingProductImg.value = false;
         } catch (error) {
             toastr.error(error.message);
         } finally {
-            // isUploadingProductImg.value = false;
+            isUploadingProductImg.value = false;
             event.target.value = null;
         }
     };

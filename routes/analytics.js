@@ -9,5 +9,6 @@ router.post('/order', analyticsController.registerOrder);
 
 // Rutas Privadas (Para el Panel Admin)
 router.get('/dashboard', auth, analyticsController.getDashboardStats);
+router.post('/pos/sale', auth, analyticsController.createPosOrder);
 
 module.exports = router;

@@ -19,8 +19,6 @@ export function useAnalytics() {
     const renderChart = async () => {
         // 1. Esperamos al ciclo de actualización de Vue
         await nextTick();
-
-        console.log("Pintamos nuevamente...")
         // 2. Esperamos un poco más para asegurar que el v-if terminó de pintar el canvas
         setTimeout(() => {
             const ctx = document.getElementById('salesChart');

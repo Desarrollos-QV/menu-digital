@@ -6,6 +6,8 @@ const productSchema = new Schema({
     description: String,
     price: { type: Number, required: true },
     image: String, // URL de la imagen
+    barcode: { type: String, unique: true, sparse: true, trim: true },
+    stock: { type: Number },
     businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true },
     
     // Relaciones (IDs de otras colecciones)

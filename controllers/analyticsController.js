@@ -36,14 +36,14 @@ exports.registerVisit = async (req, res) => {
 // 2. Registrar Pedido / Clic WhatsApp (Público)
 exports.registerOrder = async (req, res) => {
     try {
-        const { slug, customerName, customerEmail, cart, total } = req.body;
+        const { slug, customerName, customerPhone, cart, total } = req.body;
         const business = await Business.findOne({ slug });
         
         // Guardar Orden
         const newOrder = new Order({
             businessId: business._id,
             customerName,
-            customerEmail,
+            customerPhone,
             items: cart.map(item => ({
                 productId: item.product._id,
                 name: item.product.name,
@@ -77,7 +77,7 @@ exports.getDashboardStats = async (req, res) => {
         const ordersToday = await Order.find({ businessId, createdAt: { $gte: today } });
         const salesToday = ordersToday.reduce((sum, order) => sum + order.total, 0);
         const totalOrders = await Order.countDocuments({ businessId });
-        const uniqueUsers = await Order.distinct('customerEmail', { businessId });
+        const uniqueUsers = await Order.distinct('customerPhone', { businessId });
         const visitsToday = await Visit.countDocuments({ businessId, date: { $gte: today } });
 
         // 2. Gráfica de Ventas (Últimos 7 días)
@@ -138,3 +138,60 @@ exports.getDashboardStats = async (req, res) => {
 
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
+
+
+// 3. Registrar Venta POS
+exports.createPosOrder = async (req, res) => {
+    try {
+        const { cart, customer, discount, paymentMethod, totals } = req.body;
+        
+        const newOrder = new Order({
+            businessId: req.user.businessId,
+            customerName: customer ? customer.name : 'Cliente Mostrador',
+            customerId: customer ? customer._id : null,
+            items: cart.map(item => ({
+                productId: item._id,
+                name: item.name,
+                quantity: item.qty,
+                price: item.price
+            })),
+            subtotal: totals.subtotal,
+            tax: totals.tax,
+            total: totals.total,
+            discount: discount,
+            source: 'pos',
+            status: 'completed', // En POS se asume pagado al cerrar
+            paymentMethod: paymentMethod
+        });
+
+        await newOrder.save();
+
+        // Actualizar stock o ventas del producto
+        for (const item of cart) {
+            await Product.findByIdAndUpdate(item._id, { $inc: { salesCount: item.qty } });
+        }
+
+        // Si hay cliente de lealtad, sumar puntos
+        if (customer && customer._id) {
+            // Aquí podrías llamar a la lógica de loyaltyController o duplicarla simplificada
+            const CustomerModel = require('../models/Customer');
+            const LoyaltyProgram = require('../models/LoyaltyProgram');
+            const program = await LoyaltyProgram.findOne({ businessId: req.user.businessId });
+            
+            if (program && program.active) {
+                const pointsToAdd = program.type === 'points' ? Math.floor(totals.total) : 1;
+                await CustomerModel.findByIdAndUpdate(customer._id, {
+                    $inc: { points: pointsToAdd, visits: 1 },
+                    lastVisit: new Date()
+                });
+            }
+        }
+
+        res.json({ success: true, orderId: newOrder._id });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+};
+

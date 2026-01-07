@@ -80,7 +80,7 @@ exports.login = async (req, res) => {
                 businessId: user.businessId 
             }, 
             SECRET_KEY, 
-            { expiresIn: '8h' }
+            { expiresIn: '7d' }
         );
 
         res.json({ 

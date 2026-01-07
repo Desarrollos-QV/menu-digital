@@ -57,7 +57,7 @@ export function useCategories(isDark, fetchMedia) {
             if (fetchMedia) await fetchMedia();
             categoryForm.value.image = data.url;
             categoryForm.value.imageName = data.name;
-
+            isUploadingCatImg.value = false;
         } catch (error) {
             toastr.error(error.message);
         } finally {

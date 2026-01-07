@@ -4,7 +4,15 @@ export function useAuth() {
     const isAuthenticated = ref(false);
     const username = ref('');
     const credentials = ref({ username: '', password: '' });
-    const isDark = ref(false); // Ponemos el tema aquí también
+    const storedTheme = localStorage.getItem('isDark_cookie');
+    const isDark = ref(storedTheme === 'true');
+
+
+    if (isDark.value) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
 
     const checkSession = () => {
         const token = localStorage.getItem('token');
@@ -44,15 +52,23 @@ export function useAuth() {
                 localStorage.clear();
                 isAuthenticated.value = false;
                 credentials.value = { username: '', password: '' };
+                location.reload();
             }
         });
     };
 
-    const toggleTheme = () => {
+     const toggleTheme = () => {
         isDark.value = !isDark.value;
-        if (isDark.value) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
+        
+        if (isDark.value) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('isDark_cookie', 'true'); // Guardar preferencia
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('isDark_cookie', 'false'); // Guardar preferencia
+        }
     };
+
 
     return {
         isAuthenticated,
