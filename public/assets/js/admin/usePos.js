@@ -10,7 +10,7 @@ export function usePos(productsRef, fetchMedia) {
     const searchQuery = ref('');
     // ACTUALIZADO: Payment Form con referencia
     const paymentForm = reactive({ method: 'cash', amountReceived: 0, change: 0, reference: '' });
-    const showScanner = ref(false);
+    const showScannerProds = ref(false);
     let html5QrCode = null;
     const isSearchFocused = ref(false);
     const showCustomerModal = ref(false);
@@ -141,15 +141,47 @@ export function usePos(productsRef, fetchMedia) {
     const triggerRecargas = () => toastr.info('Próximamente');
     const changeSalesperson = () => toastr.info('Próximamente');
     const setCustomer = selectCustomer;
-    const startCameraScanner = async () => { showScanner.value = true; await nextTick(); html5QrCode = new Html5Qrcode("pos-reader"); try { await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => { if (html5QrCode) html5QrCode.pause(); const allProducts = productsRef.products.value; const product = allProducts.find(p => p.barcode === decodedText || p._id === decodedText); if (product) { addToCart(product); setTimeout(() => html5QrCode && html5QrCode.resume(), 1000); } else { toastr.warning(`Código no encontrado: ${decodedText}`); setTimeout(() => html5QrCode && html5QrCode.resume(), 1000); } }, () => { }); } catch (err) { toastr.error("No se pudo iniciar la cámara"); showScanner.value = false; } };
-    const stopCameraScanner = async () => { if (html5QrCode) { try { await html5QrCode.stop(); html5QrCode.clear(); } catch (e) { } html5QrCode = null; } showScanner.value = false; };
+    const startCameraScanner = async () => { 
+        showScannerProds.value = true; 
+        await nextTick(); 
+        
+        html5QrCode = new Html5Qrcode("pos-reader"); 
+        try { 
+            await html5QrCode.start(
+                { 
+                    facingMode: "environment" 
+                }, 
+                { 
+                    fps: 10, 
+                    qrbox: 250 
+                }, 
+                (
+                    decodedText
+                ) => { 
+                    if (html5QrCode) html5QrCode.pause(); 
+                    const allProducts = productsRef.products.value; 
+                    const product = allProducts.find(p => p.barcode === decodedText || p._id === decodedText); 
+                    if (product) { 
+                        addToCart(product); 
+                        setTimeout(() => html5QrCode && html5QrCode.resume(), 1000); 
+                    } else { 
+                        toastr.warning(`Código no encontrado: ${decodedText}`); 
+                        setTimeout(() => html5QrCode && html5QrCode.resume(), 1000); 
+                    } 
+            }, () => { }); 
+        } catch (err) { 
+            toastr.error("No se pudo iniciar la cámara"); 
+            showScannerProds.value = false; 
+        } 
+    };
+    const stopCameraScanner = async () => { if (html5QrCode) { try { await html5QrCode.stop(); html5QrCode.clear(); } catch (e) { } html5QrCode = null; } showScannerProds.value = false; };
 
     let searchTimeout;
     watch(customerSearchQuery, (newVal) => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => { searchCustomers(); }, 300); });
 
     return {
         posTabs, activeTabId, activeTab,
-        searchQuery, isSearchFocused, currentTotals, showPayModal, showDiscountModal, paymentForm, showScanner,
+        searchQuery, isSearchFocused, currentTotals, showPayModal, showDiscountModal, paymentForm, showScannerProds,
         showCustomerModal, customerSearchQuery, customerList, discountForm, discountPreview,
         // Methods
         addTab, removeTab, addToCart, updateQty, removeFromCart,

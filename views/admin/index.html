@@ -265,8 +265,7 @@
                                         @blur="pos.isSearchFocused.value = true"
                                         type="text" 
                                         placeholder="Escanear o buscar..." 
-                                        class="w-full pl-12 md:pl-14 pr-12 md:pr-14 py-3 md:py-4 rounded-2xl border-none bg-white dark:bg-slate-700 text-sm md:text-lg shadow-lg focus:ring-4 focus:ring-primary/20 outline-none transition-all"
-                                    >
+                                        class="w-full pl-12 md:pl-14 pr-12 md:pr-14 py-3 md:py-4 rounded-2xl border-none bg-white dark:bg-slate-700 text-sm md:text-lg shadow-lg focus:ring-4 focus:ring-primary/20 outline-none transition-all">
                                     
                                     <!-- Botón Cámara -->
                                     <button @click="pos.startCameraScanner" class="absolute right-3 top-2.5 md:top-2 p-2 text-slate-400 hover:text-primary transition flex-shrink-0">
@@ -1428,6 +1427,23 @@
         <button @click="stopScanner" class="absolute top-6 right-6 text-white bg-white/20 p-2 rounded-full z-10"><i class="fa-solid fa-xmark text-2xl"></i></button>
         <div id="reader" class="w-full max-w-md bg-white rounded-lg overflow-hidden relative"></div>
         <p class="text-white mt-8 text-sm font-medium">Apunta al código QR del cliente</p>
+    </div>
+
+    <!-- MODAL ESCÁNER products -->
+    <div v-if="pos.showScannerProds.value" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in border dark:border-slate-700">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white">
+                    Escanear Producto
+                </h3>
+                <button @click="pos.stopCameraScanner" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <button @click="pos.stopCameraScanner" class="absolute top-6 right-6 text-white bg-white/20 p-2 rounded-full z-10"><i class="fa-solid fa-xmark text-2xl"></i></button>
+                <div id="pos-reader" class="w-full max-w-md bg-white rounded-lg overflow-hidden relative"></div>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL SAAS -->
