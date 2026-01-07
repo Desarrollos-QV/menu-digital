@@ -180,10 +180,10 @@
                 <div class="flex items-center space-x-4 md:space-x-6">
                     
                     <button v-if="settings.plan == 'pro' && finance.shiftStatus.value === 'closed'" @click="finance.showOpenModal.value = true" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-xl shadow-lg shadow-emerald-500/30 font-bold transition">
-                        <i class="fa-solid fa-lock-open mr-2"></i> Abrir Caja
+                        <i class="fa-solid fa-lock-open lg:mr-2"></i> <span class="hidden md:inline"> Abrir Caja</span>
                     </button>
                     <button v-if="settings.plan == 'pro' && finance.shiftStatus.value === 'open'" @click="finance.showCloseModal.value = true" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/30 font-bold transition">
-                        <i class="fa-solid fa-lock mr-2"></i> Cerrar Caja (Corte)
+                        <i class="fa-solid fa-lock lg:mr-2"></i> <span class="hidden md:inline"> Cerrar Caja (Corte)</span>
                     </button>
                     
                     <button @click="toggleTheme" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 flex items-center justify-center hover:bg-slate-200 transition"><i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i></button>
@@ -988,7 +988,7 @@
                                         <i class="fa-solid fa-envelope"></i> <span class="hidden md:inline">Email</span>
                                     </button>
                                     <button v-if="quotes.form.status != 'ready'" @click="convertQuoteToSale" class="py-2 md:py-3 px-2 md:px-4 bg-indigo-600 text-white rounded-lg md:rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition text-xs md:text-sm flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap col-span-2 md:col-span-1">
-                                        <i class="fa-solid fa-cash-register"></i> <span class="hidden md:inline">Convertir</span>
+                                        <i class="fa-solid fa-cash-register"></i> <span class="">Convertir</span>
                                     </button>
                                 </div>
                             </div>
@@ -1463,86 +1463,88 @@
     </div>
 
     <!-- MODAL PAGO POS -->
-    <div v-if="pos.showPayModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[500px]">
+    <div v-if="pos.showPayModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 w-full h-auto max-h-[90vh] sm:max-h-screen max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col lg:flex-row overflow-y-auto sm:overflow-y-visible">
             <!-- Métodos -->
-            <div class="w-1/3 bg-slate-100 dark:bg-slate-800 p-4 border-r dark:border-slate-700 space-y-2">
-                <h3 class="font-bold text-slate-500 mb-4 uppercase text-xs">Método de Pago</h3>
+            <div class="w-full lg:w-1/3 bg-slate-100 dark:bg-slate-800 p-3 sm:p-4 lg:border-r dark:border-slate-700 space-y-2 lg:max-h-screen lg:overflow-y-auto">
+                <h3 class="font-bold text-slate-500 mb-3 sm:mb-4 uppercase text-xs">Método de Pago</h3>
                 
                 <!-- EFECTIVO -->
                 <button @click="pos.setPaymentMethod('cash')" 
-                        class="w-full p-4 rounded-xl flex items-center gap-3 transition" 
-                        :class="pos.paymentForm.method === 'cash' ? 'bg-green-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-200'">
-                    <i class="fa-solid fa-money-bill-wave text-xl w-6 text-center"></i> 
+                        class="w-full p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-3 transition text-sm sm:text-base" 
+                        :class="pos.paymentForm.method === 'cash' ? 'bg-green-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200'">
+                    <i class="fa-solid fa-money-bill-wave text-lg sm:text-xl w-5 sm:w-6 text-center shrink-0"></i> 
                     <span class="font-bold">Efectivo</span>
                 </button>
                 
                 <!-- T. CRÉDITO -->
                 <button @click="pos.setPaymentMethod('credit_card')" 
-                        class="w-full p-4 rounded-xl flex items-center gap-3 transition" 
-                        :class="pos.paymentForm.method === 'credit_card' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-200'">
-                    <i class="fa-regular fa-credit-card text-xl w-6 text-center"></i> 
+                        class="w-full p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-3 transition text-sm sm:text-base" 
+                        :class="pos.paymentForm.method === 'credit_card' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200'">
+                    <i class="fa-regular fa-credit-card text-lg sm:text-xl w-5 sm:w-6 text-center shrink-0"></i> 
                     <span class="font-bold">T. Crédito</span>
                 </button>
 
                 <!-- T. DÉBITO -->
                 <button @click="pos.setPaymentMethod('debit_card')" 
-                        class="w-full p-4 rounded-xl flex items-center gap-3 transition" 
-                        :class="pos.paymentForm.method === 'debit_card' ? 'bg-blue-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-200'">
-                    <i class="fa-solid fa-credit-card text-xl w-6 text-center"></i> 
+                        class="w-full p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-3 transition text-sm sm:text-base" 
+                        :class="pos.paymentForm.method === 'debit_card' ? 'bg-blue-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200'">
+                    <i class="fa-solid fa-credit-card text-lg sm:text-xl w-5 sm:w-6 text-center shrink-0"></i> 
                     <span class="font-bold">T. Débito</span>
                 </button>
                 
                 <!-- TRANSFERENCIA -->
                 <button @click="pos.setPaymentMethod('transfer')" 
-                        class="w-full p-4 rounded-xl flex items-center gap-3 transition" 
-                        :class="pos.paymentForm.method === 'transfer' ? 'bg-purple-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-200'">
-                    <i class="fa-solid fa-money-bill-transfer text-xl w-6 text-center"></i> 
+                        class="w-full p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-3 transition text-sm sm:text-base" 
+                        :class="pos.paymentForm.method === 'transfer' ? 'bg-purple-500 text-white shadow-lg' : 'bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200'">
+                    <i class="fa-solid fa-money-bill-transfer text-lg sm:text-xl w-5 sm:w-6 text-center shrink-0"></i> 
                     <span class="font-bold">Transferencia</span>
                 </button>
             </div>
             
             <!-- Calculadora / Detalles -->
-            <div class="w-2/3 p-8 flex flex-col justify-between">
+            <div class="w-full lg:w-2/3 p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-3xl font-black text-slate-800 dark:text-white mb-2 text-right">${{ pos.currentTotals.value.total.toFixed(2) }}</h2>
-                    <p class="text-right text-slate-400 text-sm mb-8">Total a Pagar</p>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-800 dark:text-white mb-1 sm:mb-2 text-right">${{ pos.currentTotals.value.total.toFixed(2) }}</h2>
+                    <p class="text-right text-slate-400 text-xs sm:text-sm mb-4 sm:mb-8">Total a Pagar</p>
 
                     <!-- VISTA: EFECTIVO -->
-                    <div v-if="pos.paymentForm.method === 'cash'" class="animate-fade-in">
-                        <label class="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Monto Recibido</label>
-                        <input v-model.number="pos.paymentForm.amountReceived" @input="pos.calculateChange" type="number" class="w-full text-3xl font-bold p-4 border rounded-xl bg-slate-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white text-right focus:ring-2 focus:ring-primary outline-none">
+                    <div v-if="pos.paymentForm.method === 'cash'" class="animate-fade-in space-y-4">
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Monto Recibido</label>
+                            <input v-model.number="pos.paymentForm.amountReceived" @input="pos.calculateChange" type="number" class="w-full text-2xl sm:text-3xl lg:text-4xl font-bold p-3 sm:p-4 border rounded-xl bg-slate-50 dark:bg-slate-800 dark:border-slate-600 dark:text-white text-right focus:ring-2 focus:ring-primary outline-none">
+                        </div>
                         
-                        <div class="flex gap-2 mt-4 justify-end">
-                            <button @click="pos.paymentForm.amountReceived = 100; pos.calculateChange()" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded text-sm text-slate-600 dark:text-slate-300">$100</button>
-                            <button @click="pos.paymentForm.amountReceived = 200; pos.calculateChange()" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded text-sm text-slate-600 dark:text-slate-300">$200</button>
-                            <button @click="pos.paymentForm.amountReceived = 500; pos.calculateChange()" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded text-sm text-slate-600 dark:text-slate-300">$500</button>
-                            <button @click="pos.paymentForm.amountReceived = pos.currentTotals.value.total; pos.calculateChange()" class="px-3 py-1 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 rounded text-sm font-bold">Exacto</button>
+                        <div class="flex gap-1 sm:gap-2 justify-end flex-wrap">
+                            <button @click="pos.paymentForm.amountReceived = 100; pos.calculateChange()" class="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-200 dark:bg-slate-700 rounded text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition">$100</button>
+                            <button @click="pos.paymentForm.amountReceived = 200; pos.calculateChange()" class="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-200 dark:bg-slate-700 rounded text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition">$200</button>
+                            <button @click="pos.paymentForm.amountReceived = 500; pos.calculateChange()" class="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-200 dark:bg-slate-700 rounded text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition">$500</button>
+                            <button @click="pos.paymentForm.amountReceived = pos.currentTotals.value.total; pos.calculateChange()" class="px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 rounded text-xs sm:text-sm font-bold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition">Exacto</button>
                         </div>
 
-                        <div class="mt-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl flex justify-between items-center border border-green-100 dark:border-green-800">
-                            <span class="text-green-700 dark:text-green-400 font-bold">Cambio</span>
-                            <span class="text-2xl font-black text-green-600 dark:text-green-400">${{ pos.paymentForm.change.toFixed(2) }}</span>
+                        <div class="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-xl flex justify-between items-center border border-green-100 dark:border-green-800">
+                            <span class="text-green-700 dark:text-green-400 font-bold text-sm sm:text-base">Cambio</span>
+                            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-green-600 dark:text-green-400">${{ pos.paymentForm.change.toFixed(2) }}</span>
                         </div>
                     </div>
 
                     <!-- VISTA: TARJETAS / TRANSFERENCIA -->
-                    <div v-else class="flex flex-col items-center justify-center h-48 text-slate-400 animate-fade-in">
-                        <i v-if="pos.paymentForm.method === 'credit_card'" class="fa-regular fa-credit-card text-6xl mb-4 text-indigo-300"></i>
-                        <i v-else-if="pos.paymentForm.method === 'debit_card'" class="fa-solid fa-credit-card text-6xl mb-4 text-blue-300"></i>
-                        <i v-else class="fa-solid fa-money-bill-transfer text-6xl mb-4 text-purple-300"></i>
+                    <div v-else class="flex flex-col items-center justify-center min-h-48 sm:min-h-64 text-slate-400 animate-fade-in py-6">
+                        <i v-if="pos.paymentForm.method === 'credit_card'" class="fa-regular fa-credit-card text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4 text-indigo-300"></i>
+                        <i v-else-if="pos.paymentForm.method === 'debit_card'" class="fa-solid fa-credit-card text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4 text-blue-300"></i>
+                        <i v-else class="fa-solid fa-money-bill-transfer text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4 text-purple-300"></i>
                         
-                        <p class="font-bold text-lg text-slate-600 dark:text-slate-300">Procesar cobro externo</p>
-                        <p class="text-xs">Confirma que la transacción fue exitosa en la terminal.</p>
+                        <p class="font-bold text-base sm:text-lg text-slate-600 dark:text-slate-300">Procesar cobro externo</p>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Confirma que la transacción fue exitosa en la terminal.</p>
                         
                         <!-- Referencia Opcional -->
-                        <input v-model="pos.paymentForm.reference" type="text" placeholder="No. de Autorización / Referencia (Opcional)" class="mt-4 w-full px-4 py-2 text-center rounded-lg bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 text-sm outline-none focus:border-primary">
+                        <input v-model="pos.paymentForm.reference" type="text" placeholder="No. de Autorización / Referencia (Opcional)" class="mt-4 sm:mt-6 w-full px-3 sm:px-4 py-2 sm:py-3 text-center rounded-lg bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 text-xs sm:text-sm dark:text-white outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition">
                     </div>
                 </div>
 
-                <div class="flex gap-4 mt-6">
-                    <button @click="pos.showPayModal.value = false" class="px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition">Cancelar</button>
-                    <button @click="pos.processSale(finance)" class="flex-1 text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:opacity-90 transition active:scale-95"
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4 sm:mt-6">
+                    <button @click="pos.showPayModal.value = false" class="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition text-sm sm:text-base">Cancelar</button>
+                    <button @click="pos.processSale(finance)" class="flex-1 text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:opacity-90 transition active:scale-95 py-2.5 sm:py-3 text-sm sm:text-base"
                             :class="{
                                 'bg-green-500': pos.paymentForm.method === 'cash',
                                 'bg-indigo-500': pos.paymentForm.method === 'credit_card',
@@ -1976,66 +1978,66 @@
     </div>
 
     <!-- MODAL CERRAR CAJA (CORTE) -->
-    <div v-if="finance.showCloseModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl animate-fade-in overflow-hidden flex flex-col max-h-[90vh]">
+    <div v-if="finance.showCloseModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 w-full h-auto max-h-[95vh] sm:max-h-screen max-w-2xl rounded-2xl shadow-2xl animate-fade-in overflow-hidden flex flex-col overflow-y-auto sm:overflow-y-visible">
             <!-- Header -->
-            <div class="text-center p-8 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-red-50 to-orange-50 dark:from-slate-900 dark:to-slate-800">
-                <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">
+            <div class="text-center p-4 sm:p-6 lg:p-8 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-red-50 to-orange-50 dark:from-slate-900 dark:to-slate-800 shrink-0">
+                <div class="w-12 sm:w-16 h-12 sm:h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 text-xl sm:text-2xl shadow-sm">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-slate-800 dark:text-white">Corte de Caja</h3>
-                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Registra los recuentos de cada método de pago e ingresa el total real contado.</p>
+                <h3 class="text-lg sm:text-2xl font-bold text-slate-800 dark:text-white">Corte de Caja</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">Registra los recuentos de cada método de pago e ingresa el total real contado.</p>
             </div>
 
             <!-- Body -->
-            <div class="p-8 overflow-y-auto space-y-6">
+            <div class="p-4 sm:p-6 lg:p-8 overflow-y-auto space-y-4 sm:space-y-6 flex-1">
                 
                 <!-- Información del Turno -->
-                <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700 space-y-2">
-                    <div class="flex justify-between text-sm">
+                <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div class="flex justify-between text-xs sm:text-sm">
                         <span class="text-slate-600 dark:text-slate-400">Efectivo en Sistema:</span>
                         <span class="font-bold text-slate-800 dark:text-white">${{ finance.currentData.value.currentCashInDrawer.toFixed(2) }}</span>
                     </div>
-                    <div class="flex justify-between text-sm">
+                    <div class="flex justify-between text-xs sm:text-sm">
                         <span class="text-slate-600 dark:text-slate-400">Ventas Totales del Turno:</span>
                         <span class="font-bold text-slate-800 dark:text-white">${{ finance.currentData.value.salesSummary.total.toFixed(2) }}</span>
                     </div>
                 </div>
 
                 <!-- Recuento por Método de Pago -->
-                <div class="space-y-4">
+                <div class="space-y-3 sm:space-y-4">
                     <h4 class="font-bold text-slate-800 dark:text-white uppercase text-xs tracking-wider">Recuento Manual por Método de Pago</h4>
                     
                     <!-- EFECTIVO -->
-                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg flex items-center justify-center text-lg">
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 sm:p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
+                            <div class="flex items-center gap-2 sm:gap-3 w-full">
+                                <div class="w-9 sm:w-10 h-9 sm:h-10 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg flex items-center justify-center text-sm sm:text-lg shrink-0">
                                     <i class="fa-solid fa-money-bill-wave"></i>
                                 </div>
                                 <div>
-                                    <p class="font-bold text-slate-800 dark:text-white">Efectivo</p>
+                                    <p class="font-bold text-slate-800 dark:text-white text-sm sm:text-base">Efectivo</p>
                                     <p class="text-xs text-slate-500 dark:text-slate-400">Dinero físico contado</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Recuento Manual</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-3 text-slate-400 font-bold">$</span>
-                                    <input v-model.number="finance.closeAmount.value" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-right outline-none focus:ring-2 focus:ring-green-500 dark:text-white">
+                                    <input v-model.number="finance.closeAmount.value" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-2 sm:py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-right outline-none focus:ring-2 focus:ring-green-500 dark:text-white text-sm sm:text-base">
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Total Esperado</label>
-                                <div class="px-3 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 font-bold text-right text-slate-700 dark:text-slate-300 text-sm">
+                                <div class="px-3 py-2 sm:py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 font-bold text-right text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
                                     ${{ finance.currentData.value.currentCashInDrawer.toFixed(2) }}
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Diferencia</label>
-                                <div class="px-3 py-2.5 rounded-lg font-bold text-right text-sm"
+                                <div class="px-3 py-2 sm:py-2.5 rounded-lg font-bold text-right text-xs sm:text-sm"
                                      :class="(finance.closeAmount.value || 0) === finance.currentData.value.currentCashInDrawer 
                                               ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
                                               : (finance.closeAmount.value || 0) > finance.currentData.value.currentCashInDrawer
@@ -2054,33 +2056,33 @@
                     </div>
 
                     <!-- TARJETAS DÉBITO -->
-                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg flex items-center justify-center text-lg">
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 sm:p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                            <div class="w-9 sm:w-10 h-9 sm:h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg flex items-center justify-center text-sm sm:text-lg shrink-0">
                                 <i class="fa-solid fa-credit-card"></i>
                             </div>
                             <div>
-                                <p class="font-bold text-slate-800 dark:text-white">Tarjeta Débito</p>
+                                <p class="font-bold text-slate-800 dark:text-white text-sm sm:text-base">Tarjeta Débito</p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Débito contado</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Recuento Manual</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-3 text-slate-400 font-bold">$</span>
-                                    <input v-model.number="finance.closeRecounts.debit" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-right outline-none focus:ring-2 focus:ring-blue-500 dark:text-white">
+                                    <input v-model.number="finance.closeRecounts.debit" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-2 sm:py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-right outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm sm:text-base">
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Total Esperado</label>
-                                <div class="px-3 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 font-bold text-right text-slate-700 dark:text-slate-300 text-sm">
+                                <div class="px-3 py-2 sm:py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 font-bold text-right text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
                                     ${{ (finance.currentData.value.salesSummary?.debit_card || 0).toFixed(2) }}
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Diferencia</label>
-                                <div class="px-3 py-2.5 rounded-lg font-bold text-right text-sm"
+                                <div class="px-3 py-2 sm:py-2.5 rounded-lg font-bold text-right text-xs sm:text-sm"
                                      :class="(finance.closeRecounts.debit || 0) === (finance.currentData.value.salesSummary?.debit_card || 0)
                                               ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
                                               : (finance.closeRecounts.debit || 0) > (finance.currentData.value.salesSummary?.debit_card || 0)
@@ -2099,33 +2101,33 @@
                     </div>
 
                     <!-- TARJETAS CRÉDITO -->
-                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-lg flex items-center justify-center text-lg">
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 sm:p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                            <div class="w-9 sm:w-10 h-9 sm:h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-lg flex items-center justify-center text-sm sm:text-lg shrink-0">
                                 <i class="fa-regular fa-credit-card"></i>
                             </div>
                             <div>
-                                <p class="font-bold text-slate-800 dark:text-white">Tarjeta Crédito</p>
+                                <p class="font-bold text-slate-800 dark:text-white text-sm sm:text-base">Tarjeta Crédito</p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Crédito contado</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Recuento Manual</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-3 text-slate-400 font-bold">$</span>
-                                    <input v-model.number="finance.closeRecounts.credit" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-right outline-none focus:ring-2 focus:ring-purple-500 dark:text-white">
+                                    <input v-model.number="finance.closeRecounts.credit" type="number" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-2 sm:py-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 font-bold text-right outline-none focus:ring-2 focus:ring-purple-500 dark:text-white text-sm sm:text-base">
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Total Esperado</label>
-                                <div class="px-3 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 font-bold text-right text-slate-700 dark:text-slate-300 text-sm">
+                                <div class="px-3 py-2 sm:py-2.5 rounded-lg bg-slate-200 dark:bg-slate-700 font-bold text-right text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
                                     ${{ (finance.currentData.value.salesSummary?.credit_card || 0).toFixed(2) }}
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Diferencia</label>
-                                <div class="px-3 py-2.5 rounded-lg font-bold text-right text-sm"
+                                <div class="px-3 py-2 sm:py-2.5 rounded-lg font-bold text-right text-xs sm:text-sm"
                                      :class="(finance.closeRecounts.credit || 0) === (finance.currentData.value.salesSummary?.credit_card || 0)
                                               ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
                                               : (finance.closeRecounts.credit || 0) > (finance.currentData.value.salesSummary?.credit_card || 0)
@@ -2145,9 +2147,9 @@
                 </div>
 
                 <!-- TOTAL REAL SUMADO -->
-                <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 rounded-xl p-6 border border-slate-700">
-                    <p class="text-slate-400 text-sm uppercase tracking-wider font-bold mb-2">Monto Total Real (Sumado)</p>
-                    <div class="text-4xl font-black text-white flex items-baseline gap-2">
+                <div class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700">
+                    <p class="text-slate-400 text-xs uppercase tracking-wider font-bold mb-2">Monto Total Real (Sumado)</p>
+                    <div class="text-2xl sm:text-3xl lg:text-4xl font-black text-white flex items-baseline gap-1 sm:gap-2">
                         <span>$</span>
                         <span>{{ (
                             (finance.closeAmount.value || 0) +
@@ -2160,9 +2162,9 @@
             </div>
 
             <!-- Footer -->
-            <div class="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex gap-3">
-                <button @click="finance.showCloseModal.value = false" class="flex-1 py-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
-                <button @click="finance.closeRegister" class="flex-1 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:opacity-90 transition active:scale-95">
+            <div class="p-3 sm:p-4 lg:p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-2 sm:gap-3 shrink-0">
+                <button @click="finance.showCloseModal.value = false" class="flex-1 py-2.5 sm:py-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition text-sm sm:text-base">Cancelar</button>
+                <button @click="finance.closeRegister" class="flex-1 bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold py-2.5 sm:py-3 rounded-xl shadow-lg hover:opacity-90 transition active:scale-95 text-sm sm:text-base">
                     Finalizar Corte
                 </button>
             </div>
