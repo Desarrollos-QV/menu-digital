@@ -449,8 +449,8 @@
                                         <span>Descuento</span>
                                         <span class="font-bold">-${{ pos.currentTotals.value.discountAmount.toFixed(2) }}</span>
                                     </div>
-                                    <div class="flex justify-between text-slate-600 dark:text-slate-400">
-                                        <span>IVA (16%)</span>
+                                    <div class="flex justify-between text-slate-600 dark:text-slate-400" v-if="settings.iva > 0">
+                                        <span>IVA ({{ settings.iva }}%)</span>
                                         <span class="font-medium">${{ pos.currentTotals.value.tax.toFixed(2) }}</span>
                                     </div>
                                 </div>
@@ -637,7 +637,7 @@
                         <!-- Header con Acciones -->
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                             <div class="flex items-center gap-4">
-                                <button @click="currentView = 'orders'" class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                                <button @click="viewListOrders" class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                                     <i class="fa-solid fa-arrow-left text-slate-500 dark:text-slate-300"></i>
                                 </button>
                                 <div>
@@ -658,7 +658,7 @@
                             
                             <!-- Botones Acción -->
                             <div class="flex flex-wrap gap-2">
-                                <button @click="printThermalTicket" class="bg-slate-800 dark:bg-white dark:text-slate-900 text-white px-4 py-2 rounded-lg font-bold shadow hover:opacity-90 transition"><i class="fa-solid fa-receipt mr-2"></i>Ticket</button>
+                                <button @click="openTicketPreview" class="bg-slate-800 dark:bg-white dark:text-slate-900 text-white px-4 py-2 rounded-lg font-bold shadow hover:opacity-90 transition"><i class="fa-solid fa-receipt mr-2"></i>Ticket</button>
                                 <button @click="generatePDF" class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-red-600 transition"><i class="fa-solid fa-file-pdf mr-2"></i>PDF</button>
                                 <button @click="openShareModal" class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-green-600 transition"><i class="fa-brands fa-whatsapp mr-2"></i>Compartir</button>
                             </div>
@@ -964,6 +964,10 @@
                                         <div class="flex justify-between text-slate-600 dark:text-slate-400">
                                             <span>Subtotal</span>
                                             <span class="font-medium">${{ quotes.totals.value.subtotal.toFixed(2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between text-slate-600 dark:text-slate-400" v-if="settings.iva > 0">
+                                            <span>IVA ({{ settings.iva }}%)</span>
+                                            <span class="font-medium">${{ quotes.totals.value.tax.toFixed(2) }}</span>
                                         </div>
                                         <div v-if="quotes.totals.value.discount > 0" class="flex justify-between text-red-500">
                                             <span class="truncate">Desc. {{ quotes.form.discount.title ? `(${quotes.form.discount.title})` : '' }}</span>
@@ -1353,71 +1357,279 @@
                 </div>
 
                 <!-- CONFIGURACIÓN VIEW -->
-                <div v-if="currentView === 'settings'" class="space-y-6 animate-fade-in max-w-4xl mx-auto">
-                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Configuración del Sistema</h2>
+                <div v-if="currentView === 'settings'" class="space-y-4 md:space-y-6 animate-fade-in mx-auto px-0 md:px-0 max-w-4xl">
+                    <h2 class="text-xl md:text-2xl font-bold text-slate-800 dark:text-white px-4 md:px-0">Configuración del Sistema</h2>
+                    
+                    <!-- TARJETA 1: IDENTIDAD VISUAL -->
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-lg text-slate-800 dark:text-white flex items-center">
-                                    <i class="fa-solid fa-store mr-2 text-primary"></i> 
-                                    {{ settings.role === 'superadmin' ? 'Plataforma SaaS' : 'Mi Negocio' }}
+                        <div class="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="w-full sm:w-auto">
+                                <h3 class="font-bold text-base md:text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-store text-primary text-base md:text-lg"></i> 
+                                    <span class="truncate">{{ settings.role === 'superadmin' ? 'Plataforma SaaS' : 'Mi Negocio' }}</span>
                                 </h3>
-                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Personaliza la identidad visual e información.</p>
+                                <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">Personaliza la identidad visual e información.</p>
                             </div>
-                            <div>
-                                <a :href="'/'+settings.slug" target="_blank" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-xl shadow-lg shadow-emerald-500/30 font-bold transition">
-                                    <i class="fa-solid fa-share mr-2"></i>
-                                    Visita Mi Sitio
-                                </a>
+                            <div class="w-full sm:w-auto">
+                                <button @click="openPWA()" type="button" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs md:text-sm px-3 md:px-4 py-2 md:py-2.5 rounded-xl shadow-lg shadow-emerald-500/30 font-bold transition inline-flex items-center justify-center w-full sm:w-auto gap-2 cursor-pointer border-none">
+                                    <i class="fa-solid fa-share text-sm md:text-base"></i>
+                                    <span>Abrir mi App Web</span>
+                                </button>
                             </div>
                         </div>
-                        <div class="p-6">
-                            <div class="flex flex-col md:flex-row gap-8">
-                                <div v-if="settings.role === 'admin_negocio'" class="flex flex-col items-center space-y-3">
-                                    <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Logo del Negocio</label>
-                                    <div class="relative group cursor-pointer w-32 h-32">
-                                        <input type="file" ref="avatarInput" @change="uploadAvatar" class="hidden" accept="image/*">
-                                        <div @click="$refs.avatarInput.click()" class="w-full h-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-slate-50 dark:hover:bg-slate-700 transition relative bg-slate-50 dark:bg-slate-800 shadow-sm">
-                                            <img v-if="settings.avatar" :src="settings.avatar" class="w-full h-full object-cover">
-                                            <div v-else class="text-slate-400 flex flex-col items-center text-center p-2"><i class="fa-regular fa-image text-3xl mb-1"></i><span class="text-[10px] font-medium uppercase">Subir Logo</span></div>
-                                            <div v-if="isUploadingAvatar" class="absolute inset-0 bg-white/80 dark:bg-black/60 flex items-center justify-center z-10"><i class="fa-solid fa-circle-notch fa-spin text-primary text-xl"></i></div>
+                        
+                        <div class="p-4 md:p-6">
+                            <div class="flex flex-col gap-6 md:gap-8">
+                                <!-- LOGO SECTION -->
+                                <div v-if="settings.role === 'admin_negocio'" class="flex flex-col sm:flex-row items-center sm:items-start gap-6 pb-6 sm:pb-0 sm:border-b border-slate-100 dark:border-slate-700">
+                                    <div class="flex flex-col items-center space-y-3 w-full sm:w-auto">
+                                        <label class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300">Logo del Negocio</label>
+                                        <div class="relative group cursor-pointer w-28 h-28 md:w-32 md:h-32 flex-shrink-0">
+                                            <input type="file" ref="avatarInput" @change="uploadAvatar" class="hidden" accept="image/*">
+                                            <div @click="$refs.avatarInput.click()" class="w-full h-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-slate-50 dark:hover:bg-slate-700 transition relative bg-slate-50 dark:bg-slate-800 shadow-sm">
+                                                <img v-if="settings.avatar" :src="settings.avatar" class="w-full h-full object-cover">
+                                                <div v-else class="text-slate-400 flex flex-col items-center text-center p-2">
+                                                    <i class="fa-regular fa-image text-2xl md:text-3xl mb-1"></i>
+                                                    <span class="text-[9px] md:text-[10px] font-medium uppercase">Subir Logo</span>
+                                                </div>
+                                                <div v-if="isUploadingAvatar" class="absolute inset-0 bg-white/80 dark:bg-black/60 flex items-center justify-center z-10">
+                                                    <i class="fa-solid fa-circle-notch fa-spin text-primary text-lg md:text-xl"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- FORMULARIO CAMPOS -->
+                                    <div class="flex-1 space-y-4 w-full">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    {{ settings.role === 'superadmin' ? 'Nombre Plataforma' : 'Nombre del Negocio' }}
+                                                </label>
+                                                <input v-model="settings.appName" type="text" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                            </div>
+                                            <div v-if="settings.role === 'admin_negocio'">
+                                                <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    Slug <small class="text-[10px]">(URL de tu WebApp)</small>
+                                                </label>
+                                                <input v-model="settings.slug" type="text" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                            </div>
+                                            <div v-if="settings.role === 'admin_negocio'">
+                                                <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                                    Dirección Fisica
+                                                </label>
+                                                <input v-model="settings.address" type="text" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex-1 space-y-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div >
-                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+
+                                <!-- RESTO DE CAMPOS (sin logo) -->
+                                <div v-else class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                 {{ settings.role === 'superadmin' ? 'Nombre Plataforma' : 'Nombre del Negocio' }}
                                             </label>
-                                            <input v-model="settings.appName" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                            <input v-model="settings.appName" type="text" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
                                         </div>
-                                        <div v-if="settings.role === 'admin_negocio'">
-                                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Slug <small>(Url de tu WebApp)</small> </label>
-                                            <input v-model="settings.slug" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
-                                        </div>
-                                        <div v-if="settings.role === 'admin_negocio'"><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono / WhatsApp</label><input v-model="settings.phone" type="tel" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></div>
-                                        <div v-if="settings.role === 'admin_negocio'"><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Correo de Contacto</label><input v-model="settings.ownerEmail" type="email" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></div>
-                                        <div v-if="settings.role === 'admin_negocio'"><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Moneda</label><input v-model="settings.currency" type="text" placeholder="MXN" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></div>
-                                        <div v-if="settings.role === 'admin_negocio'"><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Color Principal</label><div class="flex gap-2 items-center"><div class="relative overflow-hidden w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm"><input v-model="settings.primaryColor" type="color" class="absolute -top-2 -left-2 w-16 h-16 cursor-pointer border-none p-0"></div><input v-model="settings.primaryColor" type="text" class="flex-1 px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary uppercase font-mono text-sm"></div></div>
                                     </div>
-                                    <div class="flex justify-end pt-4"><button @click="saveSettings" class="bg-primary hover:bg-primaryDark text-white px-6 py-2.5 rounded-xl font-medium transition shadow-md flex items-center"><i class="fa-solid fa-save mr-2"></i> Guardar Cambios</button></div>
+                                </div>
+
+                                <!-- CAMPOS ADICIONALES ADMIN -->
+                                <div v-if="settings.role === 'admin_negocio'" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono / WhatsApp</label>
+                                            <input v-model="settings.phone" type="tel" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Correo de Contacto</label>
+                                            <input v-model="settings.ownerEmail" type="email" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Color Principal</label>
+                                            <div class="flex gap-2 items-center">
+                                                <div class="relative overflow-hidden w-10 h-10 flex-shrink-0 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                                                    <input v-model="settings.primaryColor" type="color" class="absolute -top-2 -left-2 w-16 h-16 cursor-pointer border-none p-0">
+                                                </div>
+                                                <input v-model="settings.primaryColor" type="text" class="flex-1 px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary uppercase font-mono">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 mt-6 pt-4 gap-4 border-t">
+                                        <div>
+                                            <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Moneda</label>
+                                            <select v-model="settings.currency" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+                                                <option value="" disabled selected>Selecciona una moneda</option>
+                                                <option value="MXN">Pesos Mexicanos (MXN)</option>
+                                                <!--<option value="USD">Dólares (USD)</option>-->
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">IVA %</label>
+                                            <input v-model="settings.iva" type="number" placeholder="% de IVA para cada operación" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- BOTÓN GUARDAR -->
+                                <div class="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                    <button @click="saveSettings" class="w-full sm:w-auto bg-primary hover:bg-primaryDark text-white px-4 md:px-6 py-2.5 rounded-xl font-medium transition shadow-md flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-save text-sm md:text-base"></i>
+                                        <span class="text-sm md:text-base">Guardar Cambios</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- TARJETA 2: ACCESO -->
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100 dark:border-slate-700"><h3 class="font-bold text-lg text-slate-800 dark:text-white flex items-center"><i class="fa-solid fa-shield-halved mr-2 text-secondary"></i> Acceso</h3></div>
-                        <div class="p-6 space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Usuario</label><input v-model="profile.username" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></div>
-                                <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nueva Contraseña</label><input v-model="profile.newPassword" type="password" placeholder="Dejar en blanco para no cambiar" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"></div>
+                        <div class="p-4 md:p-6 border-b border-slate-100 dark:border-slate-700">
+                            <h3 class="font-bold text-base md:text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-secondary text-base md:text-lg"></i>
+                                <span>Acceso</span>
+                            </h3>
+                        </div>
+                        <div class="p-4 md:p-6 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Usuario</label>
+                                    <input v-model="profile.username" type="text" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nueva Contraseña</label>
+                                    <input v-model="profile.newPassword" type="password" placeholder="Dejar en blanco para no cambiar" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
                             </div>
-                            <div class="flex justify-end pt-2"><button @click="saveProfile" class="bg-slate-800 hover:bg-black dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-6 py-2.5 rounded-xl font-medium transition shadow-md">Actualizar Perfil</button></div>
+                            <div class="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                <button @click="saveProfile" class="w-full sm:w-auto bg-slate-800 hover:bg-black dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 md:px-6 py-2.5 rounded-xl font-medium transition shadow-md text-sm md:text-base">
+                                    Actualizar Perfil
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- ===================== NUEVA VISTA KDS (COCINA) ===================== -->
+                <div v-if="currentView === 'kds'" class="h-full flex flex-col animate-fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-fire-burner text-orange-500"></i> Cocina (KDS)
+                        </h2>
+                        <div class="flex gap-2 text-sm">
+                            <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full font-bold">Pendientes: {{ kds.pendingOrders.value.length }}</span>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">Prep: {{ kds.preparingOrders.value.length }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- TABLERO KDS -->
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
+                        
+                        <!-- COLUMNA 1: PENDIENTES -->
+                        <div class="flex flex-col bg-slate-200 dark:bg-slate-800 rounded-2xl p-2 border-t-4 border-amber-500">
+                            <div class="text-center font-bold text-slate-500 uppercase text-xs mb-2 tracking-wider">Pendientes</div>
+                            <div class="flex-1 overflow-y-auto space-y-3 thin-scroll px-1 pb-10">
+                                <div v-for="order in kds.pendingOrders.value" :key="order._id" class="kds-card bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border-l-4 border-amber-400 relative">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-mono font-bold text-lg dark:text-white">#{{ order._id.slice(-6).toUpperCase()}}</span>
+                                        <span class="text-xs font-bold text-slate-400">{{ kds.getTimeElapsed(order.createdAt) }}</span>
+                                    </div>
+                                    <div class="text-sm font-bold text-slate-600 dark:text-slate-300 mb-2 truncate">
+                                        {{ order.customerId ? order.customerId.name : 'Mostrador' }}
+                                    </div>
+                                    
+                                    <!-- ITEMS KDS (CORREGIDO: selectedOptions) -->
+                                    <div class="space-y-3 mb-4">
+                                        <div v-for="item in order.items" :key="item.name + item._id" class="text-sm border-b border-dashed border-slate-200 dark:border-slate-600 pb-2 last:border-0 last:pb-0">
+                                            <!-- Nombre y Cantidad -->
+                                            <div class="flex gap-2 items-start">
+                                                <span class="font-black text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-600 px-2 py-0.5 rounded text-sm">{{ item.quantity }}</span>
+                                                <span class="dark:text-slate-200 font-medium leading-tight">{{ item.name }}</span>
+                                            </div>
+                                            
+                                            <!-- Complementos (Selected Options) -->
+                                            <div v-if="item.selectedOptions && item.selectedOptions.length > 0" class="pl-8 mt-1 space-y-0.5">
+                                                <div v-for="opt in item.selectedOptions" :key="opt.name" class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                    <i class="fa-solid fa-plus text-[10px] opacity-60"></i> {{ opt.name }}
+                                                </div>
+                                            </div>
+
+                                            <!-- Notas del Item -->
+                                            <div v-if="item.notes" class="pl-8 mt-1">
+                                                <div class="text-xs text-white bg-red-500 px-2 py-0.5 rounded inline-block font-bold">
+                                                    Nota: {{ item.notes }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button @click="kds.advanceStatus(order, 'preparing')" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
+                                        Empezar <i class="fa-solid fa-fire ml-1"></i>
+                                    </button>
+                                </div>
+                                <div v-if="kds.pendingOrders.value.length === 0" class="text-center text-slate-400 py-10 opacity-50"><i class="fa-solid fa-mug-hot text-4xl mb-2"></i><p>Sin pedidos</p></div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA 2: PREPARANDO -->
+                        <div class="flex flex-col bg-slate-200 dark:bg-slate-800 rounded-2xl p-2 border-t-4 border-blue-500">
+                            <div class="text-center font-bold text-slate-500 uppercase text-xs mb-2 tracking-wider">En Preparación</div>
+                            <div class="flex-1 overflow-y-auto space-y-3 thin-scroll px-1 pb-10">
+                                <div v-for="order in kds.preparingOrders.value" :key="order._id" class="kds-card bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border-l-4 border-blue-400">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-mono font-bold text-lg dark:text-white">#{{ order._id.slice(-4) }}</span>
+                                        <span class="text-xs font-bold text-blue-500 animate-pulse">Preparando...</span>
+                                    </div>
+                                    
+                                    <!-- ITEMS KDS (CORREGIDO: selectedOptions) -->
+                                    <div class="space-y-3 mb-4 opacity-90">
+                                        <div v-for="item in order.items" :key="item.name + item._id" class="text-sm border-b border-dashed border-slate-200 dark:border-slate-600 pb-2 last:border-0 last:pb-0">
+                                            <div class="flex gap-2 items-start">
+                                                <span class="font-black bg-slate-100 dark:bg-slate-600 px-2 py-0.5 rounded text-sm dark:text-white">{{ item.quantity }}</span>
+                                                <span class="dark:text-slate-200 font-medium leading-tight">{{ item.name }}</span>
+                                            </div>
+                                            
+                                            <div v-if="item.selectedOptions && item.selectedOptions.length > 0" class="pl-8 mt-1 space-y-0.5">
+                                                <div v-for="opt in item.selectedOptions" :key="opt.name" class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                    <i class="fa-solid fa-plus text-[10px] opacity-60"></i> {{ opt.name }}
+                                                </div>
+                                            </div>
+
+                                            <div v-if="item.notes" class="pl-8 mt-1">
+                                                <span class="text-xs text-red-500 font-bold">Nota: {{ item.notes }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button @click="kds.advanceStatus(order, 'ready')" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
+                                        Terminar <i class="fa-solid fa-check ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA 3: LISTOS -->
+                        <div class="flex flex-col bg-slate-200 dark:bg-slate-800 rounded-2xl p-2 border-t-4 border-emerald-500">
+                            <div class="text-center font-bold text-slate-500 uppercase text-xs mb-2 tracking-wider">Listos para Entrega</div>
+                            <div class="flex-1 overflow-y-auto space-y-3 thin-scroll px-1 pb-10">
+                                <div v-for="order in kds.readyOrders.value" :key="order._id" class="kds-card bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border-l-4 border-emerald-400">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-mono font-bold text-lg dark:text-white">#{{ order._id.slice(-4) }}</span>
+                                        <span class="text-xs font-bold text-emerald-600">LISTO</span>
+                                    </div>
+                                    <div class="text-sm text-slate-500 mb-4">{{ order.customerId ? order.customerId.name : 'Mostrador' }}</div>
+                                    <button @click="kds.advanceStatus(order, 'completed')" class="w-full py-3 bg-slate-800 dark:bg-slate-900 text-white font-bold rounded-lg shadow-lg active:scale-95 transition opacity-90 hover:opacity-100">
+                                        Entregar / Servir
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -1544,7 +1756,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-4 sm:mt-6">
                     <button @click="pos.showPayModal.value = false" class="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition text-sm sm:text-base">Cancelar</button>
-                    <button @click="pos.processSale(finance)" class="flex-1 text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:opacity-90 transition active:scale-95 py-2.5 sm:py-3 text-sm sm:text-base"
+                    <button @click="finishSale" class="flex-1 text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:opacity-90 transition active:scale-95 py-2.5 sm:py-3 text-sm sm:text-base"
                             :class="{
                                 'bg-green-500': pos.paymentForm.method === 'cash',
                                 'bg-indigo-500': pos.paymentForm.method === 'credit_card',
@@ -2202,6 +2414,73 @@
                 <button @click="showShareModal = false" class="py-4 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition">Cancelar</button>
                 <button @click="confirmShare" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 transition flex items-center justify-center gap-2">
                     <i class="fa-regular fa-paper-plane"></i> Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NUEVO: MODAL PREVISUALIZACIÓN TICKET -->
+    <div v-if="showTicketModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all" style="z-index: 100;">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[90vh]">
+            <!-- Header Modal -->
+            <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800 rounded-t-3xl">
+                <h3 class="font-bold text-lg dark:text-white"><i class="fa-solid fa-print mr-2"></i> Vista Previa Ticket</h3>
+                <button @click="showTicketModal = false" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            
+            <!-- Cuerpo (El Ticket en sí) -->
+            <div class="flex-1 overflow-y-auto p-6 bg-slate-200 dark:bg-slate-950 flex justify-center">
+                <!-- Contenedor ID para imprimir -->
+                <div id="thermal-ticket-content" class="ticket-preview text-xs leading-tight">
+                    <div class="text-center mb-2">
+                        <h2 class="text-lg font-bold">{{ settings.appName }}</h2>
+                        <p>{{ settings.address }}</p>
+                        <p>Tel: {{ settings.phone }}</p>
+                        <p class="mt-1">{{ new Date().toLocaleString() }}</p>
+                    </div>
+                    
+                    <div class="ticket-dashed"></div>
+                    
+                    <div class="flex justify-between font-bold">
+                        <span>Folio:</span>
+                        <span>#{{ ticketData?.folio }}</span>
+                    </div>
+                    <div>Cliente: {{ ticketData?.customer }}</div>
+                    
+                    <div class="ticket-dashed"></div>
+                    
+                    <div class="font-bold mb-1 flex justify-between">
+                        <span>Cant. Prod.</span>
+                        <span>Total</span>
+                    </div>
+                    
+                    <div v-for="item in ticketData?.items" :key="item.name" class="flex justify-between mb-1">
+                        <span>{{ item.qty }} x {{ item.name }}</span>
+                        <span>${{ (item.price * item.qty).toFixed(2) }}</span>
+                    </div>
+
+                    <div class="ticket-dashed"></div>
+
+                    <div class="flex justify-between font-bold text-sm">
+                        <span>TOTAL</span>
+                        <span>${{ ticketData?.total.toFixed(2) }}</span>
+                    </div>
+                    
+                    <div class="ticket-dashed"></div>
+                    
+                    <div class="text-center mt-2">
+                        <p>Método: {{ ticketData?.method }}</p>
+                        <p class="mt-2 font-bold">¡Gracias por su compra!</p>
+                        <p class="text-[10px] mt-1">Software: Tengo Hambre</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Acciones -->
+            <div class="p-4 border-t dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-3xl grid grid-cols-2 gap-4">
+                <button @click="showTicketModal = false" class="py-3 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition">Cerrar</button>
+                <button @click="printTicketNow" class="bg-slate-800 dark:bg-white dark:text-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Imprimir
                 </button>
             </div>
         </div>

@@ -36,7 +36,7 @@ exports.registerVisit = async (req, res) => {
 // 2. Registrar Pedido / Clic WhatsApp (Público)
 exports.registerOrder = async (req, res) => {
     try {
-        const { slug, customerName, customerPhone, cart, total } = req.body;
+        const { slug, customerName, customerPhone, customerId, cart, total } = req.body;
         const business = await Business.findOne({ slug });
         
         // Guardar Orden
@@ -44,6 +44,7 @@ exports.registerOrder = async (req, res) => {
             businessId: business._id,
             customerName,
             customerPhone,
+            customerId,
             items: cart.map(item => ({
                 productId: item.product._id,
                 name: item.product.name,
@@ -139,7 +140,6 @@ exports.getDashboardStats = async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-
 // 3. Registrar Venta POS
 exports.createPosOrder = async (req, res) => {
     try {
@@ -160,7 +160,7 @@ exports.createPosOrder = async (req, res) => {
             total: totals.total,
             discount: discount,
             source: 'pos',
-            status: 'completed', // En POS se asume pagado al cerrar
+            status: 'pending', // del POS pasa al KDS
             paymentMethod: paymentMethod
         });
 

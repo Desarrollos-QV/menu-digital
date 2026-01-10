@@ -66,6 +66,7 @@ exports.getAdminConfig = async (req, res) => {
                 role: 'admin_negocio',
                 appName: business.name, // El nombre del negocio será el nombre de la App para ellos
                 adminName: req.user.username, // O un campo específico si lo agregas
+                address: business.address || '',
                 slug : business.slug || '',
                 urlApp: 'https://'+req.hostname+'/'+business.slug,
                 plan: business.plan || 'free',
@@ -74,6 +75,7 @@ exports.getAdminConfig = async (req, res) => {
                 phone: business.phone || '',
                 ownerEmail: business.ownerEmail || '',
                 currency: business.settings?.currency || 'MXN',
+                iva: business.settings?.iva || 16,
                 primaryColor: business.settings?.primaryColor || '#6366f1'
             });
         }
@@ -105,12 +107,14 @@ exports.updateAdminConfig = async (req, res) => {
             
             if (req.body.avatar) business.avatar = req.body.avatar;
             if (req.body.appName) business.name = req.body.appName;
+            if (req.body.address) business.address = req.body.address;
             if (req.body.phone) business.phone = req.body.phone;
             if (req.body.ownerEmail) business.ownerEmail = req.body.ownerEmail;
             
             // Settings anidados
             if (!business.settings) business.settings = {};
             if (req.body.currency) business.settings.currency = req.body.currency;
+            if (req.body.iva) business.settings.iva = req.body.iva;
             if (req.body.primaryColor) business.settings.primaryColor = req.body.primaryColor;
 
             await business.save();

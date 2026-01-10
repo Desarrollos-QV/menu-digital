@@ -16,6 +16,7 @@ import { useUsers } from './useUsers.js';
 import { useFinance } from './useFinance.js';
 import { useOrders } from './useOrders.js';
 import { useQuotes } from './useQuotes.js';
+import { useKds } from './useKds.js';
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -43,7 +44,6 @@ toastr.options = {
     "timeOut": "3000",
 }
 
-
 createApp({
     setup() {
         // STATE
@@ -53,22 +53,23 @@ createApp({
         // Simular rol (en producción viene del token JWT decodificado)
         const currentUserRole = ref('admin_negocio'); // Cambia a 'superadmin' para probar la otra vista
 
-         // --- USANDO COMPOSABLES ---
+        // --- USANDO COMPOSABLES ---
         const auth = useAuth();
         const media = useMedia(auth.isDark);
         const banners = useBanners(auth.isDark, media.fetchMedia);
         const products = useProducts(auth.isDark, media.fetchMedia);
-        const pos = usePos(products, media.fetchMedia);
         const categories = useCategories(auth.isDark, media.fetchMedia);
         const addons = useAddons(auth.isDark);
         const settings = useSettings(auth);
+        const pos = usePos(products, media.fetchMedia, settings);
         const saas = useSaas();
         const analytics = useAnalytics();
         const useloyalty = useLoyalty();
         const users = useUsers();
         const finance = useFinance();
         const orders = useOrders();
-        const quotes = useQuotes();
+        const quotes = useQuotes(settings);
+        const kds = useKds();
 
 
         const saasMenu = ref([
@@ -113,13 +114,18 @@ createApp({
                 icon: 'fa-solid fa-receipt',
                 expanded: false,
                 children: [
-                    { id: 10, label: 'Historial', view: 'orders',
-                    get locked() { return (settings.settings.value.plan == 'free') ? true : false; } },
-                    { id: 11, label: 'Cotizaciones', view: 'quotes',
-                    get locked() { return (settings.settings.value.plan == 'free') ? true : false; } }
+                    {
+                        id: 10, label: 'Historial', view: 'orders',
+                        get locked() { return (settings.settings.value.plan == 'free') ? true : false; }
+                    },
+                    {
+                        id: 11, label: 'Cotizaciones', view: 'quotes',
+                        get locked() { return (settings.settings.value.plan == 'free') ? true : false; }
+                    }
                 ],
                 get locked() { return (settings.settings.value.plan == 'free') ? true : false; }
             },
+            { id: 3, label: 'KDS Cocina', icon: 'fa-solid fa-fire-burner', view: 'kds' }, // Nuevo Item
             { id: 12, label: 'Caja', icon: 'fa-solid fa-box', view: 'finance', get locked() { return (settings.settings.value.plan == 'free') ? true : false; } },
             { id: 13, label: 'Usuarios', icon: 'fa-solid fa-user-group', view: 'users' },
             { id: 14, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
@@ -134,8 +140,8 @@ createApp({
         const showItemDetailsModal = ref(false);
         const selectedCartItem = ref(null);
 
-       
-        // --- DATA TABLE LOGIC ---
+
+        // --- DATA TABLE PRODUCTS ---
         let dataTable = null;
         const initDataTable = () => {
             if (dataTable) {
@@ -257,7 +263,7 @@ createApp({
                     data: orders.ordersList.value,
                     responsive: true,
                     language: { url: "/es-ES.json" },
-                    order: [[1, 'desc']], // Ordenar por fecha descendente
+                    order: [[7, 'ASC']], // Ordenar por fecha descendente
                     columns: [
                         { data: '_id', render: (data) => `<span class="font-mono text-xs text-slate-500">#${data.slice(-6).toUpperCase()}</span>` },
                         { data: 'createdAt', render: (data) => `<span class="text-sm">${new Date(data).toLocaleDateString()} ${new Date(data).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>` },
@@ -294,6 +300,13 @@ createApp({
         // Watcher
         watch(orders.ordersList, () => { if (currentView.value === 'orders') initOrdersTable(); });
 
+        const viewListOrders = () => {
+            console.log("Reiniciamos...")
+            orders.fetchOrders();
+            initOrdersTable(); //<-- Inicializamos de nuevo
+            currentView.value = 'orders';
+        }
+
         // DataTable Quotes
         let QuotesTable = null;
         const initQuotesTable = () => {
@@ -310,12 +323,14 @@ createApp({
                         { data: 'customerName', render: (data) => data ? `<span class="font-bold text-slate-800 dark:text-white">${data.toUpperCase()}</span>` : '<span class="italic text-slate-400">Mostrador</span>' },
                         { data: 'validUntil', render: (data) => `<span class="badge badge-sm">${data}</span>` },
                         { data: 'total', render: (data) => `<span class="font-bold text-slate-800 dark:text-white">$${data.toFixed(2)}</span>` },
-                        { data: 'status', render: (data) => {
+                        {
+                            data: 'status', render: (data) => {
                                 const colors = { ready: 'bg-green-100 text-green-700', pending: 'bg-yellow-100 text-yellow-700' };
                                 return `<span class="px-2 py-1 rounded text-xs font-bold ${colors[data] || 'bg-slate-100'}">${data}</span>`;
                             }
                         },
-                        { data: null, render: () => `
+                        {
+                            data: null, render: () => `
                             <div class="flex gap-2 justify-end">
                                 <button class="btn-edit-quote text-blue-500 hover:bg-blue-50 p-2 rounded"><i class="fa-solid fa-eye"></i></button>
                                 <button class="btn-delete-quote text-red-500 hover:bg-red-50"><i class="fa-solid fa-trash"></i></button>
@@ -388,10 +403,10 @@ createApp({
             // 1. CAMBIAR LA URL VISUALMENTE
             const slug = item.view === 'dashboard' ? '' : item.view; // /admin/dashboard -> /admin/
             // Nota: Asumimos base /admin/
-            if(!item.locked) {
+            if (!item.locked) {
                 const newUrl = `/admin/${slug}`;
                 window.history.pushState({ view: item.view }, '', newUrl);
-            }else {
+            } else {
                 const Toast = Swal.mixin({ toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3500 });
                 Toast.fire({ icon: 'error', title: 'Sección Bloqueada', text: "Por favor activa un plan PRO" });
                 currentView.value = "dashboard";
@@ -400,21 +415,33 @@ createApp({
                 window.history.pushState({ view: currentView.value }, '', newUrl);
                 return;
             }
-            
+
+            if (window.innerWidth < 768) mobileMenuOpen.value = false;
+            else collapsed.value = false;
+
+            // Stop KDS polling if leaving KDS
+            if (item.view !== 'kds') kds.stopPolling();
+            // Check KDS for sidebar
+            if (item.view == 'kds') {
+                if (window.innerWidth < 768) {
+                    mobileMenuOpen.value = false;
+                    collapsed.value = false;
+                } else {
+                    mobileMenuOpen.value = true;
+                    collapsed.value = true;
+                }
+            }
 
             // Optimizamos el espacio del POS
             if (item.view == 'pos') {
                 products.fetchProducts();
                 if (window.innerWidth < 768) {
-                     mobileMenuOpen.value = false;
+                    mobileMenuOpen.value = false;
                     collapsed.value = false;
-                }else {
+                } else {
                     mobileMenuOpen.value = true;
                     collapsed.value = true;
-                } 
-            } else {
-                if (window.innerWidth < 768) mobileMenuOpen.value = false;
-                else collapsed.value = false;
+                }
             }
 
             if (!item.children) {
@@ -439,6 +466,7 @@ createApp({
                 }
                 if (item.view === 'orders') orders.fetchOrders();
                 if (item.view === 'quotes') quotes.fetchQuotes();
+                if (item.view === 'kds') kds.startPolling(); // Start polling for KDS
             }
         };
 
@@ -599,6 +627,67 @@ createApp({
                 win.close();
             }, 500);
         };
+        // --- LÓGICA IMPRESIÓN DE TICKETS PRO ---
+        const showTicketModal = ref(false);
+        const ticketData = ref(null);
+
+        const openTicketPreview = () => {
+            const ord = orders.selectedOrder.value;
+            if (!ord) return;
+
+            ticketData.value = {
+                folio: ord._id.slice(-6).toUpperCase(),
+                customer: ord.customerId ? ord.customerId.name : 'Mostrador',
+                total: ord.total,
+                method: ord.paymentMethod,
+                items: ord.items.map(i => ({ qty: i.quantity, name: i.name, price: i.price }))
+            };
+            showTicketModal.value = true;
+        };
+
+        // Truco del Iframe invisible para imprimir SIN abrir ventana
+        const printTicketNow = () => {
+            // 1. Obtener el HTML limpio del ticket
+            const content = document.getElementById('thermal-ticket-content').innerHTML;
+
+            // 2. Crear un iframe oculto
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            // 3. Escribir el contenido
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`
+                        <html>
+                        <head>
+                            <title>Print</title>
+                            <style>
+                                body { margin: 0; padding: 0; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; }
+                                .text-center { text-align: center; }
+                                .font-bold { font-weight: bold; }
+                                .flex { display: flex; justify-content: space-between; }
+                                .mb-1 { margin-bottom: 4px; }
+                                .mb-2 { margin-bottom: 8px; }
+                                .mt-2 { margin-top: 8px; }
+                                .text-lg { font-size: 16px; }
+                                .ticket-dashed { border-bottom: 1px dashed #000; margin: 8px 0; }
+                                .text-xs { font-size: 11px; }
+                            </style>
+                        </head>
+                        <body>
+                            ${content}
+                            <script>
+                                window.onload = function() { 
+                                    window.print(); 
+                                    setTimeout(() => { window.parent.document.body.removeChild(window.frameElement); }, 1000);
+                                }
+                            <\/script>
+                        </body>
+                        </html>
+                    `);
+            doc.close();
+        };
 
         // 3. GENERAR PDF
         const generatePDF = () => {
@@ -696,11 +785,11 @@ createApp({
             } catch (error) {
                 toastr.error(error.message);
             }
-            
+
         };
 
         const convertQuoteToSale = () => {
-            
+
             if (!quotes.clientSearch.value) return Swal.fire('Falta información', 'Ingresa el nombre del cliente', 'warning');
             if (quotes.form.items.length === 0) return Swal.fire('Vacío', 'Agrega productos a la cotización', 'warning');
 
@@ -718,17 +807,17 @@ createApp({
                         // Aplicamos el carrito
                         pos.activeTab.value.cart = JSON.parse(JSON.stringify(items));
                         // Aplicamops el descuento
-                        pos.activeTab.value.discount.amount = quotes.form.discount.value; 
+                        pos.activeTab.value.discount.amount = quotes.form.discount.value;
                         pos.activeTab.value.discount.reason = quotes.form.discount.title;
                         pos.activeTab.value.discount.type = quotes.form.discount.type;
                         // Aplicamos el usuario
                         pos.selectCustomer(quotes.form.client);
                         // Eliminamos solo si ya es una quote guardada...
-                        if(quotes.isEditing.value) { 
+                        if (quotes.isEditing.value) {
                             quotes.form.status = 'ready'; // <-- Marcamos como lista
-                            const res = await authFetch(`/api/quotes/${quotes.form._id}`, {method: 'PUT',headers: { 'Content-Type': 'application/json' },body: JSON.stringify(quotes.form)});
+                            const res = await authFetch(`/api/quotes/${quotes.form._id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(quotes.form) });
                             if (!res.ok) throw new Error('Error al guardar la cotizacion');
-                            if (res.ok) { toastr.success('Cotización Actualizada con éxito!');}
+                            if (res.ok) { toastr.success('Cotización Actualizada con éxito!'); }
                         }
                         // Cambiamos vista...
                         currentView.value = 'pos';
@@ -814,6 +903,29 @@ createApp({
             finance.showCloseModal.value = true;
         }
 
+        // --- FUNCIÓN: PROCESAR VENTA Y ABRIR TICKET ---
+        const finishSale = async () => {
+            await pos.processSale(finance)
+            // Si el modal de pago se cierra, asumimos éxito
+            if (!pos.showPayModal.value) {
+                setTimeout(async () => {
+                    // Buscar la última orden para imprimir su ticket
+                    await orders.fetchOrders();
+                    const lastOrder = orders.ordersList.value[0];
+                    
+                    if (lastOrder) {
+                        ticketData.value = {
+                            folio: lastOrder._id.slice(-6).toUpperCase(),
+                            customer: lastOrder.customerId ? lastOrder.customerId.name : 'Mostrador',
+                            total: lastOrder.total,
+                            method: lastOrder.paymentMethod,
+                            items: lastOrder.items.map(i => ({ qty: i.quantity, name: i.name, price: i.price }))
+                        };
+                        showTicketModal.value = true;
+                    }
+                }, 500); // Pequeño delay para asegurar que BD actualizó
+            }
+        };
 
         onMounted(async () => {
             auth.checkSession();
@@ -821,7 +933,8 @@ createApp({
             // Extraer la última parte de la URL
             const parts = path.split('/').filter(p => p);
             const lastPart = parts[parts.length - 1]; // "pos"
-            
+            kds.stopPolling();
+
             if (auth.isAuthenticated.value) {
                 const savedRole = localStorage.getItem('role');
                 if (savedRole) currentUserRole.value = savedRole;
@@ -843,23 +956,23 @@ createApp({
                     } else {
                         // Buscar si existe una vista con ese nombre
                         const found = businessMenu.value.find(i => i.view === lastPart);
-                        
-                        if(lastPart == 'pos') { 
-                            if(settings.settings.value.plan == 'free') {
+
+                        if (lastPart == 'pos') {
+                            if (settings.settings.value.plan == 'free') {
                                 const Toast = Swal.mixin({ toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3500 });
                                 Toast.fire({ icon: 'error', title: 'Sección Bloqueada', text: "Por favor activa un plan PRO" });
                                 currentView.value = "dashboard";
                                 // 1. CAMBIAR LA URL VISUALMENTE
                                 const newUrl = `/admin/dashboard`;
                                 window.history.pushState({ view: currentView.value }, '', newUrl);
-                            }else {
+                            } else {
                                 currentView.value = 'pos';
                             }
-                        }else {
+                        } else {
                             if (found) {
-                                if(found.locked == undefined) {
+                                if (found.locked == undefined) {
                                     currentView.value = found.view;
-                                }else {
+                                } else {
                                     const Toast = Swal.mixin({ toast: true, position: 'bottom-end', showConfirmButton: false, timer: 3500 });
                                     Toast.fire({ icon: 'error', title: 'Sección Bloqueada', text: "Por favor activa un plan PRO" });
                                     currentView.value = "dashboard";
@@ -878,9 +991,20 @@ createApp({
                                     };
                                 }
                             }
-                        }
+                        }  
+                        
+
                         // Cargar datos iniciales de negocio
-                        if (currentView.value === 'pos') products.fetchProducts();
+                        if (currentView.value === 'pos') {
+                            products.fetchProducts();
+                            if (window.innerWidth < 768) {
+                                mobileMenuOpen.value = false;
+                                collapsed.value = false;
+                            } else {
+                                mobileMenuOpen.value = true;
+                                collapsed.value = true;
+                            }
+                        }
                         if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
                         if (currentView.value === 'media') media.fetchMedia();
                         if (currentView.value === 'ads') { banners.isUploadingBanner.value = false; banners.fetchBanners(); }
@@ -896,10 +1020,21 @@ createApp({
                         if (currentView.value === 'users') users.fetchUsers();
                         if (currentView.value === 'settings') settings.fetchSettings();
                         if (currentView.value === 'quotes') quotes.fetchQuotes();
+                        if (currentView.value === 'kds') {
+                            kds.startPolling();
+                            if (window.innerWidth < 768) {
+                                mobileMenuOpen.value = false;
+                                collapsed.value = false;
+                            } else {
+                                mobileMenuOpen.value = true;
+                                collapsed.value = true;
+                            }
+                        }
                     }
                 }
             }
         });
+ 
 
         // 4. MANEJAR BOTÓN "ATRÁS" DEL NAVEGADOR
         window.onpopstate = (event) => {
@@ -911,9 +1046,20 @@ createApp({
             }
         };
 
+        // Función para abrir la PWA
+        const openPWA = () => {
+            if (settings.settings.value && settings.settings.value.slug) {
+                const url = '/' + settings.settings.value.slug;
+                window.open(url, '_blank', 'width=400,height=850,scrollbars=yes,resizable=yes');
+            } else {
+                alert('El slug del negocio no está configurado');
+            }
+        };
+
         return {
             collapsed, mobileMenuOpen, currentView,
             activeMenuItems, currentUserRole,
+            openPWA,
             toggleSidebar, navigate, toggleSubmenu,
             ...analytics, // Analitica general
             ...settings, // Configuraciones
@@ -925,19 +1071,23 @@ createApp({
             ...addons, // addonsList, saveAddon, addOptionRow...
             ...saas, // Multinegocios
             ...useloyalty, // Loyalty
+            kds, // KDS Expuesto
             // POS
             pos, showItemDetailsModal, selectedCartItem, openItemDetails,
             selectedItemAddonGroups, selectedItemUnitPrice, toggleAddonOption, isOptionSelected,
             users,
-            finance,closeFinanceShift, // Exportar
+            finance, closeFinanceShift, // Exportar
             orders,
             quotes,
             saveQuote,
             viewListQuotes,
+            viewListOrders,
             downloadSalesExcel, printThermalTicket, generatePDF,
-            startNewQuote, editQuote, convertQuoteToSale,openQuoteShare,
+            startNewQuote, editQuote, convertQuoteToSale, openQuoteShare,
             showShareModal, sharePhone, sharePrefix, openShareModal, confirmShare,
-            showDiscountModal, tempDiscount, openDiscountModal, confirmDiscount
+            showDiscountModal, tempDiscount, openDiscountModal, confirmDiscount,
+            // Impresion de Tickets
+            showTicketModal, ticketData, openTicketPreview, printTicketNow, finishSale
         };
     }
 }).mount('#app');

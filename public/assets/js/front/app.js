@@ -73,7 +73,7 @@ createApp({
         const loyaltyForm = ref({ name: '', phone: '', pin: '' });
         const loyaltyState = ref({ registered: false, authRequired: false, customer: {}, program: {} });
         const isRecovering = ref(false); // Modo manual de poner teléfono
-
+        const customer = ref([]);
         // --- LÓGICA DE SLUG ACTUALIZADA ---
         const getSlug = () => {
             // 1. Intentar obtener de ?slug=nombre
@@ -140,6 +140,7 @@ createApp({
                 }
 
                 nextTick(() => { if (banners.value.length > 0) new Swiper('.banner-swiper', { slidesPerView: 1.1, spaceBetween: 10, loop: true, autoplay: { delay: 4000 } }); });
+
             } catch (e) { businessError.value = true; }
             finally { isLoading.value = false; }
         };
@@ -221,16 +222,21 @@ createApp({
             msg += `\n💰 *TOTAL: ${config.value.currency || '$'}${cartTotalPrice.value}*`;
 
             // 1. Enviar datos al Backend (Sin esperar respuesta crítica)
+            const cs = JSON.parse(localStorage.getItem('customer_data')) ?? [];
+            const dataReq = {
+                slug,
+                customerName: customerName.value,
+                customerId: cs ? cs._value._id : null,
+                customerEmail: customerEmail.value,
+                cart: cart.value,
+                total: cartTotalPrice.value
+            };
+            console.log(dataReq);
+
             fetch('/api/analytics/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    slug,
-                    customerName: customerName.value,
-                    customerEmail: customerEmail.value,
-                    cart: cart.value,
-                    total: cartTotalPrice.value
-                })
+                body: JSON.stringify(dataReq)
             });
 
             // 2. Abrir Whatsapp
@@ -277,11 +283,13 @@ createApp({
         };
 
         const toggleRecoverMode = () => {
-            const phone = prompt("Ingresa tu número de celular registrado:");
-            if(phone) {
-                loyaltyForm.value.phone = phone;
-                checkLoyaltyStatus(); // Esto detectará si existe y pedirá PIN
-            }
+            loyaltyState.value.authRequired = true;
+            loyaltyState.value.registered = true;
+            // const phone = prompt("Ingresa tu número de celular registrado:");
+            // if(phone) {
+            //     loyaltyForm.value.phone = phone;
+            //     checkLoyaltyStatus(); // Esto detectará si existe y pedirá PIN
+            // }
         };
 
         const checkLoyaltyStatus = async () => {
@@ -295,9 +303,13 @@ createApp({
                 if (res.ok) {
                     const data = await res.json();
                     loyaltyState.value = data; // Actualiza la UI (Pide PIN o muestra tarjeta)
-                    
+                        
                     // Si ya está autenticado (se envió PIN antes o sesión viva?), generar QR
                     if (data.authSuccess) {
+                        customer.value = data.customer;
+                        customerName.value = customer.value.name;
+                        localStorage.setItem('customer_data', JSON.stringify(customer));
+                        localStorage.setItem('loyalty_name', customer.value.name);
                         localStorage.setItem('loyalty_phone', loyaltyForm.value.phone);
                         localStorage.setItem('loyalty_pin', loyaltyForm.value.pin);
                         nextTick(() => generateQR(loyaltyForm.value.phone));
@@ -322,10 +334,7 @@ createApp({
                 if (res.ok) {
                     const data = await res.json();
                     if (data.authSuccess) {
-                        loyaltyState.value = data;
-                        localStorage.setItem('loyalty_phone', loyaltyForm.value.phone);
-                        localStorage.setItem('loyalty_pin', loyaltyForm.value.pin);
-                        nextTick(() => generateQR(loyaltyForm.value.phone));
+                        await checkLoyaltyStatus(); 
                         toastr.success('Sesión iniciada');
                     } else {
                         toastr.error('PIN incorrecto');
@@ -335,7 +344,6 @@ createApp({
                 }
             } catch (e) { toastr.error('Error de conexión'); }
         };
-
 
         const registerLoyalty = async () => {
             if(loyaltyForm.value.pin.length !== 4) return toastr.warning('El PIN debe ser de 4 dígitos');
@@ -390,6 +398,11 @@ createApp({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ slug, visitorId: getVisitorId() })
                 });
+                if(localStorage.getItem('customer_data') && localStorage.getItem('customer_data') != null) {
+                    loyaltyForm.value.phone = localStorage.getItem('loyalty_phone');
+                    loyaltyForm.value.pin = localStorage.getItem('loyalty_pin');
+                    checkLoyaltyStatus();
+                }
             }
         });
 

@@ -13,6 +13,7 @@ export function useOrders() {
             const res = await authFetch('/api/orders');
             if (res.ok) {
                 ordersList.value = await res.json();
+                console.log(ordersList);
             }
         } catch (e) { console.error(e); }
         finally { isLoading.value = false; }
@@ -34,37 +35,94 @@ export function useOrders() {
         finally { isLoading.value = false; }
     };
 
-    // --- ACCIONES ---
+     // --- CAMBIAR ESTADO MANUALMENTE ---
+    const updateOrderStatus = async (id, newStatus) => {
+        try {
+            const res = await fetch(`/api/orders/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
 
-    const printTicket = () => {
-        // Aquí conectaríamos con la impresora térmica o generaríamos un popup imprimible
-        toastr.info('Enviando a impresora...');
-        // window.print(); // O lógica específica de ticket
+            if (res.ok) {
+                // Actualizar lista local
+                const idx = ordersList.value.findIndex(o => o._id === id);
+                if (idx !== -1) ordersList.value[idx].status = newStatus;
+                
+                Swal.fire({
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 2000,
+                    icon: 'success', title: `Estado cambiado a: ${newStatus}`
+                });
+            }
+        } catch (error) {
+            Swal.fire('Error', 'No se pudo actualizar el pedido', 'error');
+        }
     };
 
-    const downloadPDF = () => {
-        // Placeholder para librería jsPDF
-        toastr.info('Generando PDF...');
+    // --- CANCELAR PEDIDO (ELIMINAR DE CAJA) ---
+    const cancelOrder = async (id) => {
+        const result = await Swal.fire({
+            title: '¿Cancelar Venta?',
+            text: "Esta acción marcará el pedido como cancelado y se restará del total de caja del día.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, cancelar venta',
+            cancelButtonText: 'Volver'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Opción A: Borrar físico (DELETE) -> No recomendado para auditoría
+                // Opción B: Update status 'cancelled' (Recomendado)
+                const res = await fetch(`/api/orders/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'cancelled' })
+                });
+
+                if (res.ok) {
+                    const idx = ordersList.value.findIndex(o => o._id === id);
+                    if (idx !== -1) ordersList.value[idx].status = 'cancelled';
+                    
+                    Swal.fire(
+                        'Cancelado',
+                        'La venta ha sido cancelada y descontada.',
+                        'success'
+                    );
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Hubo un problema al cancelar', 'error');
+            }
+        }
     };
 
-    const shareWhatsapp = () => {
-        if(!selectedOrder.value) return;
-        const ord = selectedOrder.value;
-        const customerName = ord.customerId ? ord.customerId.name : 'Cliente';
-        const msg = `Hola ${customerName}, adjunto el comprobante de tu compra en FudiApp.\nOrden: #${ord._id.slice(-6).toUpperCase()}\nTotal: $${ord.total.toFixed(2)}\nGracias por tu preferencia.`;
+    // --- EXCEL ---
+    const downloadSalesExcel = () => {
+        if (!window.XLSX) return Swal.fire('Error', 'Librería Excel no cargada', 'error');
         
-        // Si tenemos el teléfono del cliente, lo usamos, si no, abre WhatsApp genérico
-        const phone = ord.customerId && ord.customerId.phone ? ord.customerId.phone : '';
-        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    };
+        const data = ordersList.value.map(o => ({
+            Folio: o._id.slice(-6),
+            Fecha: new Date(o.createdAt).toLocaleDateString(),
+            Hora: new Date(o.createdAt).toLocaleTimeString(),
+            Cliente: o.customerId ? o.customerId.name : 'Mostrador',
+            Total: o.total,
+            Metodo: o.paymentMethod,
+            Estado: o.status
+        }));
 
-    const generateInvoice = () => {
-        toastr.info('Módulo de Facturación próximamente');
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+        XLSX.writeFile(wb, `Ventas_${new Date().toISOString().slice(0,10)}.xlsx`);
     };
 
     return {
         ordersList, selectedOrder, isLoading,
         fetchOrders, fetchOrderDetails,
-        printTicket, downloadPDF, shareWhatsapp, generateInvoice
+        updateOrderStatus,
+        cancelOrder,
+        downloadSalesExcel
     };
 }

@@ -6,14 +6,16 @@ export function useSettings(auth) {
         role: '', // Para saber qué campos mostrar
         appName: '',
         adminName: '',
+        address: '',
         plan: 'free',
         // Campos Negocio
         avatar: '',
         phone: '',
         ownerEmail: '',
-        currency: 'MXN',
         primaryColor: '#6366f1',
-        urlApp: ''
+        urlApp: '',
+        currency: 'MXN',
+        iva: 0,
     });
     
     // Agregamos email al estado
@@ -36,6 +38,7 @@ export function useSettings(auth) {
                 const data = await res.json();
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
+                console.log("Configuraciones: ", settings.value)
             }
         } catch (e) { console.error(e); }
         

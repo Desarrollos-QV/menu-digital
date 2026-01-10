@@ -1,7 +1,7 @@
 import { ref, computed, reactive, nextTick, watch } from 'vue';
 import { authFetch } from './api.js';
 
-export function usePos(productsRef, fetchMedia) {
+export function usePos(productsRef, fetchMedia, setingsRef) {
     // ... (Estados existentes) ...
     const posTabs = ref([{ id: 1, name: 'Cliente 1', cart: [], customer: null, discount: { type: 'fixed', amount: 0, reason: '' } }]);
     const activeTabId = ref(1);
@@ -21,7 +21,8 @@ export function usePos(productsRef, fetchMedia) {
     // ... (Computed activeTab, currentTotals, discountPreview IGUALES) ...
     const activeTab = computed(() => posTabs.value.find(t => t.id === activeTabId.value));
     const currentTotals = computed(() => { 
-        console.log("Calculamos costos en POS....", activeTab.value);
+            
+        const ivaform = (setingsRef.settings.value.iva / 100);
         const tab = activeTab.value;
         if (!tab) return { subtotal: 0, tax: 0, total: 0 };
         let subtotal = tab.cart.reduce((sum, item) => {
@@ -31,8 +32,9 @@ export function usePos(productsRef, fetchMedia) {
         let discountAmount = tab.discount.type === 'fixed' ? tab.discount.amount : subtotal * (tab.discount.amount / 100);
         if (discountAmount > subtotal) discountAmount = subtotal;
         let afterDiscount = subtotal - discountAmount;
-        let tax = afterDiscount * 0.16;
+        let tax = afterDiscount * ivaform;
         let total = afterDiscount + tax;
+
         return { subtotal, discountAmount, tax, total };
     });
     const discountPreview = computed(() => { /* ... lógica existente ... */ return { original: 0, newTotal: 0, saving: 0 }; });

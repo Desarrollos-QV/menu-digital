@@ -2,7 +2,7 @@ import { ref, computed, reactive } from 'vue';
 import { authFetch } from './api.js'; // <-- Helper para Fetch
 const Swal = window.Swal;
 
-export function useQuotes() {
+export function useQuotes(setingsRef) {
     // Estado General
     const quotesList = ref([]);
     const isEditing = ref(false);
@@ -17,7 +17,6 @@ export function useQuotes() {
 
     const productSearch = ref('');
     const showProductResults = ref(false);
-
     // Formulario de Cotización
     const form = reactive({
         id: null,
@@ -47,7 +46,8 @@ export function useQuotes() {
     // --- COMPUTADOS ---
     const totals = computed(() => {
         const subtotal = form.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-
+        const ivaform = (setingsRef.settings.value.iva / 100);
+        
         let discountAmount = 0;
         if (form.discount.value > 0) {
             if (form.discount.type === 'percentage') {
@@ -58,7 +58,7 @@ export function useQuotes() {
         }
 
         let afterDiscount = subtotal - discountAmount;
-        let tax = afterDiscount * 0.16;
+        let tax = afterDiscount * ivaform;
         let total = Math.max(afterDiscount + tax);
 
         // const total = Math.max(0, subtotal - discountAmount);
@@ -159,7 +159,6 @@ export function useQuotes() {
     };
 
     // --- CRUD ---
-
     const newQuote = () => {
         form.id = Date.now().toString();
         form.client = null;
@@ -228,7 +227,6 @@ export function useQuotes() {
     };
 
     // --- EXPORTAR ---
-
     const generatePDF = () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
