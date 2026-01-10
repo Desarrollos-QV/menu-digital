@@ -226,12 +226,11 @@ createApp({
             const dataReq = {
                 slug,
                 customerName: customerName.value,
-                customerId: cs ? cs._value._id : null,
+                customerId: (cs._value) ? cs._value._id : null,
                 customerEmail: customerEmail.value,
                 cart: cart.value,
                 total: cartTotalPrice.value
             };
-            console.log(dataReq);
 
             fetch('/api/analytics/order', {
                 method: 'POST',
