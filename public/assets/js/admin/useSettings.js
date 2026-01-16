@@ -16,6 +16,8 @@ export function useSettings(auth) {
         urlApp: '',
         currency: 'MXN',
         iva: 0,
+        // Categorías seleccionadas por el negocio
+        categories: []
     });
     
     // Agregamos email al estado
@@ -38,6 +40,8 @@ export function useSettings(auth) {
                 const data = await res.json();
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
+                // Asegurar que exista el array de categorias
+                if (!Array.isArray(settings.value.categories)) settings.value.categories = [];
                 console.log("Configuraciones: ", settings.value)
             }
         } catch (e) { console.error(e); }

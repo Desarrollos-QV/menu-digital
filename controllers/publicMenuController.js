@@ -5,6 +5,9 @@ const Addon = require('../models/Addon');
 const Banner = require('../models/Banner');
 const Config = require('../models/Config');
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+
+const SECRET_KEY = process.env.JWT_SECRET; 
 
 // Helper para obtener ID del negocio desde el slug
 const getBusinessIdBySlug = async (slug) => {
@@ -90,16 +93,16 @@ exports.getPublicData = async (req, res) => {
 
 // --- FUNCIÓN DE REGISTRO PÚBLICO ---
 exports.registerBusiness = async (req, res) => {
-    const { businessName, username, email, password } = req.body;
+    const { businessName, name, email, password, categories } = req.body;
 
     try {
         // Validaciones básicas
-        if (!businessName || !username || !email || !password) {
+        if (!businessName || !name || !email || !password) {
             return res.status(400).json({ message: 'Todos los campos son obligatorios' });
         }
 
         // Verificar si el usuario ya existe
-        const existingUser = await User.findOne({ username });
+        const existingUser = await User.findOne({ name });
         if (existingUser) {
             return res.status(400).json({ message: 'El usuario ya existe, elige otro.' });
         }
@@ -120,13 +123,14 @@ exports.registerBusiness = async (req, res) => {
             name: businessName,
             slug: slug,
             plan: 'free',
-            active: true
+            active: true,
+            categories
         });
         const savedBusiness = await newBusiness.save();
 
         // 2. Crear el Usuario Admin vinculado
         const newUser = new User({
-            username,
+            username: name,
             password,
             email,
             role: 'admin_negocio',
@@ -134,9 +138,23 @@ exports.registerBusiness = async (req, res) => {
         });
         await newUser.save();
 
+        // 3. Generar Token
+        const token = jwt.sign(
+            { 
+                id: newUser._id, 
+                role: newUser.role, 
+                businessId: newUser.businessId 
+            }, 
+            SECRET_KEY, 
+            { expiresIn: '7d' }
+        );
+
         res.status(201).json({ 
             message: 'Registro exitoso', 
-            slug: savedBusiness.slug 
+            slug: savedBusiness.slug,
+            token, 
+            username: newUser.username, 
+            role: newUser.role 
         });
 
     } catch (error) {

@@ -3,387 +3,510 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menú Digital</title><!-- ID para el Favicon Dinámico -->
-    <link id="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍔</text></svg>">
+    <title>Tengo Hambre - MarketPlace</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
+    <!-- Fuentes & Iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Swiper JS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-
-    <!-- Toastr & jQuery -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- JQUERY (Requerido para Toastr) -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- TOASTR (Notificaciones) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <link rel="stylesheet" href="./assets/css/front.css">
+    <!-- SWEETALERT2 (Alertas Modales) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/front.css">
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .hero-pattern {
+            background-color: #ffffff;
+            background-image: radial-gradient(#6366f1 0.5px, transparent 0.5px), radial-gradient(#6366f1 0.5px, #ffffff 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.1;
+        }
+        .dark .hero-pattern { opacity: 0.05; background-color: #0f172a; background-image: radial-gradient(#fff 0.5px, transparent 0.5px), radial-gradient(#fff 0.5px, #0f172a 0.5px); }
+
+        [v-cloak] { display: none; }
+        
+        /* Transiciones suaves para tarjetas */
+        .biz-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .biz-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white">
 
-
-<div id="app" class="flex flex-col min-h-screen pb-20">
-
-    <!-- PANTALLA ERROR / NO BUSINESS -->
-    <div v-if="businessError" class="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-50 flex flex-col items-center justify-center p-8 text-center">
-        <div class="w-24 h-24 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-4xl text-slate-400">
-            <i class="fa-solid fa-store-slash"></i>
-        </div>
-        <h1 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">Negocio no encontrado</h1>
-        <p class="text-slate-500 dark:text-slate-400 mb-6">Parece que el enlace es incorrecto o el negocio no está disponible.</p>
-        <p class="text-xs text-slate-400">Prueba con ?slug=nombre-del-negocio</p>
-    </div>
-
-    <template v-else>
-        <!-- HEADER -->
-        <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm px-4 pt-4 pb-2 transition-all duration-300 border-b border-transparent dark:border-slate-800" 
-                :class="{'shadow-md dark:shadow-slate-900/50': scrollY > 10}">
-            <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center gap-3">
-                    <!-- Avatar del Negocio -->
-                    <div v-if="config.avatar" class="w-10 h-10 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
-                        <img :src="config.avatar" class="w-full h-full object-cover">
-                    </div>
-                    <div v-else class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm shadow-primary/30">
-                        {{ (config.appName || 'M')[0] }}
-                    </div>
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
+        
+        <!-- NAVBAR RESPONSIVE -->
+        <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300" :class="{'py-3': !scrolled, 'py-2 shadow-sm': scrolled}">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-12 md:h-14">
                     
-                    <div>
-                        <h1 class="text-lg font-bold text-slate-800 dark:text-white leading-none">{{ config.appName || 'Cargando...' }}</h1>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Menú Digital</p>
+                    <!-- Logo & Ubicación -->
+                    <div class="flex items-center gap-6">
+                        <a href="/" class="flex items-center gap-2 group cursor-pointer">
+                            <div class="w-8 h-8 md:w-10 md:h-10 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition">
+                                <img src="/assets/images/logo.jpg" alt="">
+                            </div>
+                            <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white hidden sm:block">Tengo <span class="text-brand">Hambre</span></span>
+                        </a>
+
+                        <!-- Selector Ubicación (Desktop) 
+                        <div class="hidden md:flex flex-col border-l border-slate-200 dark:border-slate-700 pl-6">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Entregar en</span>
+                            <div class="flex items-center gap-1 cursor-pointer group hover:opacity-80 transition">
+                                <span class="text-brand font-bold text-sm truncate max-w-[200px]">Ubicación Actual</span>
+                                <i class="fa-solid fa-chevron-down text-xs text-brand"></i>
+                            </div>
+                        </div>-->
+                    </div>
+
+                    <!-- Search Bar (Desktop - Centrado) -->
+                    <div class="hidden md:block flex-1 max-w-lg mx-6">
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-search text-slate-400 group-focus-within:text-brand transition-colors"></i>
+                            </div>
+                            <input v-model="searchQuery" type="text" class="block w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-none rounded-full text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-slate-700 transition-all placeholder:text-slate-400" placeholder="Buscar restaurantes, comida, antojos...">
+                        </div>
+                    </div>
+
+                    <!-- Acciones Derecha (SOLO USUARIO) -->
+                    <div class="flex items-center gap-3 md:gap-4">
+                        
+                        <!-- ESTADO: LOGUEADO -->
+                        <div v-if="currentUser" class="relative group z-50">
+                            <button class="flex items-center gap-2 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-200 hidden sm:block ml-2">{{ firstName }}</span>
+                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+                                    {{ userInitial }}
+                                </div>
+                            </button>
+                            
+                            <!-- Dropdown User -->
+                            <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 hidden group-hover:block animate-fade-in">
+                                <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
+                                    <p class="text-xs text-slate-400 font-bold">Hola, {{ currentUser.customer.name }}</p>
+                                </div>
+                                <!--
+                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"><i class="fa-solid fa-receipt mr-2"></i> Mis Pedidos</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"><i class="fa-solid fa-heart mr-2"></i> Favoritos</a>
+                                -->
+                                <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+                                <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold">
+                                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ESTADO: NO LOGUEADO (INVITADO) -->
+                        <button v-else @click="showUserModal = true" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition group" title="Iniciar Sesión / Registro">
+                            <i class="fa-regular fa-user group-hover:scale-110 transition-transform"></i>
+                        </button>
+
+                    </div> 
+                </div>
+
+                <!-- Mobile Search (Visible solo en móvil abajo del header) -->
+                <div class="md:hidden mt-3 pb-1">
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-search text-slate-400"></i>
+                        </div>
+                        <input v-model="searchQuery" type="text" class="block w-full pl-11 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-brand outline-none transition-all placeholder:text-slate-400" placeholder="¿Qué se te antoja hoy?">
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button @click="toggleTheme" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 flex items-center justify-center transition-colors">
-                        <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
-                    </button>
-                </div>
             </div>
-            <div class="relative">
-                <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
-                <input v-model="searchQuery" type="text" placeholder="¿Qué se te antoja hoy?" 
-                       class="w-full bg-slate-100 dark:bg-slate-800 dark:text-white rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition shadow-inner dark:placeholder-slate-500">
-            </div>
-        </header>
+        </nav>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 overflow-x-hidden">
+        <main class="flex-1 pt-28 md:pt-24 pb-12">
             
-            <!-- LOADING SKELETON -->
-            <div v-if="isLoading" class="mt-4 px-4 space-y-6">
-                <div class="w-full h-40 rounded-2xl skeleton"></div>
-                <div class="flex space-x-3 overflow-hidden"><div v-for="i in 4" :key="i" class="flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl skeleton"></div></div></div>
-                <div class="space-y-4"><div v-for="i in 3" :key="i" class="w-full h-28 rounded-2xl skeleton"></div></div>
+            <!-- HERO SLIDER SECTION -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
+                <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-48 md:h-64 bg-slate-100 dark:bg-slate-800 group">
+                    
+                    <!-- Slides Container -->
+                    <div v-for="(banner, index) in banners" :key="banner._id" 
+                         class="absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center"
+                         :class="{'opacity-100 z-10': activeBanner === index, 'opacity-0 z-0': activeBanner !== index}">
+                        
+                        <!-- Background Gradient -->
+                        <div class="absolute inset-0 opacity-90 z-10 bg-gradient-to-r" :class="banner.bgClass"></div>
+                        <div class="absolute inset-0 hero-pattern z-10 mix-blend-overlay"></div>
+                        
+                        <!-- Decorative Image -->
+                        <img :src="'https://tengo-hambre.com/'+banner.imageUrl || 'https://via.placeholder.com/800x400'" class="absolute right-0 top-0 w-full h-full  object-cover opacity-0 md:opacity-60 mix-blend-overlay z-0 transition-transform duration-[2000ms] ease-out" 
+                             :class="{'scale-110': activeBanner === index, 'scale-100': activeBanner !== index}">
+                        
+                        <!-- Content -->
+                        <div class="relative z-20 px-6 md:px-12 max-w-2xl text-white">
+                            <!--<span class="bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full mb-3 md:mb-4 inline-block border border-white/30 animate-fade-in">
+                                {{ banner.isSystem ? 'FudiApp' : 'Destacado' }}
+                            </span>-->
+                            <h1 class="text-2xl md:text-5xl font-black mb-2 md:mb-4 leading-tight drop-shadow-sm">
+                                <span v-html="banner.title"></span>
+                            </h1>
+                            <p class="text-white/90 text-sm md:text-lg mb-6 max-w-md hidden md:block font-medium drop-shadow-sm">
+                                {{ banner.description }}
+                            </p>
+                            <!--
+                            <button @click="handleBannerClick(banner)" class="bg-white text-slate-900 px-6 py-2.5 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 transition shadow-lg transform hover:-translate-y-0.5 border border-white">
+                                Ver Más
+                            </button>-->
+                        </div>
+                    </div>
+
+                    <!-- Slider Controls (Dots) -->
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+                        <button v-for="(banner, index) in banners" :key="index" 
+                                @click="setActiveBanner(index)" 
+                                class="h-2 rounded-full transition-all duration-300 shadow-sm"
+                                :class="activeBanner === index ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'">
+                        </button>
+                    </div>
+
+                    <!-- Arrows -->
+                    <button @click="prevBanner" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100 hidden md:flex">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button @click="nextBanner" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100 hidden md:flex">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+                
+                <!-- Skeleton Loader para Banners -->
+                <div v-else class="relative rounded-3xl overflow-hidden h-48 md:h-64 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
             </div>
 
-            <!-- REAL CONTENT -->
-            <div v-else class="animate-fade-in">
-                
-                <!-- BANNERS -->
-                <div v-if="banners.length > 0" class="mt-4 pl-4">
-                    <div class="swiper banner-swiper pr-4 !pb-8 rounded-2xl overflow-visible">
-                        <div class="swiper-wrapper">
-                            <div v-for="banner in banners" :key="banner._id" class="swiper-slide">
-                                <div class="relative h-40 w-full rounded-2xl overflow-hidden shadow-md group dark:shadow-none dark:border dark:border-slate-700">
-                                    <img :src="banner.imageUrl" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
-                                        <h3 class="text-white font-bold text-lg leading-tight drop-shadow-md">{{ banner.title }}</h3>
-                                        <p v-if="banner.description" class="text-white/90 text-xs mt-1 line-clamp-1 drop-shadow-md">{{ banner.description }}</p>
+            <!-- CATEGORÍAS (Sticky Wrapper) -->
+            <div class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-4 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar snap-x items-center">
+                        <button @click="selectedCategory = 'all'" class="snap-start flex-shrink-0 px-5 py-2 md:py-3 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2" 
+                            :class="selectedCategory === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-lg dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
+                            <i class="fa-solid fa-utensils"></i> Todo
+                        </button>
+                        
+                        <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id" class="snap-start flex-shrink-0 px-5 py-2 md:py-3 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2 group" 
+                            :class="selectedCategory === cat.id ? 'bg-brand text-white border-brand shadow-lg shadow-brand/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
+                            <span class="group-hover:scale-110 transition-transform duration-200">{{ cat.emoji }}</span> {{ cat.name }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+
+                <!-- LOADING -->
+                <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
+                    <div v-for="i in 8" class="bg-white dark:bg-slate-800 rounded-3xl p-4">
+                        <div class="h-40 bg-slate-200 dark:bg-slate-700 rounded-2xl mb-4"></div>
+                        <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                        <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                    </div>
+                </div>
+
+                <!-- ERROR -->
+                <div v-else-if="error" class="text-center py-20">
+                    <div class="inline-block p-4 rounded-full bg-red-100 text-red-500 mb-4 text-3xl"><i class="fa-solid fa-wifi"></i></div>
+                    <h3 class="font-bold text-xl dark:text-white">Algo salió mal</h3>
+                    <p class="text-slate-500">No pudimos conectar con el servidor.</p>
+                    <button @click="fetchBusinesses" class="mt-4 text-brand font-bold hover:underline">Reintentar</button>
+                </div>
+
+                <div v-else>
+                    <!-- TRENDING TOP (Carousel en móvil, Grid destacado en Desktop) -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && trendingBusinesses.length > 0" class="mb-12">
+                        <div class="flex justify-between items-end mb-6">
+                            <div>
+                                <h2 class="text-2xl md:text-3xl font-black dark:text-white flex items-center gap-2">
+                                    Tendencias <span class="hidden md:inline">de la semana</span> 🔥
+                                </h2>
+                                <p class="text-slate-500 text-sm md:text-base hidden md:block">Los lugares más populares en Tengo Hambre ahora mismo.</p>
+                            </div>
+                            <button class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
+                                Ver todo <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Grid/Carousel -->
+                        <div class="flex overflow-x-auto no-scrollbar -mx-4 px-4 pb-8 md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-6 md:mx-0 md:px-0 md:pb-0 snap-x">
+                            <div v-for="biz in trendingBusinesses" :key="biz._id" @click="goToBusiness(biz)" class="snap-center flex-shrink-0 w-72 md:w-auto biz-card bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 cursor-pointer overflow-hidden group relative mx-2 md:mx-0">
+                                <!-- Imagen -->
+                                <div class="relative h-44 md:h-48 overflow-hidden">
+                                    <img :src="'https://tengo-hambre.com'+biz.avatar || 'https://via.placeholder.com/400x300?text=TengoHambre'" class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+                                    
+                                    <!-- Badges -->
+                                    <div class="absolute top-3 left-3 flex flex-col gap-2">
+                                        <span v-if="biz.promo" class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
+                                            <i class="fa-solid fa-tag"></i> OFERTA
+                                        </span>
+                                        <span v-if="!biz.isOpen" class="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm backdrop-blur-md">
+                                            CERRADO
+                                        </span>
+                                    </div>
+                                    <div class="absolute bottom-3 right-3 bg-white/95 dark:bg-black/80 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+                                        <i class="fa-solid fa-star text-yellow-400"></i> {{ biz.rating }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Info -->
+                                <div class="p-5">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <h3 class="font-bold text-lg leading-tight dark:text-white group-hover:text-brand transition truncate">{{ biz.name }}</h3>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-1">
+                                        {{ biz.tags ? biz.tags.join(' • ') : 'Restaurante' }}
+                                    </p>
+                                    
+                                    <div class="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
+                                        <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
+                                            <i class="fa-regular fa-clock text-brand"></i> {{ biz.time }} min
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <i class="fa-solid fa-motorcycle text-brand"></i> 
+                                            {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="swiper-pagination !bottom-0"></div>
                     </div>
-                </div>
 
-                <!-- CATEGORIES -->
-                <div class="sticky top-[88px] z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur py-2 pl-4 border-b border-slate-100 dark:border-slate-800 mb-4 transition-colors duration-300">
-                    <div class="flex space-x-3 overflow-x-auto hide-scroll pr-4 pb-1">
-                        <button @click="selectedCategory = 'all'" class="flex flex-col items-center min-w-[70px] transition-all duration-200 group" :class="selectedCategory === 'all' ? 'opacity-100 scale-105' : 'opacity-60 hover:opacity-100'">
-                            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 shadow-sm transition-colors duration-300" :class="selectedCategory === 'all' ? 'bg-primary text-white shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"><i class="fa-solid fa-utensils text-xl"></i></div>
-                            <span class="text-xs font-medium truncate w-full text-center" :class="selectedCategory === 'all' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400'">Todo</span>
-                        </button>
-                        <button v-for="cat in categories" :key="cat._id" @click="selectedCategory = cat._id" class="flex flex-col items-center min-w-[70px] transition-all duration-200 group" :class="selectedCategory === cat._id ? 'opacity-100 scale-105' : 'opacity-60 hover:opacity-100'">
-                            <div class="w-14 h-14 rounded-2xl overflow-hidden mb-1 shadow-sm border-2 transition-colors duration-300 bg-slate-100 dark:bg-slate-800" :class="selectedCategory === cat._id ? 'border-primary' : 'border-transparent dark:border-slate-700'">
-                                <img v-if="cat.image" :src="cat.image" class="w-full h-full object-cover">
-                                <div v-else class="w-full h-full flex items-center justify-center text-slate-400"><i class="fa-solid fa-bowl-food"></i></div>
+                    <!-- ALL BUSINESSES GRID -->
+                    <div class="animate-fade-in">
+                        <h2 class="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2 dark:text-white">
+                            <span v-if="searchQuery">Resultados de "{{ searchQuery }}"</span>
+                            <span v-else>Todos los restaurantes</span>
+                            <span class="text-sm font-normal text-slate-400 ml-2">({{ filteredBusinesses.length }})</span>
+                        </h2>
+
+                        <div v-if="filteredBusinesses.length === 0" class="text-center py-20 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+                            <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                                <img src="/assets/images/logo.jpg" alt="">
                             </div>
-                            <span class="text-xs font-medium truncate w-full text-center" :class="selectedCategory === cat._id ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400'">{{ cat.name }}</span>
-                        </button>
-                    </div>
-                </div>
+                            <h3 class="font-bold text-xl dark:text-white">Sin resultados</h3>
+                            <p class="text-slate-500">Intenta cambiar los filtros o busca otra cosa.</p>
+                            <button @click="selectedCategory = 'all'; searchQuery = ''" class="mt-4 px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">Ver todo</button>
+                        </div>
 
-                <!-- PRODUCTS GRID -->
-                <div class="px-4 pb-24">
-                    <div class="flex justify-between items-end mb-4">
-                        <h2 class="text-lg font-bold text-slate-800 dark:text-white">{{ selectedCategoryName }} <span class="text-xs font-normal text-slate-400 ml-1">({{ filteredProducts.length }})</span></h2>
-                        <span v-if="searchQuery" class="text-xs text-primary cursor-pointer" @click="searchQuery = ''">Borrar filtro</span>
-                    </div>
-
-                    <div v-if="filteredProducts.length > 0" class="grid grid-cols-1 gap-4">
-                        <div v-for="prod in filteredProducts" :key="prod._id" class="bg-white dark:bg-slate-900 rounded-2xl p-3 shadow-sm border border-slate-100 dark:border-slate-800 flex gap-4">
-                            <div class="w-28 h-28 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
-                                <img :src="prod.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover">
-                                <span v-if="prod.salesCount > 10" class="absolute top-1 left-1 bg-yellow-400 text-[10px] font-bold px-1.5 py-0.5 rounded text-black shadow-sm">TOP</span>
-                            </div>
-                            
-                            <div class="flex-1 flex flex-col justify-between py-1">
-                                <div>
-                                    <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2">{{ prod.name }}</h3>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{{ prod.description }}</p>
+                        <!-- Grid Responsive -->
+                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <div v-for="biz in filteredBusinesses" :key="biz._id" @click="goToBusiness(biz)" class="biz-card bg-white dark:bg-slate-800 rounded-3xl p-3 shadow-sm hover:shadow-lg border border-slate-100 dark:border-slate-700/50 cursor-pointer group flex flex-row sm:flex-col gap-4 sm:gap-0">
+                                
+                                <!-- Imagen (Cuadrada en móvil, Rectangular en desktop) -->
+                                <div class="relative w-28 h-28 sm:w-full sm:h-48 shrink-0 overflow-hidden rounded-2xl sm:rounded-2xl sm:mb-4">
+                                    <img :src="(biz.avatar) ? 'https://tengo-hambre.com'+biz.avatar : 'https://www.falmouthinn.com/integration/tc-theme/public/img/placeholder_4_3.png'" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                    
+                                    <!-- Badges -->
+                                    <div v-if="biz.promo" class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                        %
+                                    </div>
+                                    <div class="absolute bottom-2 right-2 bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 shadow-sm sm:hidden">
+                                        <i class="fa-solid fa-star text-yellow-400"></i> {{ biz.rating }}
+                                    </div>
                                 </div>
                                 
-                                <div class="flex justify-between items-center mt-2">
-                                    <span class="text-lg font-bold text-slate-900 dark:text-white">${{ prod.price }}</span>
-                                    <button @click="initAddToCart(prod)" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-primary hover:bg-primary hover:text-white transition flex items-center justify-center shadow-sm">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
+                                <!-- Content -->
+                                <div class="flex-1 flex flex-col justify-center sm:block">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <h3 class="font-bold text-base sm:text-lg leading-tight dark:text-white group-hover:text-brand transition line-clamp-1">{{ biz.name }}</h3>
+                                        <span class="hidden sm:flex bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs font-bold items-center gap-1">
+                                            {{ biz.rating }} <i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-2 line-clamp-1">
+                                        {{ biz.tags ? biz.tags.join(' • ') : 'Comida deliciosa' }}
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between mt-auto">
+                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-3">
+                                            <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand-300"></i> {{ biz.time }} min</span>
+                                            <span class="flex items-center gap-1"><i class="fa-solid fa-motorcycle text-brand-300"></i> ${{ biz.deliveryCost }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div v-else class="text-center py-10">
-                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300 dark:text-slate-600"><i class="fa-solid fa-utensils text-3xl"></i></div>
-                        <p class="text-slate-500 dark:text-slate-400 font-medium">No encontramos productos.</p>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- FLOATING CART BUTTON -->
-        <div v-if="cart.length > 0" class="fixed bottom-6 left-0 right-0 px-6 z-40 flex justify-center animate-slide-up">
-            <button @click="showCartModal = true" class="bg-slate-900 dark:bg-primary text-white w-full max-w-md shadow-2xl shadow-slate-900/30 dark:shadow-primary/40 rounded-2xl py-4 px-6 flex justify-between items-center transform transition active:scale-95">
-                <div class="flex items-center space-x-3">
-                    <span class="bg-primary dark:bg-white dark:text-primary text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">{{ cartTotalItems }}</span>
-                    <span class="font-medium">Ver mi pedido</span>
-                </div>
-                <span class="font-bold text-lg">${{ cartTotalPrice }}</span>
-            </button>
-        </div>
-
-        <!-- BOTÓN LEALTAD (Regalo Flotante) -->
-        <button @click="openLoyaltyModal" class="fixed bottom-24 right-6 z-40 w-14 h-14 bg-white dark:bg-slate-800 rounded-full shadow-xl flex items-center justify-center text-2xl border-2 border-yellow-400 animate-pulse-fast hover:scale-110 transition">
-            🎁
-        </button>
-
-        <!-- PRODUCT DETAILS MODAL -->
-        <div v-if="showProductModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
-            <div @click="showProductModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
-            
-            <div class="bg-white dark:bg-slate-900 w-full max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl relative z-10 max-h-[90vh] flex flex-col animate-slide-up">
-                <!-- Header Image -->
-                <div class="h-48 w-full bg-slate-100 dark:bg-slate-800 relative rounded-t-3xl overflow-hidden shrink-0">
-                    <img :src="activeProduct.image || 'https://via.placeholder.com/400x200'" class="w-full h-full object-cover">
-                    <button @click="showProductModal = false" class="absolute top-4 right-4 bg-white/90 dark:bg-black/50 p-2 rounded-full shadow-sm text-slate-800 dark:text-white"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-
-                <div class="flex-1 overflow-y-auto p-6">
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-slate-800 dark:text-white leading-tight">{{ activeProduct.name }}</h2>
-                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-2">{{ activeProduct.description }}</p>
-                        <p class="text-xl font-bold text-primary mt-3">${{ activeProduct.price }}</p>
-                    </div>
-
-                    <!-- Addons List -->
-                    <div v-if="activeProductAddons.length > 0" class="space-y-6">
-                        <div v-for="addonGroup in activeProductAddons" :key="addonGroup._id" class="border-t border-slate-100 dark:border-slate-800 pt-4">
-                            <div class="flex justify-between items-center mb-3">
-                                <h3 class="font-bold text-slate-700 dark:text-slate-200">{{ addonGroup.name }}</h3>
-                                <span v-if="addonGroup.required" class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded font-bold uppercase">Obligatorio</span>
-                                <span v-else class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded font-bold uppercase">Opcional</span>
+        <!-- FOOTER WEB COMPLETO -->
+        <footer class="bg-white dark:bg-slate-950 pt-16 pb-8 border-t border-slate-100 dark:border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                    <div class="col-span-1 md:col-span-2">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white shadow-md">
+                                <img src="/assets/images/logo.jpg" alt="">
                             </div>
-                            <div class="space-y-2">
-                                <div v-for="option in addonGroup.options" :key="option._id" 
-                                     class="flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer"
-                                     :class="isOptionSelected(addonGroup, option) ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900'"
-                                     @click="toggleOption(addonGroup, option)">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-5 h-5 rounded border flex items-center justify-center transition-colors"
-                                             :class="[ isOptionSelected(addonGroup, option) ? 'bg-primary border-primary' : 'border-slate-300 dark:border-slate-600', addonGroup.maxOptions === 1 ? 'rounded-full' : 'rounded-md' ]">
-                                            <i v-if="isOptionSelected(addonGroup, option)" class="fa-solid fa-check text-white text-xs"></i>
-                                        </div>
-                                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ option.name }}</span>
-                                    </div>
-                                    <span v-if="option.priceExtra > 0" class="text-xs font-bold text-slate-500 dark:text-slate-400">+${{ option.priceExtra }}</span>
-                                </div>
-                            </div>
+                            <span class="font-bold text-xl text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
                         </div>
+                        <p class="text-slate-500 text-sm max-w-sm">
+                            Conectando los mejores restaurantes locales con amantes de la comida como tú.
+                        </p>
+                    </div>
+                    <!--<div>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-4">Descubrir</h4>
+                        <ul class="space-y-2 text-sm text-slate-500">
+                            <li><a href="#" class="hover:text-brand transition">Nuevos Lugares</a></li>
+                            <li><a href="#" class="hover:text-brand transition">Ofertas</a></li>
+                            <li><a href="#" class="hover:text-brand transition">Categorías</a></li>
+                        </ul>
+                    </div>-->
+                    <div>
+                        <h4 class="font-bold text-slate-900 dark:text-white mb-4">Para Negocios</h4>
+                        <ul class="space-y-2 text-sm text-slate-500">
+                            <li><a href="/register" class="hover:text-brand transition font-bold text-brand">Registra tu Restaurante</a></li>
+                            <li><a href="/admin" class="hover:text-brand transition">Iniciar Sesión</a></li>
+                        </ul>
                     </div>
                 </div>
-
-                <div class="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 sm:rounded-b-2xl">
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 h-12 px-2 shrink-0">
-                            <button @click="modalQuantity > 1 ? modalQuantity-- : null" class="w-8 h-full text-slate-500 hover:text-primary"><i class="fa-solid fa-minus"></i></button>
-                            <span class="w-8 text-center font-bold text-slate-800 dark:text-white">{{ modalQuantity }}</span>
-                            <button @click="modalQuantity++" class="w-8 h-full text-slate-500 hover:text-primary"><i class="fa-solid fa-plus"></i></button>
-                        </div>
-                        <button @click="confirmAddToCart" class="flex-1 bg-primary hover:bg-indigo-600 text-white font-bold h-12 rounded-xl shadow-lg shadow-indigo-500/30 flex justify-between items-center px-6 transition active:scale-95">
-                            <span>Agregar</span>
-                            <span>${{ modalTotalPrice }}</span>
-                        </button>
+                <div class="border-t border-slate-100 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-400">
+                    <p>&copy; 2026 Tengo Hambre Inc.</p>
+                    <div class="flex space-x-4 mt-4 md:mt-0 text-lg">
+                        <a href="#" class="hover:text-brand transition"><i class="fa-brands fa-facebook"></i></a>
+                        <a href="#" class="hover:text-brand transition"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="hover:text-brand transition"><i class="fa-brands fa-twitter"></i></a>
                     </div>
                 </div>
             </div>
-        </div>
+        </footer>
 
-        <!-- CART MODAL -->
-        <div v-if="showCartModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
-            <div @click="showCartModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
-            
-            <div class="bg-white dark:bg-slate-900 w-full max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl relative z-10 max-h-[90vh] flex flex-col animate-slide-up">
-                <div class="w-full flex justify-center pt-3 pb-1 sm:hidden" @click="showCartModal = false">
-                    <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                </div>
-
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-800 dark:text-white">Tu Pedido</h2>
-                    <button @click="showCartModal = false" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-                </div>
-
-                <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                    <div v-if="cart.length === 0" class="text-center py-8 text-slate-400">
-                        <i class="fa-solid fa-basket-shopping text-4xl mb-3 opacity-50"></i>
-                        <p>Tu carrito está vacío.</p>
-                    </div>
-                    
-                    <div v-for="(item, idx) in cart" :key="idx" class="flex gap-4">
-                        <div class="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 overflow-hidden">
-                            <img :src="item.product.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover">
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start mb-1">
-                                <h4 class="font-bold text-slate-800 dark:text-white text-sm line-clamp-1">{{ item.product.name }}</h4>
-                                <span class="font-bold text-slate-900 dark:text-white text-sm">${{ item.unitPrice * item.quantity }}</span>
-                            </div>
-                            <div v-if="item.selectedOptions && item.selectedOptions.length > 0" class="mb-2">
-                                <p v-for="opt in item.selectedOptions" :key="opt.name" class="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
-                                    <span>+ {{ opt.name }}</span>
-                                    <span v-if="opt.priceExtra > 0">${{ opt.priceExtra }}</span>
-                                </p>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-slate-400">${{ item.unitPrice }} c/u</span>
-                                <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 h-7">
-                                    <button @click="decreaseCartItem(idx)" class="w-6 h-full flex items-center justify-center text-slate-500 hover:text-primary"><i class="fa-solid fa-minus text-[10px]"></i></button>
-                                    <span class="mx-2 text-xs font-bold text-slate-800 dark:text-white">{{ item.quantity }}</span>
-                                    <button @click="item.quantity++" class="w-6 h-full flex items-center justify-center text-slate-500 hover:text-primary"><i class="fa-solid fa-plus text-[10px]"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 sm:rounded-b-2xl">
-                    <div class="mb-4">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Nombre</label>
-                        <input v-model="customerName" type="text" placeholder="Ej: Juan Pérez" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Email</label>
-                        <input v-model="customerEmail" type="email" placeholder="Ej: juanperez@gmail.com" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                    </div>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-slate-500 dark:text-slate-400 font-medium">Total a pagar</span>
-                        <span class="text-2xl font-bold text-slate-900 dark:text-white">${{ cartTotalPrice }}</span>
-                    </div>
-                    <button @click="checkout" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
-                        <i class="fa-brands fa-whatsapp text-xl"></i>
-                        <span>Enviar Pedido a WhatsApp</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL LEALTAD -->
-        <div v-if="showLoyaltyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative">
-                <button @click="showLoyaltyModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-white z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <!-- MODAL REGISTRO / LOGIN USUARIO -->
+        <div v-if="showUserModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" @click="showUserModal = false"></div>
+            <div class="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
                 
-                <!-- Banner Color -->
-                <div class="h-32 w-full bg-primary flex items-center justify-center relative">
-                    <div class="absolute -bottom-8 w-20 h-20 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center border-4 border-primary">
-                        <i class="fa-solid fa-crown text-3xl text-yellow-400"></i>
+                <!-- Modal Header -->
+                <div class="p-6 pb-2 text-center">
+                    <div class="w-12 h-12 bg-brand/10 text-brand rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-regular fa-face-smile"></i>
                     </div>
+                    <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Bienvenido de nuevo' : 'Únete a FudiApp' }}</h2>
+                    <p class="text-slate-500 text-sm mt-1">
+                        {{ isLoginMode ? 'Ingresa tus datos para continuar.' : 'Regístrate para guardar favoritos y pedir.' }}
+                    </p>
                 </div>
 
-                <div class="pt-12 pb-8 px-6 text-center">
+                <!-- Modal Body -->
+                <div class="p-6 pt-2 overflow-y-auto">
                     
-                    <!-- CASO 1: REGISTRO (Si no existe) -->
-                    <div v-if="!loyaltyState.registered">
-                        <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">¡Únete al Club!</h3>
-                        <p class="text-sm text-slate-500 mb-4">Regístrate para acumular puntos.</p>
-                        
-                        <div class="space-y-3">
-                            <input v-model="loyaltyForm.name" type="text" placeholder="Tu Nombre" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary">
-                            <input v-model="loyaltyForm.phone" type="tel" placeholder="Teléfono (Será tu ID)" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary">
-                            <!-- Campo PIN -->
-                            <input v-model="loyaltyForm.pin" type="password" maxlength="4" placeholder="Crea un PIN (4 dígitos)" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary tracking-widest">
-                            
-                            <button @click="registerLoyalty" class="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30">Crear Tarjeta</button>
-                            
-                            <!-- Botón Recuperar -->
-                            <p class="text-xs text-slate-400 mt-2 cursor-pointer hover:text-primary" @click="toggleRecoverMode">¿Ya tienes cuenta? Inicia sesión</p>
-                        </div>
-                    </div>
-
-                    <!-- CASO 2: LOGIN (Pide PIN) -->
-                    <div v-else-if="loyaltyState.authRequired">
-                        <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Bienvenido de nuevo</h3>
-                        <p class="text-sm text-slate-500 mb-4">Ingresa tu PIN para ver tus puntos.</p>
-                        
-                        <div class="space-y-3">
-                            <input v-model="loyaltyForm.phone" type="tel" readonly class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-center border-none">
-                            <input v-model="loyaltyForm.pin" type="password" maxlength="4" placeholder="PIN de 4 dígitos" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center outline-none focus:border-primary tracking-widest">
-                            <button @click="loginLoyalty" class="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30">Ver Tarjeta</button>
-                            <p class="text-xs text-slate-400 mt-2 cursor-pointer hover:text-red-400" @click="resetLoyaltyState">No soy yo / Salir</p>
-                        </div>
-                    </div>
-
-                    <!-- CASO 3: TARJETA DIGITAL (Logueado) -->
-                    <div v-else>
-                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Hola, {{ loyaltyState.customer.name }}</h3>
-                        <p class="text-xs text-slate-400 uppercase tracking-widest mb-6">Membresía Digital</p>
-
-                        <div class="bg-white p-4 rounded-xl shadow-inner inline-block mb-4 border border-slate-200">
-                            <canvas id="qr-code"></canvas>
-                        </div>
-                        <p class="text-xs text-slate-400 mb-6">Muestra este código al pagar</p>
-
-                        <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                            <div class="flex justify-between items-end mb-2">
-                                <span class="text-3xl font-black text-primary">{{ loyaltyState.customer.points }}</span>
-                                <span class="text-xs text-slate-500 mb-1">/ {{ loyaltyState.program.goal }} Puntos</span>
+                    <!-- FORMULARIO DE LOGIN -->
+                    <form v-if="isLoginMode" @submit.prevent="loginCustomer" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-brands fa-whatsapp"></i></span>
+                                <input v-model="loginForm.phone" type="tel" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="55 1234 5678">
                             </div>
-                            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
-                                <div class="bg-yellow-400 h-2.5 rounded-full transition-all duration-1000" :style="`width: ${(loyaltyState.customer.points / loyaltyState.program.goal) * 100}%`"></div>
-                            </div>
-                            <p class="text-xs text-slate-500 mt-2 text-left">Premio: <span class="font-bold text-slate-700 dark:text-white">{{ loyaltyState.program.reward }}</span></p>
                         </div>
-                        <button @click="logoutLoyalty" class="mt-4 text-xs text-red-400 hover:underline">Cerrar mi sesión</button>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN de Acceso</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="loginForm.pin" type="password" inputmode="numeric" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="****">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-primary hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>Iniciar Sesión</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- FORMULARIO DE REGISTRO -->
+                    <form v-else @submit.prevent="registerCustomer" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre Completo</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-user"></i></span>
+                                <input v-model="customerForm.name" type="text" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Tu nombre">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-brands fa-whatsapp"></i></span>
+                                <input v-model="customerForm.phone" type="tel" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="55 1234 5678">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email (Opcional)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                                <input v-model="customerForm.email" type="email" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Crea un PIN (Para entrar después)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="customerForm.pin" type="password" inputmode="numeric" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Ej: 1234">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-primary hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>Crear Cuenta</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- Toggle Mode -->
+                    <div class="text-center mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <p v-if="isLoginMode" class="text-sm text-slate-500">
+                            ¿Aún no tienes cuenta? 
+                            <button @click="isLoginMode = false" class="text-brand font-bold hover:underline">Regístrate aquí</button>
+                        </p>
+                        <p v-else class="text-sm text-slate-500">
+                            ¿Ya tienes cuenta? 
+                            <button @click="isLoginMode = true" class="text-brand font-bold hover:underline">Inicia Sesión</button>
+                        </p>
                     </div>
 
+                    <p v-if="!isLoginMode" class="text-xs text-center text-slate-400 mt-4">
+                        Al registrarte aceptas nuestros <a href="#" class="text-brand hover:underline">Términos y Condiciones</a>.
+                    </p>
                 </div>
+
+                <!-- Close Button Absolute -->
+                <button @click="showUserModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition bg-slate-100 dark:bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-times"></i>
+                </button>
             </div>
         </div>
+    </div>
 
 
-    </template>
-</div>
-
-<script src="./assets/js/front/app.js"></script>
+    <!-- Scripts -->
+    <script src="../assets/js/front/marketplace.js"></script>    
 </body>
 </html>

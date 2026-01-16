@@ -70,6 +70,7 @@ exports.getAdminConfig = async (req, res) => {
                 slug : business.slug || '',
                 urlApp: 'https://'+req.hostname+'/'+business.slug,
                 plan: business.plan || 'free',
+                categories : business.categories,
                 // Campos extra de negocio
                 avatar: business.avatar || '',
                 phone: business.phone || '',
@@ -110,6 +111,7 @@ exports.updateAdminConfig = async (req, res) => {
             if (req.body.address) business.address = req.body.address;
             if (req.body.phone) business.phone = req.body.phone;
             if (req.body.ownerEmail) business.ownerEmail = req.body.ownerEmail;
+            if (req.body.categories) business.categories = req.body.categories;
             
             // Settings anidados
             if (!business.settings) business.settings = {};

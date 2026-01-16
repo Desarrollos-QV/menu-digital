@@ -90,6 +90,8 @@ export function usePos(productsRef, fetchMedia, setingsRef) {
             return toastr.error('Monto recibido insuficiente');
         }
 
+        console.log(activeTab.value);
+
         try {
             const payload = {
                 cart: activeTab.value.cart,

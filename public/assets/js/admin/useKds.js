@@ -20,6 +20,7 @@ export function useKds() {
                 activeOrders.value = allOrders.filter(o => 
                     ['pending', 'preparing', 'ready'].includes(o.status)
                 ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // FIFO (Primero en entrar, primero en salir)
+                console.log(activeOrders);
             }
         } catch (error) {
             console.error("Error KDS:", error);

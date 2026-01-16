@@ -74,6 +74,7 @@ createApp({
         const loyaltyState = ref({ registered: false, authRequired: false, customer: {}, program: {} });
         const isRecovering = ref(false); // Modo manual de poner teléfono
         const customer = ref([]);
+        
         // --- LÓGICA DE SLUG ACTUALIZADA ---
         const getSlug = () => {
             // 1. Intentar obtener de ?slug=nombre

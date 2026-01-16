@@ -52,7 +52,27 @@ createApp({
         const currentView = ref(localStorage.getItem('currentView') || 'dashboard');
         // Simular rol (en producción viene del token JWT decodificado)
         const currentUserRole = ref('admin_negocio'); // Cambia a 'superadmin' para probar la otra vista
-
+        
+        const availableCategories = ref([
+            { id: 'burgers', name: 'Hamburguesas', emoji: '🍔' },
+            { id: 'pizza', name: 'Pizza', emoji: '🍕' },
+            { id: 'sushi', name: 'Sushi', emoji: '🍣' },
+            { id: 'tacos', name: 'Tacos', emoji: '🌮' },
+            { id: 'mexican', name: 'Mexicana', emoji: '🌶️' },
+            { id: 'wings', name: 'Alitas', emoji: '🍗' },
+            { id: 'italian', name: 'Italiana', emoji: '🍝' },
+            { id: 'chinese', name: 'China', emoji: '🥡' },
+            { id: 'seafood', name: 'Mariscos', emoji: '🍤' },
+            { id: 'chicken', name: 'Pollo', emoji: '🐓' },
+            { id: 'coffee', name: 'Café', emoji: '☕' },
+            { id: 'bakery', name: 'Panadería', emoji: '🥐' },
+            { id: 'dessert', name: 'Postres', emoji: '🍰' },
+            { id: 'healthy', name: 'Saludable', emoji: '🥗' },
+            { id: 'vegan', name: 'Vegana', emoji: '🌱' },
+            { id: 'bar', name: 'Bebidas', emoji: '🍺' },
+            { id: 'breakfast', name: 'Desayunos', emoji: '🍳' },
+            { id: 'fastfood', name: 'Rápida', emoji: '🍟' }
+        ]);
         // --- USANDO COMPOSABLES ---
         const auth = useAuth();
         const media = useMedia(auth.isDark);
@@ -70,8 +90,7 @@ createApp({
         const orders = useOrders();
         const quotes = useQuotes(settings);
         const kds = useKds();
-
-
+ 
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
             { id: 102, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
@@ -130,6 +149,21 @@ createApp({
             { id: 13, label: 'Usuarios', icon: 'fa-solid fa-user-group', view: 'users' },
             { id: 14, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
+
+
+        // Lógica de Toggle
+        const toggleCategory = async (id) => {
+            if (settings.settings.value.categories.includes(id)) {
+                // Quitar si ya existe
+                settings.settings.value.categories = settings.settings.value.categories.filter(c => c !== id);
+            } else {
+                // Agregar si no existe
+                settings.settings.value.categories.push(id);
+            }
+
+            console.log(settings.settings.value.categories);
+        };
+
 
         // Computada para decidir qué menú mostrar
         const activeMenuItems = computed(() => {
@@ -374,7 +408,7 @@ createApp({
                     // Guardar y Actualizar estado
                     localStorage.setItem('role', role);
                     currentUserRole.value = role;
-                    settings.fetchSettings(); // <-- Cargamos nuevamente las configuraciones...
+                    settings.fetchSettings(); // <-- Cargamos y normalizamos configuraciones...
                     finance.fetchCurrentStatus(); // <-- Cargamos el status de la caja
                     finance.fetchHistory(); // <-- Cargamos el status de la caja
                     analytics.fetchDashboardStats(); // <-- Cargamos stadisticas
@@ -395,7 +429,7 @@ createApp({
             else collapsed.value = !collapsed.value;
         };
 
-        const navigate = (item) => {
+        const navigate = async (item) => {
             currentView.value = item.view;
             localStorage.setItem('currentView', JSON.stringify(item));
             mobileMenuOpen.value = false;
@@ -475,17 +509,6 @@ createApp({
             if (collapsed.value) collapsed.value = false;
         };
 
-        //  --- Validamos la ruta Guardada / IsDark Cookie ---
-        // if (localStorage.getItem('currentView')) {
-        //     // navigate(JSON.parse(localStorage.getItem('currentView'))); // <-- Redireccionamos
-        //     const item = JSON.parse(localStorage.getItem('currentView'));
-        //     // 1. CAMBIAR LA URL VISUALMENTE
-        //     const slug = item === 'dashboard' ? '' : item; // /admin/dashboard -> /admin/
-        //     // Nota: Asumimos base /admin/
-        //     const newUrl = `/admin/${slug}`;
-        //     window.history.pushState({ view: item.view }, '', newUrl);
-        //     navigate(item);
-        // }
 
         const openItemDetails = (item) => {
             selectedCartItem.value = item;
@@ -948,7 +971,7 @@ createApp({
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
                     if (currentView.value === 'ads') banners.fetchBanners();
                     if (currentView.value === 'media') media.fetchMedia();
-                    if (currentView.value === 'settings') settings.fetchSettings();
+                    if (currentView.value === 'settings') settings.fetchSettings(); 
                 } else {
                     // Si la URL es solo /admin, vamos al dashboard
                     if (path.endsWith('/admin') || path.endsWith('/admin/')) {
@@ -1018,7 +1041,9 @@ createApp({
                             finance.fetchHistory();
                         }
                         if (currentView.value === 'users') users.fetchUsers();
-                        if (currentView.value === 'settings') settings.fetchSettings();
+                        if (currentView.value === 'settings') {
+                            settings.fetchSettings(); 
+                        }
                         if (currentView.value === 'quotes') quotes.fetchQuotes();
                         if (currentView.value === 'kds') {
                             kds.startPolling();
@@ -1087,7 +1112,8 @@ createApp({
             showShareModal, sharePhone, sharePrefix, openShareModal, confirmShare,
             showDiscountModal, tempDiscount, openDiscountModal, confirmDiscount,
             // Impresion de Tickets
-            showTicketModal, ticketData, openTicketPreview, printTicketNow, finishSale
+            showTicketModal, ticketData, openTicketPreview, printTicketNow, finishSale,
+            availableCategories, toggleCategory,
         };
     }
 }).mount('#app');

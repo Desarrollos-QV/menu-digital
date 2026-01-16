@@ -32,7 +32,6 @@ app.use('/api/customers', require('./routes/customers')); // <-- Listado de usua
 app.use('/api/finance', require('./routes/finance')); // <-- Gestion de cajas
 app.use('/api/orders', require('./routes/orders')); // <-- Gestion de ventas
 app.use('/api/quotes', require('./routes/quotes')); // <-- Gestion de Cotizaciones
-
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
 app.use('/api/loyalty', require('./routes/loyalty'));
@@ -56,9 +55,14 @@ app.get(/.*/, (req, res) => {
         return res.sendFile(path.join(__dirname, 'views', 'admin', 'index.html'));
     }
 
+    // 3. Rutas de Admin
+    if (req.url.startsWith('/marketplace')) {
+        return res.sendFile(path.join(__dirname, 'views', 'frontend', 'marketplace.html'));
+    }
+    
     // 4. Default: App del Cliente (Menú Digital)
     // Cualquier otra ruta (ej: /tacos-pepe) se trata como un slug
-    res.sendFile(path.join(__dirname, 'views','frontend', 'index.html'));
+    res.sendFile(path.join(__dirname, 'views','frontend', 'menu.html'));
 });
 
 // 3. Conexión DB y Servidor

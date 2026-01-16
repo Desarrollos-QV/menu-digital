@@ -8,131 +8,182 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>body { font-family: 'Outfit', sans-serif; }</style>
+    <!-- Toastr & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="./assets/css/front.css">
+    <script>
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] }, 
+                    colors: { brand: '#6366f1', brandDark: '#4f46e5' } 
+                } 
+            } 
+        }
+        // Configuración Toastr (Formateada para evitar errores de línea)
+        toastr.options = {
+            "positionClass": "toast-top-center",
+            "timeOut": "3000",
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    </script>
+    <style>
+        .category-card { transition: all 0.2s ease; user-select: none; }
+        .category-selected { background-color: #e0e7ff; border-color: #6366f1; color: #4338ca; ring-width: 2px; ring-color: #6366f1; }
+        /* Ocultar scrollbar en contenedor de categorías si es necesario */
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
 </head>
 <body class="bg-slate-900 flex items-center justify-center min-h-screen p-4" style="background-image: url('../assets/images/background.jpg');background-position: center center;background-repeat: repeat-x;background-size: contain;">
-
-<div id="app" class="w-full max-w-md">
-    <!-- Formulario -->
-    <div class="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 p-8">
-        <!-- Logo / Header -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-600 text-white mb-4 shadow-lg shadow-indigo-500/30">
-            <img src="../assets/images/logo.jpg" alt="logo" class="rounded-full">
-            </div>
-            <h1 class="text-3xl font-bold text-white mb-2">Crea tu Menú Digital</h1>
-            <p class="text-slate-400">Comienza gratis en segundos.</p>
+    <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-lg border border-slate-100">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-black text-slate-900">Crea tu cuenta</h1>
+            <p class="text-slate-500 text-sm">Configura tu negocio en minutos.</p>
         </div>
 
-        <form @submit.prevent="register">
-            
-            <div class="space-y-5">
-                <!-- Nombre del Negocio -->
+        <form id="registerForm" class="space-y-5">
+            <!-- Datos Básicos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Nombre de tu Negocio</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-slate-500"><i class="fa-solid fa-store"></i></span>
-                        <input v-model="form.businessName" type="text" placeholder="Ej: Tacos El Primos" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" required>
-                    </div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre del Negocio</label>
+                    <input type="text" name="businessName" required class="w-full p-3 rounded-xl border border-slate-200 focus:border-brand outline-none bg-slate-50 focus:bg-white transition" placeholder="Ej. Tacos El Paisa">
                 </div>
-
-                <!-- Usuario -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Usuario Admin</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-slate-500"><i class="fa-solid fa-user"></i></span>
-                        <input v-model="form.username" type="text" placeholder="Ej: admin_tacos" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" required>
-                    </div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Tu Nombre</label>
+                    <input type="text" name="name" required class="w-full p-3 rounded-xl border border-slate-200 focus:border-brand outline-none bg-slate-50 focus:bg-white transition" placeholder="Nombre completo">
                 </div>
-
-                <!-- Email -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Correo electrónico</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-slate-500"><i class="fa-solid fa-user"></i></span>
-                        <input v-model="form.email" type="email" placeholder="Ej: admin_tacos@gmail.com" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" required>
-                    </div>
-                </div>
-
-                <!-- Contraseña -->
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Contraseña</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-slate-500"><i class="fa-solid fa-lock"></i></span>
-                        <input v-model="form.password" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" required>
-                    </div>
-                </div>
-
-                <!-- Plan Info -->
-                <div class="bg-indigo-900/30 border border-indigo-500/30 rounded-lg p-3 flex items-start space-x-3">
-                    <i class="fa-solid fa-gift text-indigo-400 mt-1"></i>
-                    <div>
-                        <p class="text-sm font-bold text-indigo-200">Plan Gratuito Incluido</p>
-                        <p class="text-xs text-indigo-300/80">Podrás subir productos y recibir pedidos ilimitados con publicidad.</p>
-                    </div>
-                </div>
-
-                <!-- Botón -->
-                <button type="submit" :disabled="loading" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-500/20 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center">
-                    <span v-if="loading"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Creando cuenta...</span>
-                    <span v-else>Registrarme</span>
-                </button>
             </div>
 
-            <!-- Error Message -->
-            <p v-if="errorMsg" class="mt-4 text-sm text-red-400 text-center bg-red-900/20 py-2 rounded">{{ errorMsg }}</p>
+            <!-- SELECTOR DE CATEGORÍAS (UI MEJORADA) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">¿Qué vendes? (Selecciona varios)</label>
+                <div id="categories-container" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto thin-scroll p-1">
+                    <!-- Se llenará con JS -->
+                </div>
+                <p id="cat-error" class="text-red-500 text-xs mt-1 hidden">Selecciona al menos una categoría.</p>
+            </div>
 
+            <!-- Credenciales -->
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Correo Electrónico</label>
+                <input type="email" name="email" required class="w-full p-3 rounded-xl border border-slate-200 focus:border-brand outline-none bg-slate-50 focus:bg-white transition" placeholder="correo@ejemplo.com">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Contraseña</label>
+                <input type="password" name="password" required class="w-full p-3 rounded-xl border border-slate-200 focus:border-brand outline-none bg-slate-50 focus:bg-white transition" placeholder="********">
+            </div>
+
+            <button type="submit" id="btn-submit" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition transform active:scale-95">
+                Registrarse
+            </button>
         </form>
+        
+        <p class="text-center text-xs text-slate-400 mt-6">
+            ¿Ya tienes cuenta? <a href="/admin" class="text-brand font-bold hover:underline">Inicia Sesión</a>
+        </p>
     </div>
 
-    <p class="text-center text-slate-500 text-sm mt-6">
-        ¿Ya tienes cuenta? <a href="/admin" class="text-indigo-400 hover:text-indigo-300 font-medium">Inicia Sesión</a>
-    </p>
+    <script>
+        // --- 1. CONFIGURACIÓN DE CATEGORÍAS ---
+        const availableCategories = [
+            { id: 'burgers', label: 'Hamburguesas', icon: '🍔' },
+            { id: 'pizza', label: 'Pizza', icon: '🍕' },
+            { id: 'tacos', label: 'Tacos', icon: '🌮' },
+            { id: 'sushi', label: 'Sushi', icon: '🍣' },
+            { id: 'wings', label: 'Alitas', icon: '🍗' },
+            { id: 'mexican', label: 'Mexicana', icon: '🌶️' },
+            { id: 'italian', label: 'Italiana', icon: '🍝' },
+            { id: 'chinese', label: 'China', icon: '🥡' },
+            { id: 'seafood', label: 'Mariscos', icon: '🍤' },
+            { id: 'chicken', label: 'Pollo', icon: '🐓' },
+            { id: 'breakfast', label: 'Desayunos', icon: '🍳' },
+            { id: 'coffee', label: 'Café', icon: '☕' },
+            { id: 'bakery', label: 'Panadería', icon: '🥐' },
+            { id: 'dessert', label: 'Postres', icon: '🍰' },
+            { id: 'healthy', label: 'Saludable', icon: '🥗' },
+            { id: 'bar', label: 'Bar', icon: '🍺' },
+            { id: 'fastfood', label: 'Rápida', icon: '🍟' },
+            { id: 'others', label: 'Otros', icon: '🍽️' }
+        ];
 
-</div>
+        const selectedCategories = new Set(); // Usamos Set para evitar duplicados
 
-<script>
-    const { createApp, ref } = Vue;
+        // Renderizar Categorías
+        const container = document.getElementById('categories-container');
+        availableCategories.forEach(cat => {
+            const btn = document.createElement('div');
+            btn.className = `category-card cursor-pointer border border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center gap-1 text-center hover:bg-slate-50`;
+            btn.innerHTML = `
+                <span class="text-xl">${cat.icon}</span>
+                <span class="text-[10px] font-bold leading-tight">${cat.label}</span>
+            `;
+            btn.onclick = () => toggleCategory(cat.id, btn);
+            container.appendChild(btn);
+        });
 
-    createApp({
-        setup() {
-            const form = ref({ businessName: '', username: '', email: '', password: '' });
-            const loading = ref(false);
-            const errorMsg = ref('');
-
-            const register = async () => {
-                loading.value = true;
-                errorMsg.value = '';
-
-                try {
-                    console.log(JSON.stringify(form.value));
-                    const res = await fetch('/api/public/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(form.value)
-                    });
-
-                    const data = await res.json();
-
-                    if (!res.ok) {
-                        throw new Error(data.message || 'Error al registrar');
-                    }
-
-                    // Éxito: Redirigir al admin con mensaje (o auto-login si quisieras implementarlo)
-                    alert('¡Cuenta creada con éxito! Ahora inicia sesión.');
-                    window.location.href = '/admin';
-
-                } catch (e) {
-                    errorMsg.value = e.message;
-                } finally {
-                    loading.value = false;
-                }
-            };
-
-            return { form, loading, errorMsg, register };
+        function toggleCategory(id, element) {
+            if (selectedCategories.has(id)) {
+                selectedCategories.delete(id);
+                element.classList.remove('category-selected', 'ring-2', 'ring-brand');
+            } else {
+                selectedCategories.add(id);
+                element.classList.add('category-selected', 'ring-2', 'ring-brand');
+            }
+            // Ocultar error si ya seleccionó algo
+            if(selectedCategories.size > 0) document.getElementById('cat-error').classList.add('hidden');
         }
-    }).mount('#app');
-</script>
+
+        // --- 2. LÓGICA DE REGISTRO ---
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validación manual de categorías
+            if (selectedCategories.size === 0) {
+                document.getElementById('cat-error').classList.remove('hidden');
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Procesando...";
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // AGREGAR LAS CATEGORÍAS AL PAYLOAD
+            data.categories = Array.from(selectedCategories);
+
+            try {
+                // Registrar
+                const res = await fetch('/api/public/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.message || 'Error en registro');
+
+                localStorage.setItem('token', result.token);
+                toastr.success("Registro completo, Bienvenido!!");
+                window.location = '/admin';
+            } catch (error) {
+                toastr.error(error.message);
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
+    </script>
 </body>
 </html>

@@ -153,7 +153,9 @@ exports.createPosOrder = async (req, res) => {
                 productId: item._id,
                 name: item.name,
                 quantity: item.qty,
-                price: item.price
+                price: item.price,
+                selectedOptions: item.selectedOptions,
+                note: item.note
             })),
             subtotal: totals.subtotal,
             tax: totals.tax,
