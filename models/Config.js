@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const configSchema = new mongoose.Schema({
-    appName: { type: String, default: 'FudiApp' },
+    appName: { type: String, default: 'TengoHambre' },
     adminName: { type: String, default: 'Administrador' },
 
     // Configuración visual

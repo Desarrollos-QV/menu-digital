@@ -160,19 +160,13 @@
                         
                         <!-- Content -->
                         <div class="relative z-20 px-6 md:px-12 max-w-2xl text-white">
-                            <!--<span class="bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full mb-3 md:mb-4 inline-block border border-white/30 animate-fade-in">
-                                {{ banner.isSystem ? 'FudiApp' : 'Destacado' }}
-                            </span>-->
+                            
                             <h1 class="text-2xl md:text-5xl font-black mb-2 md:mb-4 leading-tight drop-shadow-sm">
                                 <span v-html="banner.title"></span>
                             </h1>
                             <p class="text-white/90 text-sm md:text-lg mb-6 max-w-md hidden md:block font-medium drop-shadow-sm">
                                 {{ banner.description }}
                             </p>
-                            <!--
-                            <button @click="handleBannerClick(banner)" class="bg-white text-slate-900 px-6 py-2.5 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 transition shadow-lg transform hover:-translate-y-0.5 border border-white">
-                                Ver Más
-                            </button>-->
                         </div>
                     </div>
 
@@ -407,7 +401,7 @@
                     <div class="w-12 h-12 bg-brand/10 text-brand rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
                         <i class="fa-regular fa-face-smile"></i>
                     </div>
-                    <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Bienvenido de nuevo' : 'Únete a FudiApp' }}</h2>
+                    <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Bienvenido de nuevo' : 'Únete a Tengo Hambre' }}</h2>
                     <p class="text-slate-500 text-sm mt-1">
                         {{ isLoginMode ? 'Ingresa tus datos para continuar.' : 'Regístrate para guardar favoritos y pedir.' }}
                     </p>
@@ -504,8 +498,6 @@
             </div>
         </div>
     </div>
-
-
     <!-- Scripts -->
     <script src="../assets/js/front/marketplace.js"></script>    
 </body>

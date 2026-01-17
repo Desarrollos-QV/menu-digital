@@ -619,8 +619,8 @@ createApp({
                             <head><title>Ticket</title>${styles}</head>
                             <body>
                                 <div class="center">
-                                    <div class="title">${settings.settings.value.appName || 'FUDIAPP'}</div>
-                                    <div>${settings.settings.value.ownerEmail || 'soporte@fudiapp.com'}</div>
+                                    <div class="title">${settings.settings.value.appName || 'tengo hambre'}</div>
+                                    <div>${settings.settings.value.ownerEmail || 'soporte@tengo-hambre.com'}</div>
                                     <div>Tel: ${settings.settings.value.phone || '000-000-000'}</div>
                                 </div>
                                 <div class="line"></div>
@@ -722,7 +722,7 @@ createApp({
 
             // Título
             doc.setFontSize(20);
-            doc.text(`${settings.settings.value.appName || 'FUDIAPP'} - Comprobante de Venta`, 105, 20, { align: "center" });
+            doc.text(`${settings.settings.value.appName || 'TengoHambre'} - Comprobante de Venta`, 105, 20, { align: "center" });
 
             // Info General
             doc.setFontSize(10);
@@ -906,7 +906,7 @@ createApp({
             let msg = '';
             if (shareContext.value === 'ticket') {
                 const ord = orders.selectedOrder.value;
-                const msg = `Hola, aquí tienes el detalle de tu compra en ${settings.settings.value.appName || 'FUDIAPP'}.\nFolio: #${ord._id.slice(-6).toUpperCase()}\nTotal: $${ord.total.toFixed(2)}\nFecha: ${new Date(ord.createdAt).toLocaleDateString()}\nGracias por tu preferencia.`;
+                const msg = `Hola, aquí tienes el detalle de tu compra en ${settings.settings.value.appName || 'TengoHambre'}.\nFolio: #${ord._id.slice(-6).toUpperCase()}\nTotal: $${ord.total.toFixed(2)}\nFecha: ${new Date(ord.createdAt).toLocaleDateString()}\nGracias por tu preferencia.`;
             } else {
                 // Usar la lógica de mensaje de useQuotes
                 msg = decodeURIComponent(quotes.sendWhatsApp());
