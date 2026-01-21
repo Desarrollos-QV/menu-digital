@@ -98,7 +98,7 @@ createApp({
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
             { id: 103, label: 'Colonias', icon: 'fa-solid fa-map-location-dot', view: 'colonias' },
-            { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
+          //  { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
 
         const businessMenu = ref([
