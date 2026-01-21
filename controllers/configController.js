@@ -71,6 +71,10 @@ exports.getAdminConfig = async (req, res) => {
                 urlApp: 'https://'+req.hostname+'/'+business.slug,
                 plan: business.plan || 'free',
                 categories : business.categories,
+                deliveryZones: business.deliveryZones,
+                time: business.time,
+                deliveryCost: business.deliveryCost,
+                isOpen: business.isOpen,
                 // Campos extra de negocio
                 avatar: business.avatar || '',
                 phone: business.phone || '',
@@ -104,15 +108,23 @@ exports.updateAdminConfig = async (req, res) => {
 
         // CASO 2: NEGOCIO
         if (req.user.role === 'admin_negocio') {
-            const business = await Business.findById(req.user.businessId);
+            const business = await Business.findById(req.user.businessId); 
             
+
             if (req.body.avatar) business.avatar = req.body.avatar;
             if (req.body.appName) business.name = req.body.appName;
             if (req.body.address) business.address = req.body.address;
             if (req.body.phone) business.phone = req.body.phone;
             if (req.body.ownerEmail) business.ownerEmail = req.body.ownerEmail;
             if (req.body.categories) business.categories = req.body.categories;
+            if (req.body.deliveryZones) business.deliveryZones = req.body.deliveryZones;
+
+            if (req.body.time) business.time = req.body.time;
+            if (req.body.deliveryCost) business.deliveryCost = req.body.deliveryCost;
+            business.isOpen = req.body.isOpen; // <-- Aca siempre actualizamos porque al llegar False significa que esta cerrado....
             
+
+
             // Settings anidados
             if (!business.settings) business.settings = {};
             if (req.body.currency) business.settings.currency = req.body.currency;

@@ -49,6 +49,44 @@ createApp({
         const scrolled = ref(false);
         const businesses = ref([]);
 
+        // --- UBICACIÓN ---
+        const showLocationModal = ref(false);
+        const locationSearch = ref('');
+        const allLocations = ref([]); // Lista completa de colonias API
+        const currentLag = ref(null); // Colonia seleccionada { _id, name, ... }
+
+         const initApp = async () => {
+            // Cargar Colonias
+            try {
+                const res = await fetch('/api/colonias');
+                if(res.ok) allLocations.value = await res.json();
+            } catch(e) { console.error("Error colonias", e); }
+
+            // 3. Verificar Ubicación Guardada
+            const storedLoc = localStorage.getItem('fudi_location');
+            if(storedLoc) {
+                currentLag.value = JSON.parse(storedLoc);
+            } else {
+                showLocationModal.value = true; // Forzar selección
+            }
+        };
+
+        const selectLocation = (col) => {
+            currentLag.value = col;
+            localStorage.setItem('fudi_location', JSON.stringify(col));
+            showLocationModal.value = false;
+            locationSearch.value = ''; // Limpiar búsqueda
+            // Resetear filtros para ver resultados frescos
+            searchQuery.value = '';
+            selectedCategory.value = 'all';
+        };
+
+        // --- COMPUTEDS ---
+        const filteredLocations = computed(() => {
+            if(!locationSearch.value) return allLocations.value.slice(0, 10); // Mostrar top 10 si no busca
+            const q = locationSearch.value.toLowerCase();
+            return allLocations.value.filter(l => l.name.toLowerCase().includes(q) || l.zipCode.includes(q));
+        });
         // --- AUTH & USER ---
         const currentUser = ref(null);
 
@@ -298,7 +336,14 @@ createApp({
         });
 
         const filteredBusinesses = computed(() => {
-            let filtered = businesses.value;
+            // 1. Filtro OBLIGATORIO de Ubicación
+            if(!currentLag.value) return [];
+
+            // Verificar si el negocio reparte en esta zona
+            // Asegúrate de que tu modelo de negocio tenga 'deliveryZones' como array de IDs
+            let filtered = businesses.value.filter(b => {
+                return b.deliveryZones && b.deliveryZones.includes(currentLag.value._id);
+            });
 
             // Filtro Categoría (soporta `b.categories` como array o string)
             if (selectedCategory.value !== 'all') {
@@ -310,7 +355,7 @@ createApp({
                     return String(cats) === String(selectedCategory.value);
                 });
             }
-
+            
             // Filtro Búsqueda
             if (searchQuery.value) {
                 const query = searchQuery.value.toLowerCase();
@@ -333,6 +378,7 @@ createApp({
         const handleScroll = () => { scrolled.value = window.scrollY > 20; };
 
         onMounted(() => {
+            initApp();
             window.addEventListener('scroll', handleScroll);
             checkAuth(); // Verificar sesión al cargar
             fetchBusinesses();
@@ -348,6 +394,8 @@ createApp({
             searchQuery, selectedCategory, categories,
             trendingBusinesses, filteredBusinesses,
             loading, error, scrolled, goToBusiness, fetchBusinesses,
+            // Loc
+            showLocationModal, locationSearch, filteredLocations, currentLag, selectLocation,
             // Slider
             banners, activeBanner, nextBanner, prevBanner, setActiveBanner, handleBannerClick,
             // Registro & Auth

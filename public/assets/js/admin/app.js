@@ -17,6 +17,7 @@ import { useFinance } from './useFinance.js';
 import { useOrders } from './useOrders.js';
 import { useQuotes } from './useQuotes.js';
 import { useKds } from './useKds.js';
+import { useColonias } from './useColonias.js';
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -90,12 +91,14 @@ createApp({
         const orders = useOrders();
         const quotes = useQuotes(settings);
         const kds = useKds();
+        const colonias = useColonias(auth.isDark);
  
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
-            { id: 102, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
+            { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
-            { id: 103, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
+            { id: 103, label: 'Colonias', icon: 'fa-solid fa-map-location-dot', view: 'colonias' },
+            { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
 
         const businessMenu = ref([
@@ -482,7 +485,11 @@ createApp({
                 // Vistas Comunes (Admin y Negocio)
                 if (item.view === 'media') media.fetchMedia();
                 if (item.view === 'ads') banners.fetchBanners();
-                if (item.view === 'settings') settings.fetchSettings();
+                if (item.view === 'settings') {
+                    settings.fetchSettings(); // <-- Obtenemos Configuraciones 
+                    colonias.fetchColonias(); // <-- Obtenemos Colonias
+                }
+                if (item.view === 'colonias') colonias.fetchColonias();
 
                 // Vistas Específicas
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
@@ -950,6 +957,17 @@ createApp({
             }
         };
 
+        /** Coberturas y DeliveryZones */
+        const toggleColonia = (id) => {
+            console.log(settings.settings.value)
+            const idx = settings.settings.value.deliveryZones.indexOf(id);
+            if(idx === -1) settings.settings.value.deliveryZones.push(id);
+            else settings.settings.value.deliveryZones.splice(idx, 1);
+
+            console.log("Actualizacion de Configuraciones : ", settings.settings);
+        };
+
+
         onMounted(async () => {
             auth.checkSession();
             const path = window.location.pathname; // Ej: /admin/pos
@@ -965,6 +983,10 @@ createApp({
                 await finance.fetchCurrentStatus();
                 await finance.fetchHistory();
                 if (currentUserRole.value === 'superadmin') {
+                    const found = saasMenu.value.find(i => i.view === lastPart);
+                    if (found) {
+                        currentView.value = found.view;
+                    }
                     // Si recargamos y estamos en dashboard, mover a saas
                     if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
                     // Cargar datos según la vista inicial
@@ -972,6 +994,7 @@ createApp({
                     if (currentView.value === 'ads') banners.fetchBanners();
                     if (currentView.value === 'media') media.fetchMedia();
                     if (currentView.value === 'settings') settings.fetchSettings(); 
+                    if (currentView.value === 'colonias') colonias.fetchColonias();
                 } else {
                     // Si la URL es solo /admin, vamos al dashboard
                     if (path.endsWith('/admin') || path.endsWith('/admin/')) {
@@ -1042,7 +1065,8 @@ createApp({
                         }
                         if (currentView.value === 'users') users.fetchUsers();
                         if (currentView.value === 'settings') {
-                            settings.fetchSettings(); 
+                            settings.fetchSettings(); // <-- Obenemos configuracion
+                            colonias.fetchColonias(); // <-- Obtenemos Colonias
                         }
                         if (currentView.value === 'quotes') quotes.fetchQuotes();
                         if (currentView.value === 'kds') {
@@ -1055,6 +1079,7 @@ createApp({
                                 collapsed.value = true;
                             }
                         }
+                        
                     }
                 }
             }
@@ -1096,6 +1121,8 @@ createApp({
             ...addons, // addonsList, saveAddon, addOptionRow...
             ...saas, // Multinegocios
             ...useloyalty, // Loyalty
+            ...colonias,
+            toggleColonia,
             kds, // KDS Expuesto
             // POS
             pos, showItemDetailsModal, selectedCartItem, openItemDetails,

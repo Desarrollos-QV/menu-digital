@@ -34,6 +34,7 @@ const businessSchema = new mongoose.Schema({
     rating: { type: Number, default: 5.0 },
     time: { type: String, default: '30-45' }, // Minutos estimados
     deliveryCost: { type: Number, default: 0 },
+    deliveryZones: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Colonia' }],
     isTrending: { type: Boolean, default: false },
     isOpen: { type: Boolean, default: true },
     promo: { type: Boolean, default: false },

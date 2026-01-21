@@ -1,8 +1,9 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { authFetch } from './api.js'; // <-- Helper para Fetch
 
 export function useSettings(auth) {
     const settings = ref({
+        saving: false,
         role: '', // Para saber qué campos mostrar
         appName: '',
         adminName: '',
@@ -16,10 +17,17 @@ export function useSettings(auth) {
         urlApp: '',
         currency: 'MXN',
         iva: 0,
-        // Categorías seleccionadas por el negocio
-        categories: []
+        slug: '',
+        // Categorías seleccionadas por el negocio - INICIALIZADO COMO ARRAY VACÍO
+        categories: [],
+        // Zonas de entrega - INICIALIZADO COMO ARRAY VACÍO
+        deliveryZones: [],
+        // Configuraciones de horario y entrega
+        time: '',
+        deliveryCost: 0,
+        isOpen: true
     });
-    
+     
     // Agregamos email al estado
     const profile = ref({
         username: '',
@@ -32,19 +40,22 @@ export function useSettings(auth) {
     const avatarInput = ref(null);
 
     const fetchSettings = async () => {
-        settings.value = [];
         // 1. Configuración General (Pública/Global)
         try {
             const res = await authFetch('/api/config/admin');
             if (res.ok) {
                 const data = await res.json();
+                console.log(data);
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
-                // Asegurar que exista el array de categorias
+                // Asegurar que existan los arrays requeridos
                 if (!Array.isArray(settings.value.categories)) settings.value.categories = [];
-                console.log("Configuraciones: ", settings.value)
+                if (!Array.isArray(settings.value.deliveryZones)) settings.value.deliveryZones = [];
+                console.log("Configuraciones: ", settings.value);
             }
         } catch (e) { console.error(e); }
+        
+       
         
         // 2. Datos del Perfil (Privado)
         try {
@@ -60,6 +71,13 @@ export function useSettings(auth) {
 
         profile.value.username = localStorage.getItem('username') || '';
     };
+
+    const toggleColonia = (id) => {
+        const idx = settings.value.deliveryZones.indexOf(id);
+        if(idx === -1) settings.value.deliveryZones.push(id);
+        else settings.value.deliveryZones.splice(idx, 1);
+    };
+
 
     // Función para subir el avatar
     const uploadAvatar = async (event) => {
@@ -96,6 +114,7 @@ export function useSettings(auth) {
                 body: JSON.stringify(settings.value)
             });
             if (res.ok) {
+                saveProfile();
                 toastr.success('Configuración guardada correctamente');
             }
         } catch (e) { toastr.error('Error al guardar'); }
@@ -104,29 +123,34 @@ export function useSettings(auth) {
     const saveProfile = async () => {
         try {
             const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
             
-            const body = { id: payload.id, username: profile.value.username, email: profile.value.email  };
-            if (profile.value.newPassword) body.password = profile.value.newPassword;
+                const body = { id: payload.id, username: profile.value.username, email: profile.value.email  };
+                if (profile.value.newPassword) body.password = profile.value.newPassword;
 
-            const res = await authFetch('/api/auth/update', {
-                method: 'PUT',
-                body: JSON.stringify(body)
-            });
+                console.log(body);
+                const res = await authFetch('/api/auth/update', {
+                    method: 'PUT',
+                    body: JSON.stringify(body)
+                });
 
-            if (res.ok) {
-                const data = await res.json();
-                toastr.success('Perfil actualizado.');
-                // Actualizar localstorage si cambió el username
-                if(data.user && data.user.username) {
-                    auth.username.value = data.user.username;
-                    toastr.success('Perfil actualizado. Inicia sesión de nuevo.');
-                    localStorage.setItem('username', data.username);
-                    auth.logout();
+                if (res.ok) {
+                    const data = await res.json();
+                    toastr.success('Perfil actualizado.');
+                    console.log(data);
+                    // Actualizar localstorage si cambió el username
+                    if(data.user && data.user.username && auth.username.value != data.user.username ) {
+                        auth.username.value = data.user.username;
+                        toastr.success('Perfil actualizado. Inicia sesión de nuevo.');
+                        localStorage.setItem('username', data.username);
+                        auth.logout();
+                    }
+                    // Limpiar campo password
+                    profile.value.newPassword = '';
+                } else {
+                    throw new Error('Error al actualizar');
                 }
-                // Limpiar campo password
-                profile.value.newPassword = '';
-            } else {
-                throw new Error('Error al actualizar');
             }
         } catch (e) {
             toastr.error(e.message || 'Error al actualizar perfil');
@@ -134,7 +158,8 @@ export function useSettings(auth) {
     };
 
     return {
-        settings,
+        settings, 
+        toggleColonia,
         profile,
         isUploadingAvatar, // Exportar estado
         avatarInput,       // Exportar ref

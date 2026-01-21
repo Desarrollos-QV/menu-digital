@@ -50,6 +50,11 @@
         /* Transiciones suaves para tarjetas */
         .biz-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .biz-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .thin-scroll::-webkit-scrollbar { width: 4px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white">
@@ -70,14 +75,16 @@
                             <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white hidden sm:block">Tengo <span class="text-brand">Hambre</span></span>
                         </a>
 
-                        <!-- Selector Ubicación (Desktop) 
-                        <div class="hidden md:flex flex-col border-l border-slate-200 dark:border-slate-700 pl-6">
+                        <!-- Selector Ubicación (Desktop & Mobile) -->
+                        <div class="flex flex-col border-l border-slate-200 dark:border-slate-700 pl-4 md:pl-6 cursor-pointer group" @click="showLocationModal = true">
                             <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Entregar en</span>
-                            <div class="flex items-center gap-1 cursor-pointer group hover:opacity-80 transition">
-                                <span class="text-brand font-bold text-sm truncate max-w-[200px]">Ubicación Actual</span>
+                            <div class="flex items-center gap-1 hover:opacity-80 transition">
+                                <span class="text-brand font-bold text-sm truncate max-w-[140px] md:max-w-[200px]">
+                                    {{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}
+                                </span>
                                 <i class="fa-solid fa-chevron-down text-xs text-brand"></i>
                             </div>
-                        </div>-->
+                        </div>
                     </div>
 
                     <!-- Search Bar (Desktop - Centrado) -->
@@ -335,7 +342,7 @@
                                         {{ biz.tags ? biz.tags.join(' • ') : 'Comida deliciosa' }}
                                     </p>
                                     
-                                    <div class="flex items-center justify-between mt-auto">
+                                    <div class="flex items-center justify-between ">
                                         <div class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-3">
                                             <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand-300"></i> {{ biz.time }} min</span>
                                             <span class="flex items-center gap-1"><i class="fa-solid fa-motorcycle text-brand-300"></i> ${{ biz.deliveryCost }}</span>
@@ -390,6 +397,46 @@
                 </div>
             </div>
         </footer>
+
+        <!-- MODAL SELECCIÓN DE COLONIA -->
+        <div v-if="showLocationModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity"></div>
+            <div class="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[85vh]">
+                
+                <div class="p-6 pb-2">
+                    <h2 class="text-2xl font-black dark:text-white mb-1">¿Dónde te encuentras?</h2>
+                    <p class="text-slate-500 text-sm">Selecciona tu colonia para ver quién reparte en tu zona.</p>
+                    
+                    <div class="mt-4 relative">
+                        <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400"></i>
+                        <input v-model="locationSearch" type="text" class="w-full pl-10 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand transition" placeholder="Buscar colonia o código postal...">
+                    </div>
+                </div>
+
+                <div class="p-2 flex-1 overflow-y-auto thin-scroll">
+                    <div v-if="filteredLocations.length > 0" class="space-y-1">
+                        <button v-for="col in filteredLocations" :key="col._id" @click="selectLocation(col)" class="w-full text-left p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition group">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-brand/10 text-slate-400 group-hover:text-brand flex items-center justify-center transition">
+                                <i class="fa-solid fa-map-pin"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white group-hover:text-brand transition">{{ col.name }}</p>
+                                <p class="text-xs text-slate-500">CP: {{ col.zipCode }} • {{ col.city }}</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right ml-auto text-slate-300 text-xs"></i>
+                        </button>
+                    </div>
+                    <div v-else class="text-center py-10 text-slate-500">
+                        <p>No encontramos esa colonia 😢</p>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-center">
+                    <button v-if="currentLag" @click="showLocationModal = false" class="text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white">Cancelar</button>
+                    <p v-else class="text-xs text-slate-400">Debes seleccionar una ubicación para continuar.</p>
+                </div>
+            </div>
+        </div>
 
         <!-- MODAL REGISTRO / LOGIN USUARIO -->
         <div v-if="showUserModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">

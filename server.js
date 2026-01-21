@@ -19,6 +19,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // Rutas de la API (Backend)
 app.use('/api', require('./routes/api'));
 app.use('/api/saas', require('./routes/saas')); // <-- Multinegocios
+app.use('/api/colonias', require('./routes/colonias')); // <-- Colonias
 // Estas rutas ahora tienen el middleware 'auth' dentro de sus archivos
 app.use('/api/auth', require('./routes/auth')); // <-- Autenticacion
 app.use('/api/media', require('./routes/media')); // <-- Subida de medios

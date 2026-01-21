@@ -27,7 +27,7 @@ exports.updateProfile = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
         if (username) user.username = username;
-        if (email) user.email = email; // Nuevo
+        if (email) user.email = email;
         if (password) user.password = password;
 
         await user.save();
