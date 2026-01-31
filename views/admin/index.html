@@ -221,19 +221,19 @@
                     </div>
                 </div>
 
-                <!-- VISTA COLONIAS (NUEVA FUNCIONALIDAD) -->
-                <div v-if="currentView === 'colonias'" class="animate-fade-in ">
+                <!-- VISTA MUNICIPIOS (NUEVA FUNCIONALIDAD) -->
+                <div v-if="currentView === 'municipios'" class="animate-fade-in ">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
-                            <h1 class="text-2xl md:text-3xl font-black dark:text-white">Catálogo de Colonias</h1>
+                            <h1 class="text-2xl md:text-3xl font-black dark:text-white">Catálogo de Municipios</h1>
                             <p class="text-slate-500 dark:text-slate-400">Gestiona las zonas de cobertura disponibles para los negocios.</p>
                         </div>
-                        <button @click="openColoniaModal()" class="px-6 py-3 bg-slate-900 dark:bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Nueva Colonia
+                        <button @click="openMunicipioModal()" class="px-6 py-3 bg-slate-900 dark:bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Nuevo Municipio
                         </button>
                     </div>
 
-                    <!-- Tabla de Colonias -->
+                    <!-- Tabla de Municipios -->
                     <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
@@ -248,28 +248,109 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                                    <tr v-if="colonias.loading">
+                                    <tr v-if="municipios.loading">
                                         <td colspan="6" class="p-8 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Cargando...</td>
                                     </tr>
-                                    <tr v-else-if="colonias.list.length === 0">
-                                        <td colspan="6" class="p-8 text-center text-slate-500">No hay colonias registradas.</td>
+                                    <tr v-else-if="municipios.list.length === 0">
+                                        <td colspan="6" class="p-8 text-center text-slate-500">No hay municipios registrados.</td>
                                     </tr>
-                                    <tr v-else v-for="col in colonias.list" :key="col._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
-                                        <td class="p-4 pl-6 font-bold dark:text-white">{{ col.name }}</td>
-                                        <td class="p-4 font-mono text-sm text-slate-500">{{ col.zipCode }}</td>
-                                        <td class="p-4 text-sm">{{ col.city }}</td>
+                                    <tr v-else v-for="mun in municipios.list" :key="mun._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                        <td class="p-4 pl-6 font-bold dark:text-white">{{ mun.name }}</td>
+                                        <td class="p-4 font-mono text-sm text-slate-500">{{ mun.zipCode }}</td>
+                                        <td class="p-4 text-sm">{{ mun.city }}</td>
                                         <td class="p-4">
                                             <span class="px-2 py-1 rounded text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                                                {{ col.zone || 'General' }}
+                                                {{ mun.zone || 'General' }}
                                             </span>
                                         </td>
                                         <td class="p-4">
-                                            <span v-if="col.active" class="text-xs font-bold text-green-500 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full border border-green-100 dark:border-green-900/30">Activa</span>
+                                            <span v-if="mun.active" class="text-xs font-bold text-green-500 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full border border-green-100 dark:border-green-900/30">Activa</span>
                                             <span v-else class="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full border border-red-100 dark:border-red-900/30">Inactiva</span>
                                         </td>
                                         <td class="p-4 pr-6 text-right">
-                                            <button @click="openColoniaModal(col)" class="text-primary hover:text-primaryDark font-bold text-sm mr-3">Editar</button>
-                                            <button @click="toggleColoniaActive(col)" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-power-off"></i></button>
+                                            <button @click="openMunicipioModal(mun)" class="text-primary hover:text-primaryDark font-bold text-sm mr-3">Editar</button>
+                                            <button @click="toggleMunicipioActive(mun)" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-power-off"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===================== VISTA CATEGORÍAS STORE (ADMIN GLOBAL) ===================== -->
+                <div v-if="currentView === 'categoriesStore'" class="h-full flex flex-col animate-fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-burger text-primary"></i> Categorías Globales (Marketplace)
+                            </h2>
+                            <p class="text-slate-500 text-sm">Gestiona las categorías de comida disponibles para todos los negocios.</p>
+                        </div>
+                        <div class="flex gap-3 w-full md:w-auto">
+                            <button @click="categoriesStore.openCategoryModal()" class="px-6 py-2 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-primaryDark transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Nueva Categoría
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Buscador y Filtros -->
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-6">
+                        <div class="relative w-full max-w-md">
+                            <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                            <input v-model="categoriesStore.categorySearch.value" type="text" placeholder="Buscar categoría..." class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary transition">
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Categorías -->
+                    <div class="flex-1 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 dark:bg-slate-900/50">
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Estado</th>
+                                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    <tr v-for="cat in categoriesStore.filteredCategories.value" :key="cat._id" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors group">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform">
+                                                    {{ cat.emoji }}
+                                                </div>
+                                                <div>
+                                                    <p class="font-bold text-slate-800 dark:text-white">{{ cat.name }}</p>
+                                                    <p class="text-[10px] text-slate-400 font-mono">{{ cat._id }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <button @click="categoriesStore.toggleCategoryActive(cat)" 
+                                                    :class="cat.active ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'"
+                                                    class="px-3 py-1 rounded-full text-xs font-bold transition-all hover:scale-105">
+                                                {{ cat.active ? 'Activa' : 'Inactiva' }}
+                                            </button>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex justify-end gap-2">
+                                                <button @click="categoriesStore.openCategoryModal(cat)" class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition flex items-center justify-center shadow-sm">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button @click="categoriesStore.deleteCategory(cat._id)" class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white transition flex items-center justify-center shadow-sm">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="categoriesStore.filteredCategories.value.length === 0">
+                                        <td colspan="3" class="px-6 py-20 text-center">
+                                            <div class="flex flex-col items-center opacity-40">
+                                                <i class="fa-solid fa-burger text-6xl mb-4"></i>
+                                                <p class="font-bold">No se encontraron categorías</p>
+                                                <p class="text-sm">Intenta con otro término o crea una nueva.</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -560,7 +641,8 @@
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden p-4">
                         <table id="productsTable" class="w-full text-left display responsive nowrap" style="width:100%">
-                            <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-xs uppercase"><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Categorías</th><th>Estado</th><th>Acciones</th></tr></thead>
+                            <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-xs uppercase">
+                                <tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Categorías</th><th>Estado</th><th>Acciones</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
@@ -771,30 +853,6 @@
 
                             <!-- COLUMNA DERECHA: TOTALES E INFO -->
                             <div class="space-y-6">
-                                
-                                <!-- Card Financiero -->
-                                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                                    <h3 class="font-bold text-slate-800 dark:text-white mb-4">Resumen Financiero</h3>
-                                    <div class="space-y-3 text-sm">
-                                        <div class="flex justify-between text-slate-500 dark:text-slate-400">
-                                            <span>Subtotal</span>
-                                            <span>${{ orders.selectedOrder.value.subtotal?.toFixed(2) || '0.00' }}</span>
-                                        </div>
-                                        <div v-if="orders.selectedOrder.value.discount > 0" class="flex justify-between text-red-500">
-                                            <span>Descuentos</span>
-                                            <span>-${{ orders.selectedOrder.value.discount?.toFixed(2) }}</span>
-                                        </div>
-                                        <div class="flex justify-between text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-3">
-                                            <span>IVA (16%)</span>
-                                            <span>${{ orders.selectedOrder.value.tax?.toFixed(2) || '0.00' }}</span>
-                                        </div>
-                                        <div class="flex justify-between items-end pt-1">
-                                            <span class="font-bold text-slate-800 dark:text-white text-lg">Total</span>
-                                            <span class="font-black text-2xl text-slate-900 dark:text-white">${{ orders.selectedOrder.value.total.toFixed(2) }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <!-- Card Información / Metadata -->
                                 <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                                     <h3 class="font-bold text-slate-800 dark:text-white mb-4">Información de Venta</h3>
@@ -808,7 +866,59 @@
                                             <div>
                                                 <p class="text-xs text-slate-400 uppercase font-bold">Cliente</p>
                                                 <p class="font-bold text-slate-800 dark:text-white text-sm">
-                                                    {{ orders.selectedOrder.value.customerId ? orders.selectedOrder.value.customerId.name : 'Venta Mostrador' }}
+                                                    {{ orders.selectedOrder.value.customerName ? orders.selectedOrder.value.customerName : 'Venta Mostrador' }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Telefono -->
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+                                                <i class="fa-solid fa-phone"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-slate-400 uppercase font-bold">Telefono</p>
+                                                <p class="font-bold text-slate-800 dark:text-white text-sm">
+                                                    {{ orders.selectedOrder.value.customerPhone ? orders.selectedOrder.value.customerPhone : 'S/N' }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Calle y Numero -->
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+                                                <i class="fa-solid fa-map-marker-alt"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-slate-400 uppercase font-bold">Calle y Numero</p>
+                                                <p class="font-bold text-slate-800 dark:text-white text-sm">
+                                                    {{ orders.selectedOrder.value.customerStreet ? orders.selectedOrder.value.customerStreet : 'S/N' }} {{ orders.selectedOrder.value.customerNumber ? orders.selectedOrder.value.customerNumber : '' }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Referencia -->
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+                                                <i class="fa-solid fa-map-marker-alt"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-slate-400 uppercase font-bold">Referencia</p>
+                                                <p class="font-bold text-slate-800 dark:text-white text-sm">
+                                                    {{ orders.selectedOrder.value.customerReference ? orders.selectedOrder.value.customerReference : 'S/N' }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Como se pago -->
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+                                                <i class="fa-solid fa-map-marker-alt"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-slate-400 uppercase font-bold">Paga Con:</p>
+                                                <p class="font-bold text-slate-800 dark:text-white text-sm">
+                                                    {{ orders.selectedOrder.value.customerHowToPay ? orders.selectedOrder.value.customerHowToPay : 'S/N' }}
                                                 </p>
                                             </div>
                                         </div>
@@ -849,6 +959,29 @@
                                     </button>
                                 </div>
 
+                                
+                                <!-- Card Financiero -->
+                                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <h3 class="font-bold text-slate-800 dark:text-white mb-4">Resumen Financiero</h3>
+                                    <div class="space-y-3 text-sm">
+                                        <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                                            <span>Subtotal</span>
+                                            <span>${{ orders.selectedOrder.value.subtotal?.toFixed(2) || '0.00' }}</span>
+                                        </div>
+                                        <div v-if="orders.selectedOrder.value.discount > 0" class="flex justify-between text-red-500">
+                                            <span>Descuentos</span>
+                                            <span>-${{ orders.selectedOrder.value.discount?.toFixed(2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-3">
+                                            <span>IVA (16%)</span>
+                                            <span>${{ orders.selectedOrder.value.tax?.toFixed(2) || '0.00' }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-end pt-1">
+                                            <span class="font-bold text-slate-800 dark:text-white text-lg">Total</span>
+                                            <span class="font-black text-2xl text-slate-900 dark:text-white">${{ orders.selectedOrder.value.total.toFixed(2) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1523,38 +1656,47 @@
                                 </div>
                             </div>
 
-                            <!-- COLONIAS / ZONAS DE ENTREGA (NUEVO REQUERIMIENTO) -->
+                            <!-- MUNIUCIPIOS / ZONAS DE ENTREGA -->
                             <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 mt-4 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <div class="flex justify-between items-center mb-4">
-                                    <h3 class="font-bold text-lg flex items-center gap-2 dark:text-white"><i class="fa-solid fa-map-location-dot text-primary"></i> Cobertura (Colonias)</h3>
-                                    <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded-lg">{{settings.deliveryZones.length}} zonas</span>
+                                    <h3 class="font-bold text-lg flex items-center gap-2 dark:text-white"><i class="fa-solid fa-map-location-dot text-primary"></i> Cobertura (Municipio)</h3>
+                                    <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-1 rounded-lg">{{settings.municipioId ? '1 Municipio' : 'Sin cobertura'}}</span>
                                 </div>
                                 
-                                <p class="text-sm text-slate-500 mb-4">Selecciona las colonias donde brindas servicio. Esto filtrará tu negocio en la App del usuario.</p>
+                                <p class="text-sm text-slate-500 mb-4">Selecciona tu Municipio para configurar las colonias de entrega.</p>
                                 
-                                <!-- Buscador de Colonias -->
+                                <!-- Buscador de Municipios -->
                                 <div class="mb-4 relative">
                                     <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
-                                    <input v-model="coloniaSearch" type="text" placeholder="Buscar colonia..." class="w-full pl-9 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:border-primary outline-none dark:text-white">
+                                    <input v-model="municipioSearch" type="text" placeholder="Buscar Municipio..." class="w-full pl-9 p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:border-primary outline-none dark:text-white">
                                 </div>
 
-                                <!-- Lista de Colonias -->
+                                <!-- Lista de Municipios -->
                                 <div class="max-h-60 overflow-y-auto thin-scroll border rounded-xl border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
-                                    <div v-for="colonia in filteredColonias" :key="colonia._id" class="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer" 
-                                    @click="toggleColonia(colonia._id)">
-                                        <div>
-                                            <p class="font-bold text-sm dark:text-white">{{ colonia.name }}</p>
-                                            <p class="text-xs text-slate-500">CP: {{ colonia.zipCode }}</p>
+                                    <div v-for="municipio in filteredMunicipios" :key="municipio._id" 
+                                        class="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer" 
+                                        @click="() => { selectMunicipio(municipio._id); openColoniasModal(municipio); }"
+                                        :class="{'bg-slate-50 dark:bg-slate-700/50': settings.municipioId === municipio._id}">
+                                        
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-4 h-4 rounded-full border border-slate-400 flex items-center justify-center"
+                                                :class="{'bg-primary border-primary': settings.municipioId === municipio._id}">
+                                                <div v-if="settings.municipioId === municipio._id" class="w-2 h-2 rounded-full bg-white"></div>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-sm dark:text-white">{{ municipio.name }}</p>
+                                                <p class="text-xs text-slate-500">CP: {{ municipio.zipCode }}</p>
+                                            </div>
                                         </div>
-                                        <div class="w-5 h-5 rounded border flex items-center justify-center transition" :class="settings.deliveryZones.includes(colonia._id) ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600'">
-                                            <i v-if="settings.deliveryZones.includes(colonia._id)" class="fa-solid fa-check text-xs"></i>
-                                        </div>
+                                        
+                                        <button v-if="settings.municipioId === municipio._id" class="text-xs bg-primary text-white px-3 py-1 rounded-full">
+                                            {{ settings.deliveryZones.length }} Colonias <i class="fa-solid fa-chevron-right ml-1"></i>
+                                        </button>
                                     </div>
-                                    <div v-if="filteredColonias.length === 0" class="p-4 text-center text-sm text-slate-500">No se encontraron colonias</div>
+                                    <div v-if="filteredMunicipios.length === 0" class="p-4 text-center text-sm text-slate-500">No se encontraron Municipios</div>
                                 </div>
                             </div>
 
-                            
                             <!-- Tarjeta Categorías -->
                             <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 mt-4 shadow-sm border border-slate-100 dark:border-slate-700">
                                 <div class="flex justify-between items-center mb-4">
@@ -1571,10 +1713,10 @@
                                                 <p class="text-sm text-slate-500 mb-4">Selecciona todas las categorías que describan tu menú. Esto ayuda a que te encuentren en el buscador.</p>
 
                                                 <div class="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-60 overflow-y-auto thin-scroll pr-1">
-                                                    <div v-for="avilcts in availableCategories" :key="avilcts.id" 
-                                                        @click="toggleCategory(avilcts.id)"
+                                                    <div v-for="avilcts in categoriesStore.categories.list" :key="avilcts._id" 
+                                                        @click="toggleCategory(avilcts._id)"
                                                         class="category-card cursor-pointer border border-slate-200 dark:border-slate-600 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 text-center hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                                                        :class="{'category-selected': settings.categories.includes(avilcts.id)}">
+                                                        :class="{'category-selected': settings.categories.includes(avilcts._id)}">
                                                         <span class="text-2xl">{{ avilcts.emoji }}</span>
                                                         <span class="text-[11px] font-bold leading-tight">{{ avilcts.name }}</span>
                                                     </div>
@@ -1664,12 +1806,6 @@
                                                 <input v-model="profile.newPassword" type="password" placeholder="Dejar en blanco para no cambiar" class="w-full px-3 md:px-4 py-2 text-sm md:text-base border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
                                             </div>
                                         </div>
-                                        <!--
-                                        <div class="flex flex-col-reverse sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-                                            <button @click="saveProfile" class="w-full sm:w-auto bg-slate-800 hover:bg-black dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 md:px-6 py-2.5 rounded-xl font-medium transition shadow-md text-sm md:text-base">
-                                                Actualizar Perfil
-                                            </button>
-                                        </div>-->
                                     </div>
                                 </div>
                             </div>
@@ -1805,7 +1941,88 @@
         </div>
     </div>
 
-    <!-- MODAL ESCÁNER LEALTAD -->
+    <!-- MODAL SELECCIÓN DE COLONIAS (ZONAS DE ENTREGA) -->
+    <div v-if="showColoniasModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeColoniasModal"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in border dark:border-slate-700 flex flex-col max-h-[85vh]">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                <div>
+                    <h3 class="text-xl font-bold dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-map-pin text-primary"></i> {{ currentMunicipio.value ? currentMunicipio.value.name : 'Colonias' }}
+                    </h3>
+                    <p class="text-xs text-slate-500">Selecciona las zonas donde entregas</p>
+                </div>
+                <button @click="closeColoniasModal" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-2">
+                <div v-if="currentMunicipio && currentMunicipio.colonias && currentMunicipio.colonias.length > 0" class="grid grid-cols-1 sm:grid-cols-1 gap-2 p-2">
+                    <div v-for="colonia in currentMunicipio.colonias" :key="colonia._id" 
+                         @click="toggleColoniaZone(colonia._id)"
+                         class="p-3 rounded-xl border cursor-pointer transition flex items-center justify-between group select-none"
+                         :class="settings.deliveryZones.includes(colonia._id) ? 'bg-primary/5 border-primary dark:bg-primary/20' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-primary/30'">
+                        
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition"
+                                 :class="settings.deliveryZones.includes(colonia._id) ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-slate-600 group-hover:border-primary'">
+                                <i v-if="settings.deliveryZones.includes(colonia._id)" class="fa-solid fa-check text-[10px]"></i>
+                            </div>
+                            <span class="text-sm font-medium dark:text-gray-200 truncate">{{ colonia.name }}</span>
+                        </div>
+                        <span v-if="colonia.zone" class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 px-2 py-0.5 rounded-full">{{ colonia.zone }}</span>
+                    </div>
+                </div>
+                <div v-else class="flex flex-col items-center justify-center py-10 opacity-50">
+                    <i class="fa-solid fa-map-location-dot text-4xl mb-3 text-slate-300"></i>
+                    <p>No hay colonias registradas en este municipio.</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-500">{{ settings.deliveryZones.length }} seleccionadas</span>
+                <button @click="closeColoniasModal" class="px-6 py-2 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primaryDark transition">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="categoriesStore.showCategoryModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="categoriesStore.closeCategoryModal"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in border dark:border-slate-700">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold dark:text-white">{{ categoriesStore.editingCategory.value ? 'Editar Categoría' : 'Nueva Categoría Global' }}</h3>
+                <button @click="categoriesStore.closeCategoryModal" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Emoji / Icono</label>
+                    <input v-model="categoriesStore.categoryForm.value.emoji" type="text" class="w-full p-4 text-center text-4xl rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition" placeholder="🍔">
+                    <p class="text-[10px] text-center text-slate-400 mt-2">Pega un emoji o usa (Win + .) / (Cmd + Ctrl + Espacio)</p>
+                    <p class="text-[10px] text-center text-primary mt-2">Puedes buscar ejemplos en: <a href="https://emojidb.org/trend-emojis" target="_blank">https://emojidb.org/trend-emojis</a></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre de la Categoría</label>
+                    <input v-model="categoriesStore.categoryForm.value.name" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="Ej: Hamburguesas">
+                </div>
+                <div class="flex items-center gap-3 pt-2">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" v-model="categoriesStore.categoryForm.value.active" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        <span class="ml-3 text-sm font-medium text-slate-600 dark:text-slate-400">Categoría Activa</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
+                <button @click="categoriesStore.closeCategoryModal" class="px-4 py-2 text-slate-500 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition">Cancelar</button>
+                <button @click="categoriesStore.saveCategory" class="px-6 py-2 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primaryDark transition">
+                    {{ categoriesStore.editingCategory.value ? 'Actualizar' : 'Guardar' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div v-if="showScanner" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
         <button @click="stopScanner" class="absolute top-6 right-6 text-white bg-white/20 p-2 rounded-full z-10"><i class="fa-solid fa-xmark text-2xl"></i></button>
         <div id="reader" class="w-full max-w-md bg-white rounded-lg overflow-hidden relative"></div>
@@ -1845,49 +2062,95 @@
         </div>
     </div>
 
-    <!-- MODAL REGISTRO COLONIA -->
-    <div v-if="showColoniaModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showColoniaModal = false"></div>
+    <!-- MODAL REGISTRO MUNICIPIO -->
+    <div v-if="showMunicipioModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showMunicipioModal = false"></div>
         <div class="relative bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <h3 class="text-xl font-bold dark:text-white">{{ isEditing ? 'Editar Colonia' : 'Registrar Nueva Colonia' }}</h3>
-                <button @click="showColoniaModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+                <h3 class="text-xl font-bold dark:text-white">{{ isEditing ? 'Editar Municipio' : 'Registrar Nuevo Municipio' }}</h3>
+                <button @click="showMunicipioModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre de la Colonia</label>
-                    <input v-model="coloniaForm.name" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="Ej: San Felipe">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre del Municipio</label>
+                    <input v-model="municipioForm.name" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="Ej: San Felipe">
                 </div>
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Código Postal</label>
-                        <input v-model="coloniaForm.zipCode" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="31203">
+                        <input v-model="municipioForm.zipCode" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="31203">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Ciudad</label>
-                        <input v-model="coloniaForm.city" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="Chihuahua">
+                        <input v-model="municipioForm.city" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" placeholder="Chihuahua">
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Zona de Reparto</label>
-                    <select v-model="coloniaForm.zone" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white">
-                        <option value="">Seleccionar Zona</option>
-                        <option value="Norte">Zona Norte</option>
-                        <option value="Sur">Zona Sur</option>
-                        <option value="Centro">Zona Centro</option>
-                        <option value="Poniente">Zona Poniente</option>
-                        <option value="Oriente">Zona Oriente</option>
-                        <option value="Periferia">Periferia / Ejidos</option>
-                    </select>
+            <!-- Colonias -->
+            <div class="px-6 pb-6 space-y-4">
+                <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                    <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-primary"></i>
+                        Colonias / Zonas ({{ municipioForm.colonias?.length || 0 }})
+                    </h4>
+                    <button @click="addColonia" type="button" class="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-bold hover:bg-primaryDark transition shadow-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Agregar
+                    </button>
+                </div>
+
+                <div class="max-h-60 overflow-y-auto space-y-3 pr-1 thin-scroll">
+                    <div v-for="(colonia, index) in municipioForm.colonias" :key="index" 
+                         class="p-4 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm relative group animate-fade-in">
+                        
+                        <button @click="removeColonia(index)" type="button" 
+                                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fa-solid fa-times text-[10px]"></i>
+                        </button>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nombre</label>
+                                <input v-model="colonia.name" type="text" 
+                                       class="w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white" 
+                                       placeholder="Nombre colonia">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Zona (Opcional)</label>
+                                <select v-model="colonia.zone" 
+                                        class="w-full p-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 focus:border-primary outline-none transition dark:text-white cursor-pointer">
+                                    <option value="">Sin Zona</option>
+                                    <option value="Norte">Norte</option>
+                                    <option value="Sur">Sur</option>
+                                    <option value="Centro">Centro</option>
+                                    <option value="Poniente">Poniente</option>
+                                    <option value="Oriente">Oriente</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 flex items-center justify-between">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" v-model="colonia.active" class="rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-600 dark:bg-slate-700">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Activa</span>
+                            </label>
+                            <span class="text-[10px] text-slate-300 font-mono">#{{ index + 1 }}</span>
+                        </div>
+                    </div>
+
+                    <div v-if="!municipioForm.colonias || municipioForm.colonias.length === 0" 
+                         class="text-center py-10 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-2xl">
+                        <i class="fa-solid fa-map-pin text-slate-200 dark:text-slate-700 text-3xl mb-2"></i>
+                        <p class="text-xs text-slate-400 uppercase font-bold">No hay colonias registradas</p>
+                    </div>
                 </div>
             </div>
+
             <div class="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
-                <button @click="showColoniaModal = false" class="px-4 py-2 text-slate-500 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition">Cancelar</button>
-                <button @click="saveColonia" :disabled="saving" class="px-6 py-2 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primaryDark transition flex items-center gap-2 disabled:opacity-50">
+                <button @click="showMunicipioModal = false" class="px-4 py-2 text-slate-500 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition">Cancelar</button>
+                <button @click="saveMunicipio" :disabled="saving" class="px-6 py-2 bg-primary text-white font-bold rounded-lg shadow-lg hover:bg-primaryDark transition flex items-center gap-2 disabled:opacity-50">
                     <i v-if="saving" class="fa-solid fa-circle-notch fa-spin"></i>
-                    <span>{{ editingColonia ? 'Actualizar' : 'Guardar' }}</span>
+                    <span>{{ editingMunicipio ? 'Actualizar' : 'Guardar' }}</span>
                 </button>
             </div>
         </div>
@@ -2704,7 +2967,6 @@
             </div>
         </div>
     </div>
-            
 </div>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="../assets/js/admin/app.js" type="module" async></script>

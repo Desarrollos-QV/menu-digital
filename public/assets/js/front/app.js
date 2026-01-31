@@ -59,7 +59,13 @@ createApp({
         const cart = ref([]);
         const showCartModal = ref(false);
         const customerName = ref('');
-        const customerEmail = ref('');
+        const customerPhone = ref('');
+        const customerStreet = ref('');
+        const customerColony = ref('');
+        const customerNumber = ref('');
+        const customerZipCode = ref('');
+        const customerReference = ref('');
+        const customerHowToPay = ref('');
 
         // Product Logic
         const showProductModal = ref(false);
@@ -208,8 +214,8 @@ createApp({
 
         // Checkout & Send Whatsapp
         const checkout = () => {
-            if (!customerName.value.trim() || !customerEmail.value.trim()) { // Validar Name and Email
-                return toastr.warning('Nombre y Email requeridos');
+            if (!customerName.value.trim() || !customerPhone.value.trim()) { // Validar Name and Phone
+                return toastr.warning('Nombre y Telefono requeridos');
             }
 
             const phone = config.value.phone;
@@ -228,7 +234,13 @@ createApp({
                 slug,
                 customerName: customerName.value,
                 customerId: (cs._value) ? cs._value._id : null,
-                customerEmail: customerEmail.value,
+                customerPhone: customerPhone.value,
+                customerStreet: customerStreet.value,
+                customerColony: customerColony.value,
+                customerNumber: customerNumber.value,
+                customerZipCode: customerZipCode.value,
+                customerReference: customerReference.value,
+                customerHowToPay: customerHowToPay.value,
                 cart: cart.value,
                 total: cartTotalPrice.value
             };
@@ -410,7 +422,7 @@ createApp({
             banners, categories, products, config, isLoading, isDark, scrollY, businessError,
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerEmail, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
+            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState
         };

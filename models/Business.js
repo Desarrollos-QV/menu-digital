@@ -8,32 +8,12 @@ const businessSchema = new mongoose.Schema({
     tags: [String], // Ej: ['Hamburguesas', 'Rápida']
     categories: [{ 
         type: String, 
-        required: true,
-        enum: [
-            'burgers',   // Hamburguesas
-            'pizza',     // Pizza
-            'sushi',     // Sushi / Japonesa
-            'tacos',     // Tacos
-            'mexican',   // Mexicana General
-            'wings',     // Alitas / Boneless
-            'italian',   // Italiana / Pastas
-            'chinese',   // China / Asiática
-            'seafood',   // Mariscos
-            'chicken',   // Pollo / Rostizado
-            'coffee',    // Cafetería
-            'bakery',    // Panadería / Repostería
-            'dessert',   // Postres / Helados
-            'healthy',   // Saludable / Ensaladas
-            'vegan',     // Vegana / Vegetariana
-            'bar',       // Bar / Bebidas / Cervecería
-            'breakfast', // Desayunos / Brunch
-            'fastfood',  // Comida Rápida General
-            'others'     // Otros
-        ] 
+        required: true
     }],
     rating: { type: Number, default: 5.0 },
     time: { type: String, default: '30-45' }, // Minutos estimados
     deliveryCost: { type: Number, default: 0 },
+    municipioId: { type: String },
     deliveryZones: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Colonia' }],
     isTrending: { type: Boolean, default: false },
     isOpen: { type: Boolean, default: true },

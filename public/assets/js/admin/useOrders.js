@@ -13,7 +13,6 @@ export function useOrders() {
             const res = await authFetch('/api/orders');
             if (res.ok) {
                 ordersList.value = await res.json();
-                console.log(ordersList);
             }
         } catch (e) { console.error(e); }
         finally { isLoading.value = false; }

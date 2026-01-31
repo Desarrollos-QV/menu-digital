@@ -44,8 +44,9 @@ export function usePos(productsRef, fetchMedia, setingsRef) {
     const removeTab = (id) => { if (posTabs.value.length === 1) return toastr.warning('Debe haber al menos una orden activa'); const idx = posTabs.value.findIndex(t => t.id === id); posTabs.value.splice(idx, 1); if (id === activeTabId.value) activeTabId.value = posTabs.value[0].id; };
     const addToCart = (product) => { 
         const tab = activeTab.value; 
-        const existing = tab.cart.find(i => i._id === product._id); 
-        if (existing) existing.qty++; else tab.cart.push({ ...product, qty: 1 }); 
+        // const existing = tab.cart.find(i => i._id === product._id); 
+        // if (existing) existing.qty++; else tab.cart.push({ ...product, qty: 1 }); 
+        tab.cart.push({ ...product, qty: 1 }); 
         toastr.success(`Agregado: ${product.name}`); 
         searchQuery.value = ''; 
         isSearchFocused.value = false; 

@@ -17,7 +17,8 @@ import { useFinance } from './useFinance.js';
 import { useOrders } from './useOrders.js';
 import { useQuotes } from './useQuotes.js';
 import { useKds } from './useKds.js';
-import { useColonias } from './useColonias.js';
+import { useMunicipios } from './useMunicipios.js';
+import { useCategoriesStore } from './useCategoriesStore.js';
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -53,27 +54,8 @@ createApp({
         const currentView = ref(localStorage.getItem('currentView') || 'dashboard');
         // Simular rol (en producción viene del token JWT decodificado)
         const currentUserRole = ref('admin_negocio'); // Cambia a 'superadmin' para probar la otra vista
-        
-        const availableCategories = ref([
-            { id: 'burgers', name: 'Hamburguesas', emoji: '🍔' },
-            { id: 'pizza', name: 'Pizza', emoji: '🍕' },
-            { id: 'sushi', name: 'Sushi', emoji: '🍣' },
-            { id: 'tacos', name: 'Tacos', emoji: '🌮' },
-            { id: 'mexican', name: 'Mexicana', emoji: '🌶️' },
-            { id: 'wings', name: 'Alitas', emoji: '🍗' },
-            { id: 'italian', name: 'Italiana', emoji: '🍝' },
-            { id: 'chinese', name: 'China', emoji: '🥡' },
-            { id: 'seafood', name: 'Mariscos', emoji: '🍤' },
-            { id: 'chicken', name: 'Pollo', emoji: '🐓' },
-            { id: 'coffee', name: 'Café', emoji: '☕' },
-            { id: 'bakery', name: 'Panadería', emoji: '🥐' },
-            { id: 'dessert', name: 'Postres', emoji: '🍰' },
-            { id: 'healthy', name: 'Saludable', emoji: '🥗' },
-            { id: 'vegan', name: 'Vegana', emoji: '🌱' },
-            { id: 'bar', name: 'Bebidas', emoji: '🍺' },
-            { id: 'breakfast', name: 'Desayunos', emoji: '🍳' },
-            { id: 'fastfood', name: 'Rápida', emoji: '🍟' }
-        ]);
+
+        // availableCategories se carga ahora desde la base de datos vía categoriesStore
         // --- USANDO COMPOSABLES ---
         const auth = useAuth();
         const media = useMedia(auth.isDark);
@@ -91,14 +73,16 @@ createApp({
         const orders = useOrders();
         const quotes = useQuotes(settings);
         const kds = useKds();
-        const colonias = useColonias(auth.isDark);
- 
+        const municipios = useMunicipios(auth.isDark);
+        const categoriesStore = useCategoriesStore(auth.isDark);
+
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
-            { id: 103, label: 'Colonias', icon: 'fa-solid fa-map-location-dot', view: 'colonias' },
-          //  { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
+            { id: 103, label: 'Categorias', icon: 'fa-solid fa-burger', view: 'categoriesStore' },
+            { id: 103, label: 'Municipios', icon: 'fa-solid fa-map-location-dot', view: 'municipios' },
+            //  { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
 
         const businessMenu = ref([
@@ -163,8 +147,6 @@ createApp({
                 // Agregar si no existe
                 settings.settings.value.categories.push(id);
             }
-
-            console.log(settings.settings.value.categories);
         };
 
 
@@ -338,7 +320,6 @@ createApp({
         watch(orders.ordersList, () => { if (currentView.value === 'orders') initOrdersTable(); });
 
         const viewListOrders = () => {
-            console.log("Reiniciamos...")
             orders.fetchOrders();
             initOrdersTable(); //<-- Inicializamos de nuevo
             currentView.value = 'orders';
@@ -487,9 +468,9 @@ createApp({
                 if (item.view === 'ads') banners.fetchBanners();
                 if (item.view === 'settings') {
                     settings.fetchSettings(); // <-- Obtenemos Configuraciones 
-                    colonias.fetchColonias(); // <-- Obtenemos Colonias
+                    municipios.fetchMunicipios(); // <-- Obtenemos Colonias
                 }
-                if (item.view === 'colonias') colonias.fetchColonias();
+                if (item.view === 'municipios') municipios.fetchMunicipios();
 
                 // Vistas Específicas
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
@@ -508,6 +489,7 @@ createApp({
                 if (item.view === 'orders') orders.fetchOrders();
                 if (item.view === 'quotes') quotes.fetchQuotes();
                 if (item.view === 'kds') kds.startPolling(); // Start polling for KDS
+                if (item.view === 'categoriesStore') categoriesStore.fetchCategories();
             }
         };
 
@@ -942,7 +924,7 @@ createApp({
                     // Buscar la última orden para imprimir su ticket
                     await orders.fetchOrders();
                     const lastOrder = orders.ordersList.value[0];
-                    
+
                     if (lastOrder) {
                         ticketData.value = {
                             folio: lastOrder._id.slice(-6).toUpperCase(),
@@ -958,13 +940,10 @@ createApp({
         };
 
         /** Coberturas y DeliveryZones */
-        const toggleColonia = (id) => {
-            console.log(settings.settings.value)
+        const toggleMunicipio = (id) => {
             const idx = settings.settings.value.deliveryZones.indexOf(id);
-            if(idx === -1) settings.settings.value.deliveryZones.push(id);
+            if (idx === -1) settings.settings.value.deliveryZones.push(id);
             else settings.settings.value.deliveryZones.splice(idx, 1);
-
-            console.log("Actualizacion de Configuraciones : ", settings.settings);
         };
 
 
@@ -993,8 +972,9 @@ createApp({
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
                     if (currentView.value === 'ads') banners.fetchBanners();
                     if (currentView.value === 'media') media.fetchMedia();
-                    if (currentView.value === 'settings') settings.fetchSettings(); 
-                    if (currentView.value === 'colonias') colonias.fetchColonias();
+                    if (currentView.value === 'settings') settings.fetchSettings();
+                    if (currentView.value === 'municipios') municipios.fetchMunicipios();
+                    if (currentView.value === 'categoriesStore') categoriesStore.fetchCategories();
                 } else {
                     // Si la URL es solo /admin, vamos al dashboard
                     if (path.endsWith('/admin') || path.endsWith('/admin/')) {
@@ -1037,8 +1017,8 @@ createApp({
                                     };
                                 }
                             }
-                        }  
-                        
+                        }
+
 
                         // Cargar datos iniciales de negocio
                         if (currentView.value === 'pos') {
@@ -1066,7 +1046,8 @@ createApp({
                         if (currentView.value === 'users') users.fetchUsers();
                         if (currentView.value === 'settings') {
                             settings.fetchSettings(); // <-- Obenemos configuracion
-                            colonias.fetchColonias(); // <-- Obtenemos Colonias
+                            municipios.fetchMunicipios(); // <-- Obtenemos Colonias
+                            categoriesStore.fetchCategories(); // <-- Obtenemos categorias
                         }
                         if (currentView.value === 'quotes') quotes.fetchQuotes();
                         if (currentView.value === 'kds') {
@@ -1079,12 +1060,12 @@ createApp({
                                 collapsed.value = true;
                             }
                         }
-                        
+
                     }
                 }
             }
         });
- 
+
 
         // 4. MANEJAR BOTÓN "ATRÁS" DEL NAVEGADOR
         window.onpopstate = (event) => {
@@ -1121,8 +1102,8 @@ createApp({
             ...addons, // addonsList, saveAddon, addOptionRow...
             ...saas, // Multinegocios
             ...useloyalty, // Loyalty
-            ...colonias,
-            toggleColonia,
+            ...municipios,
+            toggleMunicipio,
             kds, // KDS Expuesto
             // POS
             pos, showItemDetailsModal, selectedCartItem, openItemDetails,
@@ -1140,7 +1121,8 @@ createApp({
             showDiscountModal, tempDiscount, openDiscountModal, confirmDiscount,
             // Impresion de Tickets
             showTicketModal, ticketData, openTicketPreview, printTicketNow, finishSale,
-            availableCategories, toggleCategory,
+            categoriesStore,
+            toggleCategory,
         };
     }
 }).mount('#app');

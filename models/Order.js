@@ -4,6 +4,13 @@ const orderSchema = new mongoose.Schema({
     businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
     customerName: String,
     customerEmail: String,
+    customerPhone: String,
+    customerStreet: String,
+    customerColony: String,
+    customerNumber: String,
+    customerZipCode: String,
+    customerReference: String,
+    customerHowToPay: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },

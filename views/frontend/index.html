@@ -77,7 +77,7 @@
 
                         <!-- Selector Ubicación (Desktop & Mobile) -->
                         <div class="flex flex-col border-l border-slate-200 dark:border-slate-700 pl-4 md:pl-6 cursor-pointer group" @click="showLocationModal = true">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Entregar en</span>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Municipio Seleccionado</span>
                             <div class="flex items-center gap-1 hover:opacity-80 transition">
                                 <span class="text-brand font-bold text-sm truncate max-w-[140px] md:max-w-[200px]">
                                     {{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}
@@ -404,30 +404,49 @@
             <div class="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[85vh]">
                 
                 <div class="p-6 pb-2">
-                    <h2 class="text-2xl font-black dark:text-white mb-1">¿Dónde te encuentras?</h2>
-                    <p class="text-slate-500 text-sm">Selecciona tu colonia para ver quién reparte en tu zona.</p>
+                    <div class="flex items-center gap-3 mb-1">
+                        <button v-if="selectedMunicipio" @click="goBackToMunicipios" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-brand transition">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <h2 class="text-2xl font-black dark:text-white">{{ modalTitle }}</h2>
+                    </div>
+                    <p class="text-slate-500 text-sm">
+                        {{ selectedMunicipio ? `Mostrando colonias en ${selectedMunicipio.name}` : 'Primero selecciona tu ciudad/municipio' }}
+                    </p>
                     
                     <div class="mt-4 relative">
                         <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400"></i>
-                        <input v-model="locationSearch" type="text" class="w-full pl-10 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand transition" placeholder="Buscar colonia o código postal...">
+                        <input v-model="locationSearch" type="text" 
+                               class="w-full pl-10 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand transition" 
+                               :placeholder="selectedMunicipio ? 'Buscar colonia...' : 'Buscar municipio...'">
                     </div>
                 </div>
 
                 <div class="p-2 flex-1 overflow-y-auto thin-scroll">
-                    <div v-if="filteredLocations.length > 0" class="space-y-1">
-                        <button v-for="col in filteredLocations" :key="col._id" @click="selectLocation(col)" class="w-full text-left p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition group">
+                    <div v-if="filteredItems.length > 0" class="space-y-1">
+                        
+                        <!-- LISTA DE ITEMS (Municipios o Colonias) -->
+                        <button v-for="item in filteredItems" :key="item._id" 
+                                @click="item.colonias ? selectMunicipio(item) : selectLocation(item)" 
+                                class="w-full text-left p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition group">
+                            
+                            <!-- Icono dinámico -->
                             <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-brand/10 text-slate-400 group-hover:text-brand flex items-center justify-center transition">
-                                <i class="fa-solid fa-map-pin"></i>
+                                <i :class="item.colonias ? 'fa-solid fa-city' : 'fa-solid fa-map-pin'"></i>
                             </div>
+                            
                             <div>
-                                <p class="font-bold text-slate-800 dark:text-white group-hover:text-brand transition">{{ col.name }}</p>
-                                <p class="text-xs text-slate-500">CP: {{ col.zipCode }} • {{ col.city }}</p>
+                                <p class="font-bold text-slate-800 dark:text-white group-hover:text-brand transition">{{ item.name }}</p>
+                                <p v-if="item.colonias" class="text-xs text-slate-500">{{ item.colonias.length }} zonas de entrega</p>
+                                <p v-else class="text-xs text-slate-500">CP: {{ item.zipCode }}</p>
                             </div>
+                            
                             <i class="fa-solid fa-chevron-right ml-auto text-slate-300 text-xs"></i>
                         </button>
+
                     </div>
                     <div v-else class="text-center py-10 text-slate-500">
-                        <p>No encontramos esa colonia 😢</p>
+                        <p>No encontramos resultados 😢</p>
                     </div>
                 </div>
                 

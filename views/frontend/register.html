@@ -94,53 +94,76 @@
 
     <script>
         // --- 1. CONFIGURACIÓN DE CATEGORÍAS ---
-        const availableCategories = [
-            { id: 'burgers', label: 'Hamburguesas', icon: '🍔' },
-            { id: 'pizza', label: 'Pizza', icon: '🍕' },
-            { id: 'tacos', label: 'Tacos', icon: '🌮' },
-            { id: 'sushi', label: 'Sushi', icon: '🍣' },
-            { id: 'wings', label: 'Alitas', icon: '🍗' },
-            { id: 'mexican', label: 'Mexicana', icon: '🌶️' },
-            { id: 'italian', label: 'Italiana', icon: '🍝' },
-            { id: 'chinese', label: 'China', icon: '🥡' },
-            { id: 'seafood', label: 'Mariscos', icon: '🍤' },
-            { id: 'chicken', label: 'Pollo', icon: '🐓' },
-            { id: 'breakfast', label: 'Desayunos', icon: '🍳' },
-            { id: 'coffee', label: 'Café', icon: '☕' },
-            { id: 'bakery', label: 'Panadería', icon: '🥐' },
-            { id: 'dessert', label: 'Postres', icon: '🍰' },
-            { id: 'healthy', label: 'Saludable', icon: '🥗' },
-            { id: 'bar', label: 'Bar', icon: '🍺' },
-            { id: 'fastfood', label: 'Rápida', icon: '🍟' },
-            { id: 'others', label: 'Otros', icon: '🍽️' }
-        ];
-
+        // --- 1. CONFIGURACIÓN DE CATEGORÍAS (DINÁMICAS) ---
         const selectedCategories = new Set(); // Usamos Set para evitar duplicados
-
-        // Renderizar Categorías
         const container = document.getElementById('categories-container');
-        availableCategories.forEach(cat => {
-            const btn = document.createElement('div');
-            btn.className = `category-card cursor-pointer border border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center gap-1 text-center hover:bg-slate-50`;
-            btn.innerHTML = `
-                <span class="text-xl">${cat.icon}</span>
-                <span class="text-[10px] font-bold leading-tight">${cat.label}</span>
-            `;
-            btn.onclick = () => toggleCategory(cat.id, btn);
-            container.appendChild(btn);
-        });
 
-        function toggleCategory(id, element) {
-            if (selectedCategories.has(id)) {
-                selectedCategories.delete(id);
-                element.classList.remove('category-selected', 'ring-2', 'ring-brand');
+        const loadCategories = async () => {
+            try {
+                const res = await fetch('/api/public/categories-store');
+                if(!res.ok) throw new Error("Error cargando categorías");
+                
+                const availableCategories = await res.json();
+                
+                // Limpiar loader si existiera (aquí estaba vacío al inicio)
+                container.innerHTML = ''; 
+
+                if(availableCategories.length === 0) {
+                    container.innerHTML = '<p class="col-span-4 text-center text-xs text-slate-400">No hay categorías disponibles</p>';
+                    return;
+                }
+
+                availableCategories.forEach(cat => {
+                    // Verificamos propiedad active
+                    if(cat.active === false) return;
+
+                    const btn = document.createElement('div');
+                    btn.className = `category-card cursor-pointer border border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center gap-1 text-center hover:bg-slate-50 transition bg-white`;
+                    // Usamos _id de mongo como clave
+                    btn.innerHTML = `
+                        <span class="text-xl">${cat.emoji || '🍽️'}</span>
+                        <span class="text-[10px] font-bold leading-tight uppercase text-slate-600">${cat.name}</span>
+                    `;
+                    btn.onclick = () => toggleCategory(cat._id, btn, cat.name); // Pasamos ID real
+                    container.appendChild(btn);
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p class="col-span-4 text-center text-xs text-red-400">Error al cargar categorías</p>';
+            }
+        };
+
+        function toggleCategory(id, element, name) {
+            // Guardamos el objeto simplificado o el ID. 
+            // IMPORTANTE: El backend espera un array de objetos con { type: String } O strings directos dependiendo del modelo.
+            // Revisando modelo Business.js: categories: [{ type: String, required: true }]
+            // PERO en el formulario anterior enviaban IDs como strings ("burgers").
+            // Si queremos guardar el NOMBRE de la categoría global como referencia, usamos cat.name o un slug. Iremos con el NOMBRE para consistencia visual si no tenemos slugs globales.
+            // OJO: El modelo `Business.js` define categories como `[{ type: String }]`. Antes era un Enum. Ahora es libre.
+            // enviaremos el NOMBRE para que sea legible, o podemos enviar el ID si queremos relación estricta. 
+            // PERO, la app usa nombres para mostrar filtros. Usemos el NOMBRE (slugify si fuera necesario, pero el user pide "Nombre").
+            
+            // CORRECCIÓN: Si usamos el sistema de categorías globales, idealmente guardaríamos IDs. pero el frontend legacy usa strings.
+            // Vamos a guardar el NOMBRE TAL CUAL viene de la store.
+            
+            const val = name; // Usaremos el nombre como identificador por compatibilidad con el front actual que espera strings.
+
+            if (selectedCategories.has(val)) {
+                selectedCategories.delete(val);
+                element.classList.remove('category-selected', 'ring-2', 'ring-brand', 'bg-indigo-50');
+                element.classList.add('bg-white');
             } else {
-                selectedCategories.add(id);
-                element.classList.add('category-selected', 'ring-2', 'ring-brand');
+                selectedCategories.add(val);
+                element.classList.add('category-selected', 'ring-2', 'ring-brand', 'bg-indigo-50');
+                element.classList.remove('bg-white');
             }
             // Ocultar error si ya seleccionó algo
             if(selectedCategories.size > 0) document.getElementById('cat-error').classList.add('hidden');
         }
+
+        // Iniciar carga
+        loadCategories();
 
         // --- 2. LÓGICA DE REGISTRO ---
 

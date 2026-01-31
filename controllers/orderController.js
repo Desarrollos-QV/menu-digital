@@ -5,7 +5,7 @@ const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWI
 exports.getOrders = async (req, res) => {
     try {
         const orders = await Order.find({ businessId: req.user.businessId })
-            .select('createdAt total status paymentMethod customerId createdBy items source') // Solo campos necesarios para tabla
+            .select('createdAt total status paymentMethod customerId customerName customerPhone customerStreet customerNumber customerReference customerHowToPay createdBy items source') // Solo campos necesarios para tabla
             .populate('customerId', 'name')
             .populate('createdBy', 'username')
             .sort({ createdAt: -1 })

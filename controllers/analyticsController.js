@@ -36,7 +36,7 @@ exports.registerVisit = async (req, res) => {
 // 2. Registrar Pedido / Clic WhatsApp (Público)
 exports.registerOrder = async (req, res) => {
     try {
-        const { slug, customerName, customerPhone, customerId, cart, total } = req.body;
+        const { slug, customerName, customerPhone, customerId, cart, total, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay } = req.body;
         const business = await Business.findOne({ slug });
         
         // Guardar Orden
@@ -44,6 +44,12 @@ exports.registerOrder = async (req, res) => {
             businessId: business._id,
             customerName,
             customerPhone,
+            customerStreet,
+            customerColony,
+            customerNumber,
+            customerZipCode,
+            customerReference,
+            customerHowToPay,
             customerId,
             items: cart.map(item => ({
                 productId: item.product._id,

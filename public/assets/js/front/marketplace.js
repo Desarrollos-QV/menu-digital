@@ -52,15 +52,16 @@ createApp({
         // --- UBICACIÓN ---
         const showLocationModal = ref(false);
         const locationSearch = ref('');
-        const allLocations = ref([]); // Lista completa de colonias API
+        const allMunicipios = ref([]); // Lista completa de municipios con sus colonias
+        const selectedMunicipio = ref(null); // Municipio seleccionado temporalmente
         const currentLag = ref(null); // Colonia seleccionada { _id, name, ... }
 
          const initApp = async () => {
-            // Cargar Colonias
+            // Cargar municipios
             try {
-                const res = await fetch('/api/colonias');
-                if(res.ok) allLocations.value = await res.json();
-            } catch(e) { console.error("Error colonias", e); }
+                const res = await fetch('/api/municipios');
+                if(res.ok) allMunicipios.value = await res.json();
+            } catch(e) { console.error("Error municipios", e); }
 
             // 3. Verificar Ubicación Guardada
             const storedLoc = localStorage.getItem('fudi_location');
@@ -71,21 +72,49 @@ createApp({
             }
         };
 
+        // Paso 1: Seleccionar Municipio
+        const selectMunicipio = (municipio) => {
+            selectedMunicipio.value = municipio;
+            locationSearch.value = ''; // Limpiar búsqueda para el siguiente paso
+        };
+
+        // Regresar al Paso 1
+        const goBackToMunicipios = () => {
+            selectedMunicipio.value = null;
+            locationSearch.value = '';
+        };
+
+        // Paso 2: Seleccionar Colonia (Final)
         const selectLocation = (col) => {
             currentLag.value = col;
             localStorage.setItem('fudi_location', JSON.stringify(col));
             showLocationModal.value = false;
-            locationSearch.value = ''; // Limpiar búsqueda
+            locationSearch.value = ''; 
+            selectedMunicipio.value = null; // Resetear para la próxima vez
+            
             // Resetear filtros para ver resultados frescos
             searchQuery.value = '';
             selectedCategory.value = 'all';
         };
 
         // --- COMPUTEDS ---
-        const filteredLocations = computed(() => {
-            if(!locationSearch.value) return allLocations.value.slice(0, 10); // Mostrar top 10 si no busca
+        const filteredItems = computed(() => {
             const q = locationSearch.value.toLowerCase();
-            return allLocations.value.filter(l => l.name.toLowerCase().includes(q) || l.zipCode.includes(q));
+
+            // Si ya seleccionó municipio, filtramos sus colonias
+            if (selectedMunicipio.value) {
+                const colonias = selectedMunicipio.value.colonias || [];
+                if (!q) return colonias;
+                return colonias.filter(c => c.name.toLowerCase().includes(q));
+            }
+
+            // Si no, filtramos municipios
+            if (!q) return allMunicipios.value;
+            return allMunicipios.value.filter(m => m.name.toLowerCase().includes(q) || m.zipCode.includes(q));
+        });
+
+        const modalTitle = computed(() => {
+            return selectedMunicipio.value ? 'Selecciona tu Colonia' : 'Selecciona tu Municipio';
         });
         // --- AUTH & USER ---
         const currentUser = ref(null);
@@ -395,7 +424,8 @@ createApp({
             trendingBusinesses, filteredBusinesses,
             loading, error, scrolled, goToBusiness, fetchBusinesses,
             // Loc
-            showLocationModal, locationSearch, filteredLocations, currentLag, selectLocation,
+            showLocationModal, locationSearch, filteredItems, currentLag, selectLocation,
+            selectedMunicipio, selectMunicipio, goBackToMunicipios, modalTitle,
             // Slider
             banners, activeBanner, nextBanner, prevBanner, setActiveBanner, handleBannerClick,
             // Registro & Auth

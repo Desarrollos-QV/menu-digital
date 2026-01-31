@@ -30,7 +30,6 @@ export function useFinance() {
                 if (data.status === 'open') {
                     shiftStatus.value = 'open';
                     currentData.value = data;
-                    console.log(data);
                 } else {
                     shiftStatus.value = 'closed';
                     currentData.value = null;

@@ -20,8 +20,9 @@ export function useSettings(auth) {
         slug: '',
         // Categorías seleccionadas por el negocio - INICIALIZADO COMO ARRAY VACÍO
         categories: [],
-        // Zonas de entrega - INICIALIZADO COMO ARRAY VACÍO
-        deliveryZones: [],
+        // Configuraciones de horario y entrega
+        municipioId: '', // <-- Nuevo: Un solo municipio
+        deliveryZones: [], // Zonas de entrega (Colonias IDs)
         // Configuraciones de horario y entrega
         time: '',
         deliveryCost: 0,
@@ -44,18 +45,15 @@ export function useSettings(auth) {
         try {
             const res = await authFetch('/api/config/admin');
             if (res.ok) {
-                const data = await res.json();
-                console.log(data);
+                const data = await res.json(); 
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
+                console.log("Configuraciones: " , settings.value);
                 // Asegurar que existan los arrays requeridos
                 if (!Array.isArray(settings.value.categories)) settings.value.categories = [];
-                if (!Array.isArray(settings.value.deliveryZones)) settings.value.deliveryZones = [];
-                console.log("Configuraciones: ", settings.value);
+                if (!Array.isArray(settings.value.deliveryZones)) settings.value.deliveryZones = []; 
             }
         } catch (e) { console.error(e); }
-        
-       
         
         // 2. Datos del Perfil (Privado)
         try {
@@ -72,10 +70,47 @@ export function useSettings(auth) {
         profile.value.username = localStorage.getItem('username') || '';
     };
 
+    // --- LÓGICA DE ZONAS DE ENTREGA (NUEVO REQUERIMIENTO) ---
+    const showColoniasModal = ref(false);
+    const currentMunicipio = ref(null);
+
+    const openColoniasModal = (municipio) => {
+        // Al abrir, seteamos el municipio actual para mostrar sus colonias
+        currentMunicipio.value = municipio;
+        
+        // Si el municipio seleccionado es diferente al guardado, advertimos o limpiamos
+        // PERO, solo guardamos el cambio cuando el usuario confirma o selecciona.
+        // En este enfoque, al abrir el modal, simplemente mostramos las colonias.
+        
+        showColoniasModal.value = true;
+    };
+
+    const closeColoniasModal = () => {
+        showColoniasModal.value = false;
+        currentMunicipio.value = null;
+    };
+
+    const selectMunicipio = (municipioId) => {
+        // Si cambia el municipio, limpiamos las colonias anteriores
+        if (settings.value.municipioId !== municipioId) {
+            settings.value.municipioId = municipioId;
+            settings.value.deliveryZones = []; // Limpiar colonias de otro municipio
+        }
+    };
+
+    const toggleColoniaZone = (coloniaId) => {
+        const idx = settings.value.deliveryZones.indexOf(coloniaId);
+        if (idx === -1) {
+            settings.value.deliveryZones.push(coloniaId);
+        } else {
+            settings.value.deliveryZones.splice(idx, 1);
+            // Si nos quedamos sin colonias, ¿deberíamos limpiar el municipio? No necesariamente.
+        }
+    };
+
     const toggleColonia = (id) => {
-        const idx = settings.value.deliveryZones.indexOf(id);
-        if(idx === -1) settings.value.deliveryZones.push(id);
-        else settings.value.deliveryZones.splice(idx, 1);
+        // Deprecated or alias to toggleColoniaZone
+        toggleColoniaZone(id);
     };
 
 
@@ -129,7 +164,6 @@ export function useSettings(auth) {
                 const body = { id: payload.id, username: profile.value.username, email: profile.value.email  };
                 if (profile.value.newPassword) body.password = profile.value.newPassword;
 
-                console.log(body);
                 const res = await authFetch('/api/auth/update', {
                     method: 'PUT',
                     body: JSON.stringify(body)
@@ -138,7 +172,6 @@ export function useSettings(auth) {
                 if (res.ok) {
                     const data = await res.json();
                     toastr.success('Perfil actualizado.');
-                    console.log(data);
                     // Actualizar localstorage si cambió el username
                     if(data.user && data.user.username && auth.username.value != data.user.username ) {
                         auth.username.value = data.user.username;
@@ -159,7 +192,13 @@ export function useSettings(auth) {
 
     return {
         settings, 
-        toggleColonia,
+        toggleColonia, // Mantener por compatibilidad o eliminar si ya no se usa
+        showColoniasModal,
+        currentMunicipio,
+        openColoniasModal,
+        closeColoniasModal,
+        selectMunicipio,
+        toggleColoniaZone,
         profile,
         isUploadingAvatar, // Exportar estado
         avatarInput,       // Exportar ref
