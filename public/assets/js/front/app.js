@@ -226,7 +226,15 @@ createApp({
                 msg += `▪️ *${i.quantity}x ${i.product.name}* ($${i.unitPrice * i.quantity})\n`;
                 if (i.selectedOptions?.length) msg += `   _Extras: ${i.selectedOptions.map(o => o.name).join(', ')}_\n`;
             });
-            msg += `\n💰 *TOTAL: ${config.value.currency || '$'}${cartTotalPrice.value}*`;
+            msg += `\n💰 *TOTAL: ${config.value.currency || '$'}${cartTotalPrice.value}*\n\n`;
+
+            // Agregar Datos de Entrega y Pago al mensaje
+            msg += `📍 *_Datos de Entrega_*:\n`;
+            msg += `Calle: ${customerStreet.value} #${customerNumber.value}\n`;
+            msg += `Colonia: ${customerColony.value}\n`;
+            msg += `CP: ${customerZipCode.value}\n`;
+            msg += `Ref: ${customerReference.value}\n\n`;
+            msg += `💳 *_Método de Pago_*: ${customerHowToPay.value}\n\n`;
 
             // 1. Enviar datos al Backend (Sin esperar respuesta crítica)
             const cs = JSON.parse(localStorage.getItem('customer_data')) ?? [];
