@@ -525,6 +525,17 @@
                                 </div>
                             </div>
 
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <!-- Botón Existente de Cancelar (si lo tienes) o solo -->
+                                <button @click="pos.clearCart()" class="py-3 rounded-xl border border-red-200 text-red-500 font-bold hover:bg-red-50 transition">
+                                    <i class="fa-solid fa-trash mr-2"></i> Limpiar Todo
+                                </button>
+                                <!-- NUEVO BOTÓN -->
+                                <button @click="pos.openSplitModal()" class="py-3 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                                    <i class="fa-solid fa-scissors mr-2"></i> Separar
+                                </button>
+                            </div>
+
                             <!-- Lista Items (CARRITO) -->
                             <div class="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 bg-slate-50 dark:bg-slate-700">
                                 <div v-if="pos.activeTab.value.cart.length === 0" class="h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-600">
@@ -1987,6 +1998,7 @@
         </div>
     </div>
 
+    <!-- MODAL NUEVA CATEGORÍA GLOBAL -->
     <div v-if="categoriesStore.showCategoryModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="categoriesStore.closeCategoryModal"></div>
         <div class="relative bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in border dark:border-slate-700">
@@ -2023,6 +2035,7 @@
         </div>
     </div>
 
+    <!-- MODAL ESCÁNER -->
     <div v-if="showScanner" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
         <button @click="stopScanner" class="absolute top-6 right-6 text-white bg-white/20 p-2 rounded-full z-10"><i class="fa-solid fa-xmark text-2xl"></i></button>
         <div id="reader" class="w-full max-w-md bg-white rounded-lg overflow-hidden relative"></div>
@@ -2247,6 +2260,140 @@
                             }">
                         <i class="fa-solid fa-check"></i> Confirmar Pago
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SEPARAR CUENTAS (SPLIT CHECK) -->
+    <div v-if="pos.splitState.isOpen" class="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" @click="pos.splitState.isOpen = false"></div>
+        <div class="relative bg-slate-100 dark:bg-slate-900 rounded-3xl w-full max-w-7xl h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+            
+            <!-- Header del Modal -->
+            <div class="bg-white dark:bg-slate-950 p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="text-xl font-black dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-scissors text-primary transform -rotate-90"></i> Separar Cuentas
+                    </h3>
+                    <p class="text-sm text-slate-500">Distribuye los productos de la mesa en cuentas individuales.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button @click="pos.addSplitCheck()" class="px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Agregar Cuenta
+                    </button>
+                    <button @click="pos.splitState.isOpen = false" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-red-100 hover:text-red-500 transition">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Área de Trabajo Dividida -->
+            <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                
+                <!-- COLUMNA IZQUIERDA: CUENTA ORIGINAL (Items por asignar) -->
+                <div class="w-full md:w-1/3 bg-white dark:bg-slate-800 flex flex-col border-r border-slate-200 dark:border-slate-700 shadow-lg z-10">
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 font-bold text-slate-500 text-xs uppercase tracking-wider text-center flex justify-between items-center">
+                        <span>Mesa / Original</span>
+                        <span class="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 rounded-full">{{ pos.splitState.originalItems.length }} ítems</span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50 dark:bg-slate-900/50">
+                        <!-- Estado Vacío -->
+                        <div v-if="pos.splitState.originalItems.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-50">
+                            <i class="fa-solid fa-check-circle text-5xl mb-3 text-green-500"></i>
+                            <p class="font-medium">Todo asignado</p>
+                        </div>
+
+                        <!-- Lista de Items -->
+                        <div v-for="item in pos.splitState.originalItems" :key="item.uId" class="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col gap-2 group transition hover:border-primary/50">
+                            
+                            <!-- Info del Producto -->
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-start gap-2">
+                                    <span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-black">{{ item.qty }}</span>
+                                    <div>
+                                        <span class="font-bold text-slate-700 dark:text-white text-sm block leading-tight">{{ item.name }}</span>
+                                        <div class="text-[10px] text-slate-400 mt-0.5" v-if="item.selectedAddons && item.selectedAddons.length">
+                                            {{ item.selectedAddons.map(a => a.name).join(', ') }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="font-mono font-bold text-slate-600 dark:text-slate-300 text-sm">${{ (item.price * item.qty).toFixed(2) }}</span>
+                            </div>
+                            
+                            <!-- Botones de Acción (Mover a...) -->
+                            <div class="grid grid-cols-2 gap-1.5 mt-1 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                <button v-for="(check, idx) in pos.splitState.checks" :key="check.id" 
+                                        @click="pos.moveItem(item, idx, true)"
+                                        class="py-1.5 px-2 bg-slate-100 dark:bg-slate-700 hover:bg-primary hover:text-white dark:text-slate-300 text-slate-600 text-[10px] font-bold rounded transition flex items-center justify-center gap-1 truncate"
+                                        :title="'Mover a ' + check.name">
+                                    <span>Mover a</span> <strong class="truncate max-w-[60px]">{{ check.name }}</strong> <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer Total Original -->
+                    <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                        <div class="flex justify-between items-center text-sm font-bold text-slate-500">
+                            <span>Restante en mesa:</span>
+                            <span class="text-slate-800 dark:text-white text-lg">${{ pos.getCheckTotal(pos.splitState.originalItems).toFixed(2) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: SUB-CUENTAS GRID -->
+                <div class="w-full md:w-2/3 bg-slate-100 dark:bg-slate-950/50 p-4 overflow-y-auto">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        
+                        <div v-for="(check, idx) in pos.splitState.checks" :key="check.id" 
+                            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-[450px] transition hover:shadow-md">
+                            
+                            <!-- Cabecera de la Sub-Cuenta -->
+                            <div class="p-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-t-2xl">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center font-bold text-sm">
+                                        #{{ check.id }}
+                                    </div>
+                                    <input v-model="check.name" class="bg-transparent font-bold text-slate-700 dark:text-white w-32 focus:outline-none focus:border-b-2 border-primary text-sm transition py-1" placeholder="Nombre Cuenta">
+                                </div>
+                                <span class="font-mono font-black text-lg text-primary">${{ pos.getCheckTotal(check.items).toFixed(2) }}</span>
+                            </div>
+
+                            <!-- Lista de Ítems de la Sub-Cuenta -->
+                            <div class="flex-1 overflow-y-auto p-2 space-y-1 bg-white dark:bg-slate-800 relative">
+                                
+                                <!-- Dropzone visual hint -->
+                                <div v-if="check.items.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 text-sm pointer-events-none">
+                                    <i class="fa-solid fa-arrow-right text-2xl mb-2 opacity-50"></i>
+                                    <p>Asigna productos aquí</p>
+                                </div>
+
+                                <div v-for="item in check.items" :key="item.uId + '_chk'" class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-700/50 hover:bg-white dark:hover:bg-slate-700 rounded-lg border border-transparent hover:border-slate-200 dark:hover:border-slate-600 shadow-sm transition group">
+                                    <div class="flex items-center gap-2 overflow-hidden">
+                                        <button @click="pos.moveItem(item, idx, false)" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition" title="Regresar a original">
+                                            <i class="fa-solid fa-arrow-left text-xs"></i>
+                                        </button>
+                                        <span class="text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded dark:text-white min-w-[24px] text-center">{{ item.qty }}</span>
+                                        <span class="text-sm font-medium truncate dark:text-white w-28 sm:w-auto text-slate-700">{{ item.name }}</span>
+                                    </div>
+                                    <span class="text-xs font-mono font-bold dark:text-slate-300">${{ (item.price * item.qty).toFixed(2) }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Footer: Botón de Cobrar -->
+                            <div class="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 rounded-b-2xl">
+                                <button @click="pos.paySplitCheck(idx)" 
+                                        :disabled="check.items.length === 0"
+                                        class="w-full py-3 bg-slate-800 dark:bg-primary text-white font-bold rounded-xl shadow hover:shadow-lg hover:bg-slate-700 dark:hover:bg-primaryDark transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 text-sm group">
+                                    <span class="group-hover:scale-110 transition-transform"><i class="fa-solid fa-cash-register"></i></span>
+                                    Cobrar Cuenta
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>
