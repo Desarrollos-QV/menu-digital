@@ -658,7 +658,146 @@ createApp({
         };
 
         // Truco del Iframe invisible para imprimir SIN abrir ventana
-        const printTicketNow = () => {
+        const printTicketNow = async () => {
+            try {
+                // 1. Detectar Entorno
+                const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+                const isAndroid = /android/i.test(userAgent);
+                // Configuración guardada (por si queremos forzar un modo en el futuro)
+                const savedConfig = localStorage.getItem('fudi_printer_mode'); // 'rawbt', 'browser', 'qz'
+
+                let mode = savedConfig || (isAndroid ? 'rawbt' : 'browser');
+
+                console.log(`🖨️ Iniciando impresión en modo: ${mode}`);
+                console.log("TicketData : " , ticketData)
+                if (mode === 'rawbt') {
+                    await printViaRawBT(ticketData);
+                } else if (mode === 'browser') {
+                    printViaBrowser();
+                } else {
+                    // Aquí conectaríamos QZ Tray en el futuro para Windows "Silencioso"
+                    console.warn('Modo no soportado, usando navegador');
+                    printViaBrowser();
+                }
+
+            } catch (error) {
+                console.error("Error general de impresión:", error);
+                if (window.toastr) window.toastr.error('Error al intentar imprimir');
+            }
+
+            // // 1. Obtener el HTML limpio del ticket
+            // const content = document.getElementById('thermal-ticket-content').innerHTML;
+
+            // // 2. Crear un iframe oculto
+            // const iframe = document.createElement('iframe');
+            // iframe.style.display = 'none';
+            // document.body.appendChild(iframe);
+
+            // // 3. Escribir el contenido
+            // const doc = iframe.contentWindow.document;
+            // doc.open();
+            // doc.write(`
+            //             <html>
+            //             <head>
+            //                 <title>Print</title>
+            //                 <style>
+            //                     body { margin: 0; padding: 0; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; }
+            //                     .text-center { text-align: center; }
+            //                     .font-bold { font-weight: bold; }
+            //                     .flex { display: flex; justify-content: space-between; }
+            //                     .mb-1 { margin-bottom: 4px; }
+            //                     .mb-2 { margin-bottom: 8px; }
+            //                     .mt-2 { margin-top: 8px; }
+            //                     .text-lg { font-size: 16px; }
+            //                     .ticket-dashed { border-bottom: 1px dashed #000; margin: 8px 0; }
+            //                     .text-xs { font-size: 11px; }
+            //                 </style>
+            //             </head>
+            //             <body>
+            //                 ${content}
+            //                 <script>
+            //                     window.onload = function() { 
+            //                         window.print(); 
+            //                         setTimeout(() => { window.parent.document.body.removeChild(window.frameElement); }, 1000);
+            //                     }
+            //                 <\/script>
+            //             </body>
+            //             </html>
+            //         `);
+            // doc.close();
+        };
+
+        // --- MODO 1: ANDROID (RAWBT / ESC/POS) ---
+        const printViaRawBT = async (ticketData) => {
+            try {
+                let printerData = '';
+
+                // Comandos ESC/POS
+                printerData += '\x1B\x40'; // Init
+                printerData += '\x1B\x61\x01'; // Center
+                printerData += '\x1B\x21\x10'; // Double Height
+                printerData += `${settings.settings.value.appName || 'TengoHambre'}\n`;
+                printerData += `${settings.settings.value.address || 'Monterrey NL'}\n`;
+                printerData += `Tel: ${settings.settings.value.phone || '00 000 000 000'}\n`;
+                printerData += '\x1B\x21\x00'; // Normal
+                printerData += 'Ticket de Venta\n';
+                printerData += '--------------------------------\n';
+
+                // Info
+                printerData += '\x1B\x61\x00'; // Left
+                printerData += `Fecha: ${new Date().toLocaleString()}\n`;
+                printerData += `Folio: #${ticketData.orderNumber || '000'}\n`;
+                printerData += `Cliente: ${ticketData.customerName || 'General'}\n`;
+                printerData += '--------------------------------\n';
+
+                // Items
+                ticketData.items.forEach(item => {
+                    let line = `${item.qty} x ${item.name}`;
+                    if (line.length > 20) line = line.substring(0, 20);
+                    let price = `$${item.subTotal.toFixed(2)}`;
+                    let spaces = 32 - line.length - price.length;
+                    if (spaces < 1) spaces = 1;
+                    printerData += `${line}${' '.repeat(spaces)}${price}\n`;
+
+                    if (item.selectedAddons && item.selectedAddons.length > 0) {
+                        item.selectedAddons.forEach(adon => {
+                            printerData += `  + ${adon.name}\n`;
+                        });
+                    }
+                });
+
+                printerData += '--------------------------------\n';
+                printerData += '\x1B\x61\x02'; // Right
+                printerData += '\x1B\x21\x08'; // Bold
+                printerData += `TOTAL: $${ticketData.total.toFixed(2)}\n`;
+                printerData += '\x1B\x21\x00'; // Normal
+                printerData += '\x1B\x61\x01'; // Center
+                printerData += `\n\nMétodo: ${ticketData?.method}\n`;
+                printerData += '\n\nGracias por su compra\n\n\n\n';
+
+                // Enviar a RawBT
+                const rawBtUrl = 'http://localhost:40213/print';
+                const response = await fetch(rawBtUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ printer: 'local', data: printerData, cut: true })
+                });
+
+                if (response.ok) {
+                    if (window.toastr) window.toastr.success('Imprimiendo en Android...');
+                } else {
+                    // Intent Fallback
+                    window.location.href = 'rawbt:data:base64,' + btoa(printerData);
+                }
+            } catch (e) {
+                console.error("RawBT Error:", e);
+                // Fallback por URL Scheme si el server localhost falla
+                window.toastr.warning('Intentando conexión directa...');
+            }
+        };
+
+        // --- MODO 2: WINDOWS / PC (BROWSER PRINT) ---
+        const printViaBrowser = () => {
             // 1. Obtener el HTML limpio del ticket
             const content = document.getElementById('thermal-ticket-content').innerHTML;
 
@@ -699,6 +838,12 @@ createApp({
                         </html>
                     `);
             doc.close();
+
+            // Esperar a que cargue y mandar imprimir
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }, 500);
         };
 
         // 3. GENERAR PDF
