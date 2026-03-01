@@ -34,7 +34,7 @@ exports.getPublicData = async (req, res) => {
 
         switch (type) {
             case 'products':
-                data = await Product.find({ businessId, active: true }).sort({ createdAt: -1 });
+                data = await Product.find({ businessId, active: true });
                 break;
             
             case 'categories':

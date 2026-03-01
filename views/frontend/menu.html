@@ -243,12 +243,17 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">¿Con cuanto paga?</label>
-                                    <select v-model="customerHowToPay" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                                        <option value="efectivo" selected>Efectivo</option>
-                                        <option value="tarjeta">Tarjeta</option>
+                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
+                                    <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
+                                        <option value="cash">Efectivo</option>
+                                        <option value="card">Tarjeta</option>
                                     </select>
                                 </div>
+                            </div>
+                            
+                            <div v-if="paymentMethod === 'cash'" class="mb-4 animate-fade-in">
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">¿Con cuanto paga?</label>
+                                <input v-model="customerHowToPay" type="number" placeholder="Ej: 500" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm" required>
                             </div>
                             
                             <div class="flex justify-between items-center mb-4">

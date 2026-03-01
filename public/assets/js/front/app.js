@@ -65,6 +65,7 @@ createApp({
         const customerNumber = ref('');
         const customerZipCode = ref('');
         const customerReference = ref('');
+        const paymentMethod = ref('cash');
         const customerHowToPay = ref('');
 
         // Product Logic
@@ -218,6 +219,10 @@ createApp({
                 return toastr.warning('Nombre y Telefono requeridos');
             }
 
+            if (paymentMethod.value === 'cash' && (!customerHowToPay.value || !customerHowToPay.value.toString().trim())) {
+                return toastr.warning('Por favor ingresa con cuánto vas a pagar');
+            }
+
             const phone = config.value.phone;
             if (!phone) return toastr.error('Este negocio no tiene WhatsApp configurado');
 
@@ -234,7 +239,11 @@ createApp({
             msg += `Colonia: ${customerColony.value}\n`;
             msg += `CP: ${customerZipCode.value}\n`;
             msg += `Ref: ${customerReference.value}\n\n`;
-            msg += `💳 *_Método de Pago_*: ${customerHowToPay.value}\n\n`;
+            msg += `💳 *_Método de Pago_*: ${paymentMethod.value === 'cash' ? 'Efectivo' : 'Tarjeta'}\n`;
+            if (paymentMethod.value === 'cash' && customerHowToPay.value) {
+                msg += `💵 *¿Con cuanto paga?*: $${customerHowToPay.value}\n`;
+            }
+            msg += `\n`;
 
             // 1. Enviar datos al Backend (Sin esperar respuesta crítica)
             const cs = JSON.parse(localStorage.getItem('customer_data')) ?? [];
@@ -248,6 +257,7 @@ createApp({
                 customerNumber: customerNumber.value,
                 customerZipCode: customerZipCode.value,
                 customerReference: customerReference.value,
+                paymentMethod: paymentMethod.value,
                 customerHowToPay: customerHowToPay.value,
                 cart: cart.value,
                 total: cartTotalPrice.value
@@ -430,7 +440,7 @@ createApp({
             banners, categories, products, config, isLoading, isDark, scrollY, businessError,
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
+            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState
         };
