@@ -8,8 +8,8 @@ const productSchema = new Schema({
     image: String, // URL de la imagen
     barcode: { type: String, unique: true, sparse: true, trim: true },
     stock: { type: Number },
+    sort: { type: Number, default: 0 },
     businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true },
-    
     // Relaciones (IDs de otras colecciones)
     categories: [{ type: Schema.Types.ObjectId, ref: 'Category' }],
     addons: [{ type: Schema.Types.ObjectId, ref: 'Addon' }],

@@ -170,7 +170,6 @@ createApp({
             // Esperamos que el DOM esté listo
             nextTick(() => {
                 if (!document.getElementById('productsTable')) return;
-
                 dataTable = $('#productsTable').DataTable({
                     data: products.products.value, // Datos de Vue
                     responsive: true,
@@ -183,6 +182,22 @@ createApp({
                         {
                             data: 'name',
                             render: (data, type, row) => `<div><div class="font-bold text-slate-800 dark:text-white">${data}</div><div class="text-xs text-slate-500">${row.description || ''}</div></div>`
+                        },
+                        {
+                            // Validamos si existe el campo Stock
+                            data: null,
+                            render: (data, type, row) => {
+                                const stockValue = row.stock;
+                                if (stockValue === null || stockValue === undefined) return '<span class="rounded text-xs font-bold bg-slate-100 text-slate-700">No definido</span>';
+                                if (stockValue <= 0) {
+                                    return `<span class="rounded text-xs font-bold bg-red-100 text-red-700">Agotado</span>`
+                                }
+                                return `<span class="rounded text-xs font-bold bg-green-100 text-green-700">Qty ${stockValue}</span>`
+                            }
+                        },
+                        {
+                            data: 'sort',
+                            render: (data) => `<span class="font-bold">${data}</span>`
                         },
                         { data: 'price', render: (data) => `<span class="font-bold">$${data}</span>` },
                         {

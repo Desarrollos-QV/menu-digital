@@ -9,7 +9,7 @@ export function useCategories(isDark, fetchMedia) {
     const token = localStorage.getItem('token');
 
     // Formulario Base
-    const defaultForm = { name: '', description: '', image: '', imageName: '', active: true };
+    const defaultForm = { name: '', description: '', sort: 0, image: '', imageName: '', active: true };
     const categoryForm = ref({ ...defaultForm });
 
     // Subida directa desde Modal
@@ -26,6 +26,8 @@ export function useCategories(isDark, fetchMedia) {
     const openCategoryModal = (cat = null, mediaFilesLength = 0) => {
         editingCategory.value = !!cat;
         categoryForm.value = cat ? { ...cat } : { ...defaultForm };
+        // Ordenamos por sort
+        categoriesList.value.sort((a, b) => a.sort - b.sort);
         showMediaSelector.value = false;
         showCategoryModal.value = true;
 

@@ -135,6 +135,10 @@ createApp({
                 if (prodsRes.ok) products.value = await prodsRes.json();
                 if (addonsRes.ok) addons.value = await addonsRes.json();
 
+                // Organizamos por Sort catsRes y ProdsRes
+                categories.value.sort((a, b) => a.sort - b.sort);
+                products.value.sort((a, b) => a.sort - b.sort);
+
                 const configData = await configRes.json();
 
                 config.value = configData;

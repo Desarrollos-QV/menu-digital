@@ -69,6 +69,32 @@ exports.registerOrder = async (req, res) => {
             });
         }
 
+        // 4. Actualizar Inventario (Stock)
+        for (const item of cart) {
+            const product = await Product.findById(item.product._id);
+            
+            // Solo actualizamos si el producto tiene control de stock (stock > 0)
+            if (product && product.stock !== null && product.stock !== undefined) {
+                
+                // Validamos si el producto tiene variantes
+                if (item.selectedOptions && item.selectedOptions.length > 0) {
+                    // Lógica de Variantes
+                    for (const option of item.selectedOptions) {
+                        const variant = product.variants.find(v => v.name === option.name);
+                        if (variant) {
+                            variant.stock -= item.quantity;
+                        }
+                    }
+                } else {
+                    // Lógica de Producto Simple
+                    product.stock -= item.quantity;
+                }
+                
+                await product.save();
+            }
+        }
+
+
         res.json({ status: 'ok' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -177,6 +203,31 @@ exports.createPosOrder = async (req, res) => {
         // Actualizar stock o ventas del producto
         for (const item of cart) {
             await Product.findByIdAndUpdate(item._id, { $inc: { salesCount: item.qty } });
+        }
+
+        // 4. Actualizar Inventario (Stock)
+        for (const item of cart) {
+            const product = await Product.findById(item._id);
+            
+            // Solo actualizamos si el producto tiene control de stock (stock > 0)
+            if (product && product.stock !== null && product.stock !== undefined) {
+                
+                // Validamos si el producto tiene variantes
+                if (item.selectedOptions && item.selectedOptions.length > 0) {
+                    // Lógica de Variantes
+                    for (const option of item.selectedOptions) {
+                        const variant = product.variants.find(v => v.name === option.name);
+                        if (variant) {
+                            variant.stock -= item.qty;
+                        }
+                    }
+                } else {
+                    // Lógica de Producto Simple
+                    product.stock -= item.qty;
+                }
+                
+                await product.save();
+            }
         }
 
         // Si hay cliente de lealtad, sumar puntos

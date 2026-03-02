@@ -9,10 +9,17 @@ export function useProducts(isDark, fetchMedia) {
 
     // Formulario Base
     const defaultForm = {
-        name: '', price: 0, description: '', image: '', imageName: '',
+        name: '', 
+        price: 0, 
+        description: '', 
+        sort: 0, 
+        image: '', 
+        imageName: '',
         barcode: '',
         stock: 0,
-        categories: [], addons: [], active: true,
+        categories: [], 
+        addons: [], 
+        active: true,
         isTrending: false 
     };
     const productForm = ref({ ...defaultForm });
@@ -49,7 +56,9 @@ export function useProducts(isDark, fetchMedia) {
 
             const res = await authFetch('/api/products');
             if (res.ok) products.value = await res.json();
-            
+            // Ordenamos por sort
+            products.value.sort((a, b) => a.sort - b.sort);
+            console.log("Listado de productos: " , products.value)
         } catch (e) { console.error("Error fetching products", e); }
     };
 

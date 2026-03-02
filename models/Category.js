@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: String,
+    sort: { type: Number, default: 0 },
     image: String, // URL de la imagen representativa
     businessId: { type: Schema.Types.ObjectId, ref: 'Business', required: true },
     active: { type: Boolean, default: true }
