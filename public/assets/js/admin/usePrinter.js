@@ -27,7 +27,7 @@ export function usePrinter(settings) {
                 await qz.websocket.connect({ 
                     retries: 5, 
                     delay: 2,
-                    host: ['localhost', 'app.fudipos.shop'] // Intentará ambas rutas explícitamente
+                    host: ['localhost', 'tengo-hambre.com'] // Intentará ambas rutas explícitamente
                 });
             }
 
