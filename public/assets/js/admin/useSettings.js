@@ -1,7 +1,9 @@
 import { ref, computed } from 'vue';
 import { authFetch } from './api.js'; // <-- Helper para Fetch
+import { usePrinter } from './usePrinter.js';
 
 export function useSettings(auth) {
+    const printerManager = usePrinter();
     const settings = ref({
         saving: false,
         role: '', // Para saber qué campos mostrar
@@ -26,9 +28,13 @@ export function useSettings(auth) {
         // Configuraciones de horario y entrega
         time: '',
         deliveryCost: 0,
-        isOpen: true
+        isOpen: true,
+        
     });
      
+    const printerName = ref(localStorage.getItem('fudi_printer_name') || '');
+    const availablePrinters = ref([]);
+    const scanningPrinters = ref(false);
     // Agregamos email al estado
     const profile = ref({
         username: '',
@@ -113,6 +119,25 @@ export function useSettings(auth) {
         toggleColoniaZone(id);
     };
 
+    const scanPrinters = async () => {
+        scanningPrinters.value = true;
+        
+        // Llamamos a la función que acabamos de crear
+        const printers = await printerManager.getConnectedPrinters();
+        
+        if (printers.length > 0) {
+            availablePrinters.value = printers;
+            if(window.toastr) window.toastr.success(`${printers.length} impresoras encontradas`);
+        }
+        
+        scanningPrinters.value = false;
+    };
+    
+    const saveConfig = () => {
+        // Cuando guarden los ajustes, guardas el valor en localStorage
+        localStorage.setItem('fudi_printer_name', printerName.value);
+        if(window.toastr) window.toastr.success('Impresora guardada');
+    };
 
     // Función para subir el avatar
     const uploadAvatar = async (event) => {
@@ -204,6 +229,11 @@ export function useSettings(auth) {
         avatarInput,       // Exportar ref
         fetchSettings,
         uploadAvatar,      // Exportar función
+        printerName,
+        availablePrinters,
+        scanningPrinters,
+        scanPrinters,
+        saveConfig,
         saveSettings,
         saveProfile
     };

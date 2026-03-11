@@ -256,6 +256,37 @@ export function usePrinter(settings) {
         }, 500);
     };
 
+    // NUEVA FUNCIÓN: Detectar impresoras instaladas en la PC
+    const getConnectedPrinters = async () => {
+        try {
+            // 1. Asegurarnos de que QZ Tray esté conectado
+            if (typeof qz === 'undefined') {
+                console.warn('La librería QZ no está cargada en el HTML');
+                return [];
+            }
+
+            if (!qz.websocket.isActive()) {
+                // Configuramos conexión silenciosa anónima
+                if (typeof qz.security.setCertificatePromise === 'function') {
+                    qz.security.setCertificatePromise((resolve) => resolve());
+                    qz.security.setSignaturePromise(() => (resolve) => resolve());
+                }
+                await qz.websocket.connect({ retries: 2, delay: 1, host: ['localhost', 'tengo-hambre.com'] });
+            }
+
+            // 2. Pedir a QZ la lista de impresoras
+            const printers = await qz.printers.find();
+            console.log("Impresoras detectadas:", printers);
+            
+            return printers; // Devuelve un array de strings: ['POS-58', 'Microsoft Print to PDF', ...]
+
+        } catch (error) {
+            console.error('Error al detectar impresoras:', error);
+            if(window.toastr) window.toastr.warning('Abre QZ Tray para buscar impresoras locales');
+            return []; // Devolvemos array vacío si falla
+        }
+    };
+
     // ==========================================
     // FUNCIÓN MAESTRA EXPORTADA
     // ==========================================
@@ -278,5 +309,5 @@ export function usePrinter(settings) {
         }
     };
 
-    return { printTicket };
+    return { printTicket, getConnectedPrinters };
 }

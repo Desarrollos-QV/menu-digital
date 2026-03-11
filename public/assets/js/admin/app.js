@@ -486,6 +486,7 @@ createApp({
                 if (item.view === 'settings') {
                     settings.fetchSettings(); // <-- Obtenemos Configuraciones 
                     municipios.fetchMunicipios(); // <-- Obtenemos Colonias
+                    settings.scanPrinters(); // <-- Buscamos impresoras
                 }
                 if (item.view === 'municipios') municipios.fetchMunicipios();
 
@@ -987,6 +988,7 @@ createApp({
                             settings.fetchSettings(); // <-- Obenemos configuracion
                             municipios.fetchMunicipios(); // <-- Obtenemos Colonias
                             categoriesStore.fetchCategories(); // <-- Obtenemos categorias
+                            settings.scanPrinters(); // <-- Buscamos impresoras
                         }
                         if (currentView.value === 'quotes') quotes.fetchQuotes();
                         if (currentView.value === 'kds') {
