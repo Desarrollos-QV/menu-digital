@@ -19,6 +19,7 @@ import { useQuotes } from './useQuotes.js';
 import { useKds } from './useKds.js';
 import { useMunicipios } from './useMunicipios.js';
 import { useCategoriesStore } from './useCategoriesStore.js';
+import { usePrinter } from './usePrinter.js'; // Gestor de impresion universal
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -75,6 +76,7 @@ createApp({
         const kds = useKds();
         const municipios = useMunicipios(auth.isDark);
         const categoriesStore = useCategoriesStore(auth.isDark);
+        const printer = usePrinter(settings);
 
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
@@ -594,65 +596,67 @@ createApp({
 
         // 2. IMPRIMIR TICKET TÉRMICO (80mm)
         const printThermalTicket = () => {
-            const ord = orders.selectedOrder.value;
-            if (!ord) return;
 
-            // Ventana emergente con estilos específicos para impresora
-            const win = window.open('', '', 'width=350,height=600');
-            const styles = `
-                        <style>
-                            @page { margin: 0; }
-                            body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; }
-                            .center { text-align: center; }
-                            .bold { font-weight: bold; }
-                            .line { border-bottom: 1px dashed #000; margin: 5px 0; }
-                            .flex { display: flex; justify-content: space-between; }
-                            .title { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
-                        </style>
-                    `;
+            printer.printTicket(data);
+            // const ord = orders.selectedOrder.value;
+            // if (!ord) return;
 
-            const itemsHtml = ord.items.map(item => `
-                        <div class="flex">
-                            <span>${item.quantity} x ${item.name}</span>
-                            <span>$${(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                    `).join('');
+            // // Ventana emergente con estilos específicos para impresora
+            // const win = window.open('', '', 'width=350,height=600');
+            // const styles = `
+            //             <style>
+            //                 @page { margin: 0; }
+            //                 body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; }
+            //                 .center { text-align: center; }
+            //                 .bold { font-weight: bold; }
+            //                 .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+            //                 .flex { display: flex; justify-content: space-between; }
+            //                 .title { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+            //             </style>
+            //         `;
 
-            const content = `
-                        <html>
-                            <head><title>Ticket</title>${styles}</head>
-                            <body>
-                                <div class="center">
-                                    <div class="title">${settings.settings.value.appName || 'tengo hambre'}</div>
-                                    <div>${settings.settings.value.ownerEmail || 'soporte@tengo-hambre.com'}</div>
-                                    <div>Tel: ${settings.settings.value.phone || '000-000-000'}</div>
-                                </div>
-                                <div class="line"></div>
-                                <div>Folio: #${ord._id.slice(-6).toUpperCase()}</div>
-                                <div>Fecha: ${new Date(ord.createdAt).toLocaleString()}</div>
-                                <div>Cliente: ${ord.customerId ? ord.customerId.name : 'Mostrador'}</div>
-                                <div class="line"></div>
-                                ${itemsHtml}
-                                <div class="line"></div>
-                                <div class="flex bold">
-                                    <span>TOTAL</span>
-                                    <span>$${ord.total.toFixed(2)}</span>
-                                </div>
-                                <div class="center" style="margin-top:10px;">
-                                    <div>Forma de Pago: <span style="text-transform:uppercase">${ord.paymentMethod}</span></div>
-                                    <div style="margin-top:10px;">¡Gracias por su compra!</div>
-                                </div>
-                            </body>
-                        </html>
-                    `;
+            // const itemsHtml = ord.items.map(item => `
+            //             <div class="flex">
+            //                 <span>${item.quantity} x ${item.name}</span>
+            //                 <span>$${(item.price * item.quantity).toFixed(2)}</span>
+            //             </div>
+            //         `).join('');
 
-            win.document.write(content);
-            win.document.close();
-            win.focus();
-            setTimeout(() => {
-                win.print();
-                win.close();
-            }, 500);
+            // const content = `
+            //             <html>
+            //                 <head><title>Ticket</title>${styles}</head>
+            //                 <body>
+            //                     <div class="center">
+            //                         <div class="title">${settings.settings.value.appName || 'tengo hambre'}</div>
+            //                         <div>${settings.settings.value.ownerEmail || 'soporte@tengo-hambre.com'}</div>
+            //                         <div>Tel: ${settings.settings.value.phone || '000-000-000'}</div>
+            //                     </div>
+            //                     <div class="line"></div>
+            //                     <div>Folio: #${ord._id.slice(-6).toUpperCase()}</div>
+            //                     <div>Fecha: ${new Date(ord.createdAt).toLocaleString()}</div>
+            //                     <div>Cliente: ${ord.customerId ? ord.customerId.name : 'Mostrador'}</div>
+            //                     <div class="line"></div>
+            //                     ${itemsHtml}
+            //                     <div class="line"></div>
+            //                     <div class="flex bold">
+            //                         <span>TOTAL</span>
+            //                         <span>$${ord.total.toFixed(2)}</span>
+            //                     </div>
+            //                     <div class="center" style="margin-top:10px;">
+            //                         <div>Forma de Pago: <span style="text-transform:uppercase">${ord.paymentMethod}</span></div>
+            //                         <div style="margin-top:10px;">¡Gracias por su compra!</div>
+            //                     </div>
+            //                 </body>
+            //             </html>
+            //         `;
+
+            // win.document.write(content);
+            // win.document.close();
+            // win.focus();
+            // setTimeout(() => {
+            //     win.print();
+            //     win.close();
+            // }, 500);
         };
         // --- LÓGICA IMPRESIÓN DE TICKETS PRO ---
         const showTicketModal = ref(false);
@@ -674,31 +678,40 @@ createApp({
 
         // Truco del Iframe invisible para imprimir SIN abrir ventana
         const printTicketNow = async () => {
-            try {
-                // 1. Detectar Entorno
-                const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-                const isAndroid = /android/i.test(userAgent);
-                // Configuración guardada (por si queremos forzar un modo en el futuro)
-                const savedConfig = localStorage.getItem('fudi_printer_mode'); // 'rawbt', 'browser', 'qz'
+            
+            const ord = orders.selectedOrder.value;
+            if(!ord) return;
+            
+            printer.printTicket(ord);
+            
+            console.log(ord);
+            showTicketModal.value = false;
+            
+            // try {
+            //     // 1. Detectar Entorno
+            //     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            //     const isAndroid = /android/i.test(userAgent);
+            //     // Configuración guardada (por si queremos forzar un modo en el futuro)
+            //     const savedConfig = localStorage.getItem('fudi_printer_mode'); // 'rawbt', 'browser', 'qz'
 
-                let mode = savedConfig || (isAndroid ? 'rawbt' : 'browser');
+            //     let mode = savedConfig || (isAndroid ? 'rawbt' : 'browser');
 
-                console.log(`🖨️ Iniciando impresión en modo: ${mode}`);
-                console.log("TicketData : " , ticketData)
-                if (mode === 'rawbt') {
-                    await printViaRawBT(ticketData);
-                } else if (mode === 'browser') {
-                    printViaBrowser();
-                } else {
-                    // Aquí conectaríamos QZ Tray en el futuro para Windows "Silencioso"
-                    console.warn('Modo no soportado, usando navegador');
-                    printViaBrowser();
-                }
+            //     console.log(`🖨️ Iniciando impresión en modo: ${mode}`);
+            //     console.log("TicketData : " , ticketData)
+            //     if (mode === 'rawbt') {
+            //         await printViaRawBT(ticketData);
+            //     } else if (mode === 'browser') {
+            //         printViaBrowser();
+            //     } else {
+            //         // Aquí conectaríamos QZ Tray en el futuro para Windows "Silencioso"
+            //         console.warn('Modo no soportado, usando navegador');
+            //         printViaBrowser();
+            //     }
 
-            } catch (error) {
-                console.error("Error general de impresión:", error);
-                if (window.toastr) window.toastr.error('Error al intentar imprimir');
-            }
+            // } catch (error) {
+            //     console.error("Error general de impresión:", error);
+            //     if (window.toastr) window.toastr.error('Error al intentar imprimir');
+            // }
 
             // // 1. Obtener el HTML limpio del ticket
             // const content = document.getElementById('thermal-ticket-content').innerHTML;
