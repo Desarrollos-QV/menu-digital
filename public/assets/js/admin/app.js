@@ -594,70 +594,6 @@ createApp({
             toastr.success('Reporte descargado correctamente');
         };
 
-        // 2. IMPRIMIR TICKET TÉRMICO (80mm)
-        const printThermalTicket = () => {
-
-            printer.printTicket(data);
-            // const ord = orders.selectedOrder.value;
-            // if (!ord) return;
-
-            // // Ventana emergente con estilos específicos para impresora
-            // const win = window.open('', '', 'width=350,height=600');
-            // const styles = `
-            //             <style>
-            //                 @page { margin: 0; }
-            //                 body { margin: 0; padding: 10px; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; }
-            //                 .center { text-align: center; }
-            //                 .bold { font-weight: bold; }
-            //                 .line { border-bottom: 1px dashed #000; margin: 5px 0; }
-            //                 .flex { display: flex; justify-content: space-between; }
-            //                 .title { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
-            //             </style>
-            //         `;
-
-            // const itemsHtml = ord.items.map(item => `
-            //             <div class="flex">
-            //                 <span>${item.quantity} x ${item.name}</span>
-            //                 <span>$${(item.price * item.quantity).toFixed(2)}</span>
-            //             </div>
-            //         `).join('');
-
-            // const content = `
-            //             <html>
-            //                 <head><title>Ticket</title>${styles}</head>
-            //                 <body>
-            //                     <div class="center">
-            //                         <div class="title">${settings.settings.value.appName || 'tengo hambre'}</div>
-            //                         <div>${settings.settings.value.ownerEmail || 'soporte@tengo-hambre.com'}</div>
-            //                         <div>Tel: ${settings.settings.value.phone || '000-000-000'}</div>
-            //                     </div>
-            //                     <div class="line"></div>
-            //                     <div>Folio: #${ord._id.slice(-6).toUpperCase()}</div>
-            //                     <div>Fecha: ${new Date(ord.createdAt).toLocaleString()}</div>
-            //                     <div>Cliente: ${ord.customerId ? ord.customerId.name : 'Mostrador'}</div>
-            //                     <div class="line"></div>
-            //                     ${itemsHtml}
-            //                     <div class="line"></div>
-            //                     <div class="flex bold">
-            //                         <span>TOTAL</span>
-            //                         <span>$${ord.total.toFixed(2)}</span>
-            //                     </div>
-            //                     <div class="center" style="margin-top:10px;">
-            //                         <div>Forma de Pago: <span style="text-transform:uppercase">${ord.paymentMethod}</span></div>
-            //                         <div style="margin-top:10px;">¡Gracias por su compra!</div>
-            //                     </div>
-            //                 </body>
-            //             </html>
-            //         `;
-
-            // win.document.write(content);
-            // win.document.close();
-            // win.focus();
-            // setTimeout(() => {
-            //     win.print();
-            //     win.close();
-            // }, 500);
-        };
         // --- LÓGICA IMPRESIÓN DE TICKETS PRO ---
         const showTicketModal = ref(false);
         const ticketData = ref(null);
@@ -667,6 +603,8 @@ createApp({
             if (!ord) return;
 
             ticketData.value = {
+                id: ord._id,
+                origin: 'reprint',
                 folio: ord._id.slice(-6).toUpperCase(),
                 customer: ord.customerId ? ord.customerId.name : 'Mostrador',
                 total: ord.total,
@@ -678,19 +616,25 @@ createApp({
 
         // Truco del Iframe invisible para imprimir SIN abrir ventana
         const printTicketNow = async () => {
+            let ord = null;
             
-            let ord = orders.selectedOrder.value;
-            if(!ord) {
+            if (ticketData.value.origin === 'reprint') {
+                // Viene desde "Listado de ventas", ya tenemos seleccionada la orden correcta
+                ord = orders.selectedOrder.value;
+            } else {
+                // Viene desde el POS al terminar una venta, necesitamos obtener los detalles reales para imprimir complementos
                 orders.fetchOrderDetails(ticketData.value.id);
+                // Damos un tiempo a que la reactividad y fetch terminen
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 ord = orders.selectedOrder.value;
             }
             
+            if(!ord) return window.toastr ? toastr.error('Error al recuperar la orden') : console.error('Orden no encontrada');
+            
             printer.printTicket(ord);
             
-            console.log(ord);
+            console.log('Ticket impreso: ', ord);
             showTicketModal.value = false;
-
         };
 
        
@@ -921,6 +865,7 @@ createApp({
                     if (lastOrder) {
                         ticketData.value = {
                             id : lastOrder._id,
+                            origin: 'pos',
                             folio: lastOrder._id.slice(-6).toUpperCase(),
                             customer: lastOrder.customerId ? lastOrder.customerId.name : 'Mostrador',
                             total: lastOrder.total,
@@ -1109,7 +1054,7 @@ createApp({
             saveQuote,
             viewListQuotes,
             viewListOrders,
-            downloadSalesExcel, printThermalTicket, generatePDF,
+            downloadSalesExcel, generatePDF,
             startNewQuote, editQuote, convertQuoteToSale, openQuoteShare,
             showShareModal, sharePhone, sharePrefix, openShareModal, confirmShare,
             showDiscountModal, tempDiscount, openDiscountModal, confirmDiscount,
