@@ -15,16 +15,27 @@ export function usePrinter(settings) {
     // ==========================================
     const printWithQZ = async (ticketData, printerName) => {
         try {
-            // 1. Conectar al programa local QZ Tray (el .exe)
-            if (!qz.websocket.isActive()) {
-                await qz.websocket.connect({ retries: 2, delay: 1 });
+            // 1. CONFIGURACIÓN EXPLÍCITA ANÓNIMA Y DOMINIO
+            // Desactivamos firmas digitales
+            if (typeof qz.security.setCertificatePromise === 'function') {
+                qz.security.setCertificatePromise((resolve, reject) => resolve());
+                qz.security.setSignaturePromise((toSign) => (resolve, reject) => resolve());
             }
 
-            // 2. Configurar la impresora
+            // 2. Intentar conectar forzando el dominio y localhost
+            if (!qz.websocket.isActive()) {
+                await qz.websocket.connect({ 
+                    retries: 5, 
+                    delay: 2,
+                    host: ['localhost', 'app.fudipos.shop'] // Intentará ambas rutas explícitamente
+                });
+            }
+
             const config = qz.configs.create(printerName, {
-                encoding: 'ISO-8859-1', // Soporte para acentos 
+                encoding: 'ISO-8859-1',
                 legacy: true
             });
+
 
             // 3. Generar comandos ESC/POS puros
             const data = [
