@@ -79,9 +79,51 @@ export function usePrinter(settings) {
             if(window.toastr) window.toastr.success('Ticket impreso (QZ Tray)');
 
         } catch (error) {
-            console.error('Error QZ Tray:', error);
-            if(window.toastr) window.toastr.error('Abre la app QZ Tray en tu PC');
-            throw error; // Lanza error para intentar el fallback
+             console.error('Error detallado QZ:', error);
+            
+            // --- DETECCIÓN INTELIGENTE DEL ERROR ---
+            const errorMsg = error.message || String(error);
+            
+            // Si el error menciona certificados o problemas de conexión WSS
+            if (errorMsg.includes('cert') || errorMsg.includes('connection refused') || errorMsg.includes('offline') || errorMsg.includes('8181')) {
+                
+                // Mostrar un SweetAlert amigable guiando al usuario
+                if (window.Swal) {
+                    window.Swal.fire({
+                        title: 'Conexión Bloqueada por Seguridad',
+                        html: `
+                            <div style="text-align: left; font-size: 14px;">
+                                <p>Tu navegador está bloqueando la comunicación con la impresora por seguridad (HTTPS).</p>
+                                <p><strong>Para solucionarlo en un clic:</strong></p>
+                                <ol style="margin-left: 20px; margin-top: 10px; margin-bottom: 10px;">
+                                    <li>Haz clic en el botón azul de abajo. Se abrirá una ventana nueva.</li>
+                                    <li>En esa ventana, si ves una advertencia, haz clic en <b>"Avanzado"</b> y luego en <b>"Aceptar el riesgo / Continuar"</b>.</li>
+                                    <li>Vuelve a esta pestaña y presiona "Imprimir" de nuevo.</li>
+                                </ol>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#4f46e5', // brand
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Desbloquear Conexión <i class="fa-solid fa-external-link-alt ml-1"></i>',
+                        cancelButtonText: 'Cerrar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Abrimos la URL conflictiva en una pestaña nueva para que el usuario acepte el certificado
+                            window.open('https://localhost:8181', '_blank');
+                        }
+                    });
+                } else {
+                    alert("Por favor abre https://localhost:8181 en una nueva pestaña y acepta el riesgo de seguridad.");
+                }
+            } else {
+                // Otro error (ej. impresora apagada, nombre incorrecto)
+                if(window.toastr) window.toastr.error('Error de impresión. Verifica que QZ Tray esté abierto y la impresora encendida.');
+            }
+            
+            // Forzamos el fallback de todos modos para que el cliente no se quede sin ticket
+            throw error; 
         }
     };
 
