@@ -679,18 +679,18 @@ createApp({
         // Truco del Iframe invisible para imprimir SIN abrir ventana
         const printTicketNow = async () => {
             
-            orders.fetchOrderDetails(ticketData.value.id);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const ord = orders.selectedOrder.value;
+            let ord = orders.selectedOrder.value;
             if(!ord) {
-                console.log("No existe data.." , ticketData.value);
-                return;
+                orders.fetchOrderDetails(ticketData.value.id);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                ord = orders.selectedOrder.value;
             }
             
             printer.printTicket(ord);
             
             console.log(ord);
             showTicketModal.value = false;
+
         };
 
        
