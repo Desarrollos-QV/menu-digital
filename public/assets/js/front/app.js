@@ -55,6 +55,12 @@ createApp({
         const isLoading = ref(true);
         const businessError = ref(false);
 
+        // Business Info & Reviews Logic
+        const showBusinessModal = ref(false);
+        const reviews = ref([]);
+        const newReview = ref({ customerName: '', rating: 5, comment: '' });
+        const submittingReview = ref(false);
+
         // Cart Logic
         const cart = ref([]);
         const showCartModal = ref(false);
@@ -120,12 +126,13 @@ createApp({
             try {
                 // CAMBIO CLAVE: Usamos /api/public en lugar de /api/
                 const query = `?slug=${slug}`;
-                const [bannersRes, catsRes, prodsRes, addonsRes, configRes] = await Promise.all([
+                const [bannersRes, catsRes, prodsRes, addonsRes, configRes, reviewsRes] = await Promise.all([
                     fetch('/api/public/banners' + query),
                     fetch('/api/public/categories' + query),
                     fetch('/api/public/products' + query),
                     fetch('/api/public/addons' + query),
-                    fetch('/api/public/config' + query)
+                    fetch('/api/public/config' + query),
+                    fetch('/api/public/reviews' + query)
                 ]);
 
                 if (!configRes.ok) throw new Error();
@@ -134,6 +141,7 @@ createApp({
                 if (catsRes.ok) categories.value = await catsRes.json();
                 if (prodsRes.ok) products.value = await prodsRes.json();
                 if (addonsRes.ok) addons.value = await addonsRes.json();
+                if (reviewsRes.ok) reviews.value = await reviewsRes.json();
 
                 // Organizamos por Sort catsRes y ProdsRes
                 categories.value.sort((a, b) => a.sort - b.sort);
@@ -156,6 +164,70 @@ createApp({
             } catch (e) { businessError.value = true; }
             finally { isLoading.value = false; }
         };
+
+        // Enviar Review
+        const submitReview = async () => {
+            if (!newReview.value.customerName || !newReview.value.comment) {
+                return toastr.warning('Completa tu nombre y comentario.');
+            }
+            submittingReview.value = true;
+            try {
+                const query = `?slug=${slug}`; // For potential future logic
+                const res = await fetch('/api/public/reviews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slug, ...newReview.value })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    reviews.value.unshift(data.review); // Add it to top
+                    toastr.success('¡Gracias por tu reseña!');
+                    newReview.value = { customerName: '', rating: 5, comment: '' };
+                } else {
+                    const err = await res.json();
+                    toastr.error(err.message || 'Hubo un error al enviar tu reseña.');
+                }
+            } catch (e) {
+                toastr.error('Error de conexión.');
+            } finally {
+                submittingReview.value = false;
+            }
+        };
+
+        // ----- LÓGICA DE HORARIO -----
+        const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        // Horario del día actual (puede ser null si no hay schedule configurado)
+        const todaySchedule = computed(() => {
+            const schedule = config.value.schedule;
+            if (!schedule || schedule.length === 0) return null;
+            const todayName = DAY_NAMES[new Date().getDay()];
+            return schedule.find(d => d.day === todayName) || null;
+        });
+
+        // ¿El negocio está abierto AHORA mismo?
+        const isBusinessOpen = computed(() => {
+            // 1. Si el admin lo cerró manualmente, siempre cerrado
+            if (config.value.isOpen === false) return false;
+
+            // 2. Si no hay schedule, confiamos en el campo isOpen del config
+            const day = todaySchedule.value;
+            if (!day) return config.value.isOpen !== false;
+
+            // 3. Si el día está marcado como cerrado en el schedule
+            if (!day.isOpen) return false;
+
+            // 4. Comparar hora actual con apertura/cierre
+            const now = new Date();
+            const [openH, openM] = (day.open || '00:00').split(':').map(Number);
+            const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const openMinutes = openH * 60 + openM;
+            const closeMinutes = closeH * 60 + closeM;
+
+            return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+        });
 
         // --- Logic Helpers for Cart ---
         const initAddToCart = (product) => {
@@ -215,6 +287,10 @@ createApp({
         const decreaseCartItem = (idx) => {
             if (cart.value[idx].quantity > 1) cart.value[idx].quantity--;
             else { cart.value.splice(idx, 1); if (!cart.value.length) showCartModal.value = false; }
+        };
+
+        const alertBussinesClose = () => {
+            toastr.error(`El negocio está cerrado por el momento.`);
         };
 
         // Checkout & Send Whatsapp
@@ -443,10 +519,13 @@ createApp({
         return {
             banners, categories, products, config, isLoading, isDark, scrollY, businessError,
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
+            showBusinessModal, reviews, newReview, submittingReview, submitReview,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
             cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
-            openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState
+            openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
+            isBusinessOpen, todaySchedule,
+            alertBussinesClose
         };
     }
 }).mount('#app');

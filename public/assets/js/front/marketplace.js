@@ -1,5 +1,5 @@
 
-const { createApp, ref, reactive, computed, onMounted, onUnmounted } = Vue;
+const { createApp, ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
 const Swal = window.Swal;
 
 // Configuracion de Tailwind
@@ -48,6 +48,162 @@ createApp({
         const error = ref(false);
         const scrolled = ref(false);
         const businesses = ref([]);
+
+        // --- MODO ENTREGA vs RECOLECTAR ---
+        const deliveryMode = ref('delivery'); // 'delivery' | 'pickup'
+        const mapReady     = ref(false);
+        const highlightedBiz    = ref(null);
+        const selectedPickupBiz = ref(null);
+
+        let _pickupMap     = null;
+        let _pickupMarkers = {}; // { bizId: google.maps.Marker }
+        let _infoWindow    = null;
+
+        // --- Computed: negocios con pickup y filtrables ---
+        const pickupBusinesses = computed(() => {
+            let list = businesses.value.filter(b => b.allowPickup && b.lat && b.lng);
+            if (searchQuery.value) {
+                const q = searchQuery.value.toLowerCase();
+                list = list.filter(b =>
+                    (b.name && b.name.toLowerCase().includes(q)) ||
+                    (b.address && b.address.toLowerCase().includes(q))
+                );
+            }
+            return list;
+        });
+
+        // --- Inicializar mapa ---
+        const initPickupMap = () => {
+            if (!window.google || !window.google.maps) return;
+            mapReady.value = true;
+
+            const mapEl = document.getElementById('pickup-map');
+            if (!mapEl) return;
+
+            // Centro inicial: México
+            const defaultCenter = { lat: 20.959, lng: -89.623 };
+
+            _pickupMap = new window.google.maps.Map(mapEl, {
+                center: defaultCenter,
+                zoom: 11,
+                disableDefaultUI: false,
+                zoomControl: true,
+                streetViewControl: false,
+                mapTypeControl: false,
+                fullscreenControl: false,
+                styles: [
+                    { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+                    { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+                ]
+            });
+
+            _infoWindow = new window.google.maps.InfoWindow({ maxWidth: 280 });
+
+            // Colocar markers
+            refreshMarkers();
+        };
+
+        const makeMarkerSVG = (isOpen) => ({
+            path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+            fillColor: isOpen ? '#10b981' : '#6366f1',
+            fillOpacity: 1,
+            strokeWeight: 2,
+            strokeColor: '#fff',
+            scale: 2,
+            anchor: new window.google.maps.Point(12, 24)
+        });
+
+        const refreshMarkers = () => {
+            if (!_pickupMap) return;
+
+            // Limpiar markers previos
+            Object.values(_pickupMarkers).forEach(m => m.setMap(null));
+            _pickupMarkers = {};
+
+            const bounds = new window.google.maps.LatLngBounds();
+            let hasPoints = false;
+
+            pickupBusinesses.value.forEach(biz => {
+                if (!biz.lat || !biz.lng) return;
+                const pos = { lat: biz.lat, lng: biz.lng };
+
+                const marker = new window.google.maps.Marker({
+                    position: pos,
+                    map: _pickupMap,
+                    title: biz.name,
+                    icon: makeMarkerSVG(isBusinessCurrentlyOpen(biz)),
+                    animation: window.google.maps.Animation.DROP
+                });
+
+                marker.addListener('click', () => selectPickupBiz(biz));
+                _pickupMarkers[biz._id] = marker;
+                bounds.extend(pos);
+                hasPoints = true;
+            });
+
+            if (hasPoints) {
+                _pickupMap.fitBounds(bounds);
+                // Limitar zoom excesivo
+                const listener = window.google.maps.event.addListenerOnce(_pickupMap, 'bounds_changed', () => {
+                    if (_pickupMap.getZoom() > 15) _pickupMap.setZoom(15);
+                });
+            }
+        };
+
+        const selectPickupBiz = (biz) => {
+            highlightedBiz.value  = biz._id;
+            selectedPickupBiz.value = biz;
+
+            if (_pickupMap && biz.lat && biz.lng) {
+                const pos = { lat: biz.lat, lng: biz.lng };
+                _pickupMap.panTo(pos);
+                _pickupMap.setZoom(16);
+
+                // InfoWindow
+                const isOpen = isBusinessCurrentlyOpen(biz);
+                const hours  = getTodayHours(biz);
+                _infoWindow.setContent(`
+                    <div style="font-family:'Outfit',sans-serif;padding:12px 16px;min-width:200px">
+                        <p style="font-weight:800;font-size:14px;margin:0 0 4px;color:#1e293b">${biz.name}</p>
+                        <p style="font-size:11px;color:#64748b;margin:0 0 6px">${biz.address || ''}</p>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:${isOpen ? '#10b981' : '#94a3b8'}">
+                            <span style="width:7px;height:7px;border-radius:50%;background:${isOpen ? '#10b981' : '#94a3b8'};display:inline-block"></span>
+                            ${isOpen ? ('Abierto' + (hours ? ' · ' + hours : '')) : 'Cerrado'}
+                        </div>
+                    </div>
+                `);
+                _infoWindow.open(_pickupMap, _pickupMarkers[biz._id]);
+            }
+
+            // Scrollear el card para que sea visible en móvil
+            nextTick(() => {
+                const el = document.querySelector(`.pickup-card.highlighted`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        };
+
+        const setDeliveryMode = (mode) => {
+            deliveryMode.value = mode;
+            if (mode === 'pickup') {
+                // Esperar a que el DOM renderice el mapa
+                nextTick(() => {
+                    if (!_pickupMap) {
+                        if (window._mapsReady) {
+                            initPickupMap();
+                        } else {
+                            document.addEventListener('maps-ready', initPickupMap, { once: true });
+                        }
+                    } else {
+                        // Forzar refresco de markers si ya existe el mapa
+                        refreshMarkers();
+                        window.google.maps.event.trigger(_pickupMap, 'resize');
+                    }
+                });
+            }
+        };
+
+        // Re-colocar markers cuando cambia el listado filtrado
+        watch(pickupBusinesses, () => { if (_pickupMap) refreshMarkers(); });
 
         // --- UBICACIÓN ---
         const showLocationModal = ref(false);
@@ -396,6 +552,43 @@ createApp({
             return filtered;
         });
 
+        // ---- LÓGICA HORARIO MARKETPLACE ----
+        const DAY_NAMES_MKT = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        const isBusinessCurrentlyOpen = (biz) => {
+            // 1. Si el admin lo cerró manualmente → siempre cerrado
+            if (biz.isOpen === false) return false;
+
+            const schedule = biz.schedule;
+            // 2. Sin schedule configurado → confiamos en isOpen
+            if (!schedule || schedule.length === 0) return biz.isOpen !== false;
+
+            const todayName = DAY_NAMES_MKT[new Date().getDay()];
+            const day = schedule.find(d => d.day === todayName);
+
+            // 3. Día no encontrado → abierto por defecto
+            if (!day) return true;
+
+            // 4. Día marcado como cerrado
+            if (!day.isOpen) return false;
+
+            // 5. Comparar hora actual
+            const now = new Date();
+            const [openH, openM] = (day.open || '00:00').split(':').map(Number);
+            const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
+            const cur = now.getHours() * 60 + now.getMinutes();
+            return cur >= openH * 60 + openM && cur < closeH * 60 + closeM;
+        };
+
+        const getTodayHours = (biz) => {
+            const schedule = biz.schedule;
+            if (!schedule || schedule.length === 0) return null;
+            const todayName = DAY_NAMES_MKT[new Date().getDay()];
+            const day = schedule.find(d => d.day === todayName);
+            if (!day || !day.isOpen) return null;
+            return `${day.open} - ${day.close}`;
+        };
+
         const goToBusiness = (biz) => {
             if (!biz.isOpen) {
                 // Podrías mostrar un toast o alert
@@ -430,7 +623,13 @@ createApp({
             banners, activeBanner, nextBanner, prevBanner, setActiveBanner, handleBannerClick,
             // Registro & Auth
             showUserModal, isLoginMode, openModal, customerForm, loginForm, registerCustomer, loginCustomer,
-            currentUser, firstName, userInitial, logout
+            currentUser, firstName, userInitial, logout,
+            // Horario
+            isBusinessCurrentlyOpen, getTodayHours,
+            // Modo Recolectar + Mapa
+            deliveryMode, setDeliveryMode,
+            pickupBusinesses, mapReady,
+            highlightedBiz, selectedPickupBiz, selectPickupBiz
         };
     }
 }).mount('#app');

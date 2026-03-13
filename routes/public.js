@@ -19,6 +19,7 @@ router.get('/:type', publicMenuController.getPublicData);
 // Ruta para registrar negocio
 router.post('/register', publicMenuController.registerBusiness);
 
-
+// Ruta para guardar review
+router.post('/reviews', publicMenuController.submitReview);
 
 module.exports = router;

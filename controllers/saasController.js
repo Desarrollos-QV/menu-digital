@@ -50,11 +50,24 @@ exports.createBusiness = async (req, res) => {
 // EDITAR NEGOCIO
 exports.updateBusiness = async (req, res) => {
     try {
-        const { name,ownerEmail, slug, plan } = req.body;
-        // Solo actualizamos campos administrativos, no el dueño ni la contraseña aquí
+        const { name, ownerEmail, slug, plan, phone, address, isOpen, active, isTrending,
+                lat, lng, allowDelivery, allowPickup } = req.body;
+
+        const updateData = { name, ownerEmail, slug, plan };
+
+        if (phone        !== undefined) updateData.phone        = phone;
+        if (address      !== undefined) updateData.address      = address;
+        if (isOpen       !== undefined) updateData.isOpen       = isOpen;
+        if (active       !== undefined) updateData.active       = active;
+        if (isTrending   !== undefined) updateData.isTrending   = isTrending;
+        if (lat          !== undefined) updateData.lat          = lat;
+        if (lng          !== undefined) updateData.lng          = lng;
+        if (allowDelivery !== undefined) updateData.allowDelivery = allowDelivery;
+        if (allowPickup  !== undefined) updateData.allowPickup  = allowPickup;
+
         const updatedBusiness = await Business.findByIdAndUpdate(
-            req.params.id, 
-            { name, ownerEmail, slug, plan }, 
+            req.params.id,
+            updateData,
             { new: true }
         );
         res.json(updatedBusiness);

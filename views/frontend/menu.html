@@ -45,10 +45,11 @@
 
     <template v-else>
         <!-- HEADER -->
-        <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm px-4 pt-4 pb-2 transition-all duration-300 border-b border-transparent dark:border-slate-800" 
+        <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm px-4 pt-4 pb-3 transition-all duration-300 border-b border-transparent dark:border-slate-800" 
                 :class="{'shadow-md dark:shadow-slate-900/50': scrollY > 10}">
-            <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center gap-3">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-3">
                     <!-- Avatar del Negocio -->
                     <div v-if="config.avatar" class="w-10 h-10 rounded-full overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
                         <img :src="config.avatar" class="w-full h-full object-cover">
@@ -57,9 +58,28 @@
                         {{ (config.appName || 'M')[0] }}
                     </div>
                     
-                    <div>
-                        <h1 class="text-lg font-bold text-slate-800 dark:text-white leading-none">{{ config.appName || 'Cargando...' }}</h1>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Menú Digital</p>
+                    <div class="cursor-pointer group select-none" @click="showBusinessModal = true">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h1 class="text-lg font-bold text-slate-800 dark:text-white leading-none group-hover:text-primary transition-colors">{{ config.appName || 'Cargando...' }} <i class="fa-solid fa-chevron-right text-xs text-slate-400 group-hover:translate-x-1 transition-transform"></i></h1>
+                            <!-- Rating -->
+                            <span v-if="!isLoading" class="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full"><i class="fa-solid fa-star text-yellow-400"></i> {{ config.calculatedRating }} <span class="text-[10px] text-slate-400 font-normal">({{config.reviewsCount}})</span></span>
+                            <!-- Badge Estado -->
+                            <span v-if="!isLoading"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all"
+                                :class="isBusinessOpen ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'">
+                                <span class="w-1.5 h-1.5 rounded-full animate-pulse" :class="isBusinessOpen ? 'bg-emerald-500' : 'bg-red-500'"></span>
+                                {{ isBusinessOpen ? 'Abierto' : 'Cerrado' }}
+                            </span>
+                        </div>
+                        <!-- Horario del día / Info -->
+                        <p v-if="todaySchedule && !isLoading" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1">
+                            <i class="fa-regular fa-clock text-[9px]"></i>
+                            <span v-if="todaySchedule.isOpen">{{ todaySchedule.open }} - {{ todaySchedule.close }}</span>
+                            <span v-else>Cerrado hoy</span>
+                            <span class="mx-1">&bull;</span>
+                            <i class="fa-solid fa-motorcycle text-[9px]"></i> {{ config.time || '30-45' }} min
+                        </p>
+                        <p v-else-if="!isLoading" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Menú Digital</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -67,33 +87,35 @@
                         <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
                     </button>
                 </div>
-            </div>
-            <div class="relative" v-if="!showCartModal">
-                <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
-                <input v-model="searchQuery" type="text" placeholder="¿Qué se te antoja hoy?" 
-                       class="w-full bg-slate-100 dark:bg-slate-800 dark:text-white rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition shadow-inner dark:placeholder-slate-500">
+                </div>
+                <div class="relative w-full" v-if="!showCartModal">
+                    <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                    <input v-model="searchQuery" type="text" placeholder="¿Qué se te antoja hoy?" 
+                           class="w-full bg-slate-100 dark:bg-slate-800 dark:text-white rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition shadow-inner dark:placeholder-slate-500">
+                </div>
             </div>
         </header>
 
         <!-- MAIN CONTENT -->
         <main class="flex-1 overflow-x-hidden">
+            <div class="max-w-7xl mx-auto w-full">
             
             <!-- LOADING SKELETON -->
             <div v-if="isLoading" class="mt-4 px-4 space-y-6">
-                <div class="w-full h-40 rounded-2xl skeleton"></div>
-                <div class="flex space-x-3 overflow-hidden"><div v-for="i in 4" :key="i" class="flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl skeleton"></div></div></div>
-                <div class="space-y-4"><div v-for="i in 3" :key="i" class="w-full h-28 rounded-2xl skeleton"></div></div>
+                <div class="w-full h-40 md:h-64 rounded-2xl skeleton"></div>
+                <div class="flex space-x-3 overflow-hidden"><div v-for="i in 6" :key="i" class="flex flex-col items-center gap-2"><div class="w-14 h-14 rounded-2xl skeleton"></div></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"><div v-for="i in 6" :key="i" class="w-full h-28 rounded-2xl skeleton"></div></div>
             </div>
 
             <!-- REAL CONTENT -->
             <div v-else class="animate-fade-in">
                 <template v-if="!showCartModal"> 
                     <!-- BANNERS -->
-                    <div v-if="banners.length > 0" class="mt-4 pl-4">
-                        <div class="swiper banner-swiper pr-4 !pb-8 rounded-2xl overflow-visible">
+                    <div v-if="banners.length > 0" class="mt-4 px-4">
+                        <div class="swiper banner-swiper !pb-8 rounded-2xl overflow-hidden">
                             <div class="swiper-wrapper">
                                 <div v-for="banner in banners" :key="banner._id" class="swiper-slide">
-                                    <div class="relative h-40 w-full rounded-2xl overflow-hidden shadow-md group dark:shadow-none dark:border dark:border-slate-700">
+                                    <div class="relative h-40 md:h-64 lg:h-80 w-full rounded-2xl overflow-hidden shadow-md group dark:shadow-none dark:border dark:border-slate-700">
                                         <img :src="banner.imageUrl" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
                                             <h3 class="text-white font-bold text-lg leading-tight drop-shadow-md">{{ banner.title }}</h3>
@@ -107,8 +129,8 @@
                     </div>
 
                     <!-- CATEGORIES -->
-                    <div class="sticky top-[88px] z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur py-2 pl-4 border-b border-slate-100 dark:border-slate-800 mb-4 transition-colors duration-300">
-                        <div class="flex space-x-3 overflow-x-auto hide-scroll pr-4 pb-1">
+                    <div class="sticky top-[95px] md:top-[98px] lg:top-[102px] z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur py-4 px-6 rounded-2xl border-b border-slate-100 dark:border-slate-800 mb-4 transition-colors duration-300">
+                        <div class="flex space-x-3 overflow-x-auto hide-scroll pb-1">
                             <button @click="selectedCategory = 'all'" class="flex flex-col items-center min-w-[70px] transition-all duration-200 group" :class="selectedCategory === 'all' ? 'opacity-100 scale-105' : 'opacity-60 hover:opacity-100'">
                                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 shadow-sm transition-colors duration-300" :class="selectedCategory === 'all' ? 'bg-primary text-white shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"><i class="fa-solid fa-utensils text-xl"></i></div>
                                 <span class="text-xs font-medium truncate w-full text-center" :class="selectedCategory === 'all' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400'">Todo</span>
@@ -130,23 +152,23 @@
                             <span v-if="searchQuery" class="text-xs text-primary cursor-pointer" @click="searchQuery = ''">Borrar filtro</span>
                         </div>
 
-                        <div v-if="filteredProducts.length > 0" class="grid grid-cols-1 gap-4">
-                            <div v-for="prod in filteredProducts" :key="prod._id" class="bg-white dark:bg-slate-900 rounded-2xl p-3 shadow-sm border border-slate-100 dark:border-slate-800 flex gap-4">
-                                <div class="w-28 h-28 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
+                        <div v-if="filteredProducts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                            <div v-for="prod in filteredProducts" :key="prod._id" class="bg-white dark:bg-slate-900 rounded-2xl p-3 md:p-4 shadow-sm border border-slate-100 dark:border-slate-800 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" @click="initAddToCart(prod)">
+                                <div class="w-28 h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 relative">
                                     <img :src="prod.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover">
                                     <span v-if="prod.salesCount > 10" class="absolute top-1 left-1 bg-yellow-400 text-[10px] font-bold px-1.5 py-0.5 rounded text-black shadow-sm">TOP</span>
                                 </div>
                                 
                                 <div class="flex-1 flex flex-col justify-between py-1">
                                     <div>
-                                        <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2">{{ prod.name }}</h3>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{{ prod.description }}</p>
+                                        <h3 class="font-bold text-slate-800 dark:text-slate-100 leading-snug line-clamp-2 md:text-lg group-hover:text-primary transition-colors">{{ prod.name }}</h3>
+                                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{{ prod.description }}</p>
                                     </div>
                                     
-                                    <div class="flex justify-between items-center mt-2">
-                                        <span class="text-lg font-bold text-slate-900 dark:text-white">${{ prod.price }}</span>
-                                        <button @click="initAddToCart(prod)" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-primary hover:bg-primary hover:text-white transition flex items-center justify-center shadow-sm">
-                                            <i class="fa-solid fa-plus"></i>
+                                    <div class="flex justify-between items-center mt-2 md:mt-3">
+                                        <span class="text-lg md:text-xl font-bold text-slate-900 dark:text-white">${{ prod.price }}</span>
+                                        <button @click.stop="initAddToCart(prod)" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-primary hover:bg-primary hover:text-white transition flex items-center justify-center shadow-sm">
+                                            <i class="fa-solid fa-plus md:text-lg"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -160,7 +182,7 @@
                     </div>
                 </template>
                 <template v-else>
-                    <div class="bg-white dark:bg-slate-900 w-full max-w-lg sm:rounded-2xl shadow-2xl relative z-10 max-h-[98vh] flex flex-col animate-slide-up">
+                    <div class="bg-white dark:bg-slate-900 w-full max-w-3xl mx-auto sm:border sm:border-slate-200 dark:sm:border-slate-800 md:rounded-2xl shadow-none sm:shadow-2xl relative z-10 md:my-8 flex flex-col animate-slide-up">
                         <!-- <div class="w-full flex justify-center pt-3 pb-1 sm:hidden" @click="showCartModal = false">
                             <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
                         </div> -->
@@ -173,19 +195,19 @@
                         </div>
 
                         <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                            <div v-if="cart.length === 0" class="text-center py-8 text-slate-400">
-                                <i class="fa-solid fa-basket-shopping text-4xl mb-3 opacity-50"></i>
-                                <p>Tu carrito está vacío.</p>
+                            <div v-if="cart.length === 0" class="text-center py-16 text-slate-400">
+                                <i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-50"></i>
+                                <p class="text-lg">Tu carrito está vacío.</p>
                             </div>
                             
-                            <div v-for="(item, idx) in cart" :key="idx" class="flex gap-4">
-                                <div class="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 overflow-hidden">
+                            <div v-for="(item, idx) in cart" :key="idx" class="flex gap-4 items-center sm:items-start bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                <div class="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0 overflow-hidden">
                                     <img :src="item.product.image || 'https://via.placeholder.com/150'" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex-1">
                                     <div class="flex justify-between items-start mb-1">
-                                        <h4 class="font-bold text-slate-800 dark:text-white text-sm line-clamp-1">{{ item.product.name }}</h4>
-                                        <span class="font-bold text-slate-900 dark:text-white text-sm">${{ item.unitPrice * item.quantity }}</span>
+                                        <h4 class="font-bold text-slate-800 dark:text-white text-sm line-clamp-1 md:text-base">{{ item.product.name }}</h4>
+                                        <span class="font-bold text-slate-900 dark:text-white text-sm md:text-base">${{ item.unitPrice * item.quantity }}</span>
                                     </div>
                                     <div v-if="item.selectedOptions && item.selectedOptions.length > 0" class="mb-2">
                                         <p v-for="opt in item.selectedOptions" :key="opt.name" class="text-xs text-slate-500 dark:text-slate-400 flex justify-between">
@@ -260,13 +282,18 @@
                                 <span class="text-slate-500 dark:text-slate-400 font-medium">Total a pagar</span>
                                 <span class="text-2xl font-bold text-slate-900 dark:text-white">${{ cartTotalPrice }}</span>
                             </div>
-                            <button @click="checkout" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
+                            <button v-if="isBusinessOpen" @click="checkout" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
+                                <i class="fa-brands fa-whatsapp text-xl"></i>
+                                <span>Enviar Pedido a WhatsApp</span>
+                            </button>
+                            <button v-else @click="alertBussinesClose()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-gray-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
                                 <i class="fa-brands fa-whatsapp text-xl"></i>
                                 <span>Enviar Pedido a WhatsApp</span>
                             </button>
                         </div>
                     </div>
                 </template>
+            </div>
             </div>
         </main>
 
@@ -287,12 +314,12 @@
         </button>
 
         <!-- PRODUCT DETAILS MODAL -->
-        <div v-if="showProductModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
+        <div v-if="showProductModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
             <div @click="showProductModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
             
-            <div class="bg-white dark:bg-slate-900 w-full max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl relative z-10 max-h-[90vh] flex flex-col animate-slide-up">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-2xl sm:rounded-3xl rounded-t-3xl shadow-2xl relative z-10 max-h-[90vh] flex flex-col animate-slide-up">
                 <!-- Header Image -->
-                <div class="h-48 w-full bg-slate-100 dark:bg-slate-800 relative rounded-t-3xl overflow-hidden shrink-0">
+                <div class="h-48 md:h-64 w-full bg-slate-100 dark:bg-slate-800 relative sm:rounded-t-3xl rounded-t-3xl overflow-hidden shrink-0">
                     <img :src="activeProduct.image || 'https://via.placeholder.com/400x200'" class="w-full h-full object-cover">
                     <button @click="showProductModal = false" class="absolute top-4 right-4 bg-white/90 dark:bg-black/50 p-2 rounded-full shadow-sm text-slate-800 dark:text-white"><i class="fa-solid fa-xmark"></i></button>
                 </div>
@@ -354,7 +381,7 @@
         -->
         <!-- MODAL LEALTAD -->
         <div v-if="showLoyaltyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative">
+            <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative">
                 <button @click="showLoyaltyModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-white z-10"><i class="fa-solid fa-xmark text-xl"></i></button>
                 
                 <!-- Banner Color -->
@@ -424,6 +451,137 @@
             </div>
         </div>
 
+        <!-- BUSINESS INFO MODAL (UBER EATS STYLE) -->
+        <div v-if="showBusinessModal" class="fixed inset-0 z-50 flex justify-center items-end sm:items-center">
+            <div @click="showBusinessModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+            
+            <div class="bg-slate-50 dark:bg-slate-900 w-full max-w-2xl sm:rounded-3xl rounded-t-3xl shadow-2xl relative z-10 max-h-[95vh] sm:max-h-[90vh] flex flex-col animate-slide-up overflow-hidden">
+                <!-- Header con Cover -->
+                <div class="relative h-32 md:h-48 bg-slate-200 dark:bg-slate-800 shrink-0">
+                    <img v-if="config.avatar" :src="config.avatar" class="w-full h-full object-cover blur-sm opacity-50 dark:opacity-30">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                    
+                    <button @click="showBusinessModal = false" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors z-10">
+                        <i class="fa-solid fa-xmark w-5 h-5 flex items-center justify-center"></i>
+                    </button>
+
+                    <div class="absolute bottom-4 left-6 flex items-end gap-4">
+                        <div v-if="config.avatar" class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg bg-white">
+                            <img :src="config.avatar" class="w-full h-full object-cover">
+                        </div>
+                        <div class="text-white pb-1">
+                            <h2 class="text-2xl font-bold leading-tight drop-shadow-md">{{ config.appName }}</h2>
+                            <p class="text-sm text-white/90 drop-shadow flex items-center gap-2">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-star text-yellow-400"></i> {{ config.calculatedRating }} ({{ config.reviewsCount }})</span>
+                                <span>&bull;</span>
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-motorcycle"></i> {{ config.time || '30-45' }} min</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto w-full flex flex-col hide-scroll">
+                    <!-- Nav Tabs (Static for now) -->
+                    <div class="bg-white dark:bg-slate-900 px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex gap-6 text-sm font-bold sticky top-0 z-10">
+                        <span class="text-primary border-b-2 border-primary pb-1">Información</span>
+                    </div>
+
+                    <div class="p-6 space-y-8 bg-slate-50 dark:bg-slate-900 flex-1">
+                        
+                        <!-- Descripción -->
+                        <div v-if="config.description">
+                            <h3 class="font-bold text-slate-800 dark:text-white mb-2 text-lg">Acerca de nosotros</h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{{ config.description }}</p>
+                        </div>
+
+                        <!-- Mapa y Dirección -->
+                        <div>
+                            <h3 class="font-bold text-slate-800 dark:text-white mb-3 text-lg">Ubicación</h3>
+                            <div class="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700">
+                                <div class="h-40 bg-slate-200 dark:bg-slate-700 w-full relative">
+                                    <iframe v-if="config.lat && config.lng" 
+                                        width="100%" height="100%" frameborder="0" style="border:0"
+                                        :src="`https://maps.google.com/maps?q=${config.lat},${config.lng}&hl=es&z=15&output=embed`" allowfullscreen>
+                                    </iframe>
+                                    <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                                        <i class="fa-solid fa-map-location-dot text-4xl mb-2 opacity-50"></i>
+                                        <span class="text-xs font-medium">Mapa no disponible</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 flex items-start gap-3">
+                                    <i class="fa-solid fa-location-dot text-primary mt-1"></i>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800 dark:text-white">{{ config.address || 'Dirección no especificada' }}</p>
+                                        <p class="text-xs text-slate-500 mt-1" v-if="config.address">Abre tu app de mapas preferida</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Horarios -->
+                        <div v-if="config.schedule && config.schedule.length > 0">
+                            <h3 class="font-bold text-slate-800 dark:text-white mb-3 text-lg">Horarios de atención</h3>
+                            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 divide-y divide-slate-50 dark:divide-slate-700/50">
+                                <div v-for="day in config.schedule" :key="day.day" class="p-4 flex justify-between items-center text-sm">
+                                    <span class="font-medium text-slate-700 dark:text-slate-200">{{ day.day }}</span>
+                                    <span v-if="day.isOpen" class="text-slate-500 font-medium">{{ day.open }} - {{ day.close }}</span>
+                                    <span v-else class="text-red-400 font-medium bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">Cerrado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reseñas -->
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-800 dark:text-white text-lg">Reseñas y Comentarios</h3>
+                                <span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-3 py-1 rounded-full font-bold text-sm flex items-center gap-1">
+                                    <i class="fa-solid fa-star"></i> {{ config.calculatedRating }}
+                                </span>
+                            </div>
+
+                            <!-- Listado -->
+                            <div class="space-y-4 mb-6">
+                                <div v-if="reviews.length === 0" class="text-center py-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                    <i class="fa-regular fa-comment-dots text-3xl text-slate-300 dark:text-slate-600 mb-2"></i>
+                                    <p class="text-sm text-slate-500">Sé el primero en dejar una reseña.</p>
+                                </div>
+                                <div v-else-if="reviews.length > 0" v-for="rev in reviews" :key="rev._id" class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-bold text-slate-800 dark:text-white text-sm">{{ rev.customerName }}</span>
+                                        <div class="flex text-yellow-400 text-[10px]">
+                                            <i class="fa-solid fa-star" v-for="s in rev.rating" :key="s"></i>
+                                            <i class="fa-regular fa-star" v-for="s in (5 - rev.rating)" :key="'e'+s"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ rev.comment }}</p>
+                                    <span class="text-[10px] text-slate-400 mt-2 block">{{ new Date(rev.createdAt).toLocaleDateString() }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Formulario de Reseña -->
+                            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                                <h4 class="font-bold text-slate-800 dark:text-white mb-3 text-sm">Deja tu reseña</h4>
+                                <input v-model="newReview.customerName" type="text" placeholder="Tu Nombre" class="w-full mb-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm focus:outline-none focus:border-primary">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="text-sm text-slate-500">Calificación:</span>
+                                    <div class="flex gap-1 text-2xl text-slate-300 dark:text-slate-600 cursor-pointer">
+                                        <i v-for="i in 5" :key="i" class="fa-solid fa-star hover:scale-110 transition-transform" 
+                                           :class="i <= newReview.rating ? 'text-yellow-400' : ''" 
+                                           @click="newReview.rating = i"></i>
+                                    </div>
+                                </div>
+                                <textarea v-model="newReview.comment" placeholder="'Excelente servicio, la comida llegó caliente...'" class="w-full mb-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm focus:outline-none focus:border-primary resize-none h-20"></textarea>
+                                <button @click="submitReview" :disabled="submittingReview" class="w-full bg-slate-900 dark:bg-primary text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50">
+                                    <i v-if="submittingReview" class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <span v-else>Publicar Reseña</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </template>
 </div>

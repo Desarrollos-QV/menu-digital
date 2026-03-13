@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blog - Tengo Hambre</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Fuentes & Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="../assets/css/front.css">
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        [v-cloak] { display: none; }
+        
+        .blog-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .blog-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white">
+
+    <div id="blogApp" v-cloak class="min-h-screen flex flex-col">
+        
+        <!-- NAVBAR -->
+        <nav class="fixed top-0 w-full z-50 bg-white dark:bg-slate-800 py-3 shadow-sm transition-all duration-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-12 md:h-14">
+                    
+                    <!-- Logo & Ubicación -->
+                    <div class="flex items-center gap-6">
+                        <a href="/" class="flex items-center gap-2 group cursor-pointer">
+                            <div class="w-8 h-8 md:w-10 md:h-10 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition">
+                                <img src="/assets/images/logo.jpg" alt="">
+                            </div>
+                            <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white hidden sm:block">Tengo <span class="text-brand">Hambre</span></span>
+                        </a>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <a href="/index.html" class="px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand transition flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-left"></i> Volver a Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 pt-32 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            
+            <div class="flex flex-col md:flex-row justify-between items-end mb-8 md:mb-12 border-b border-slate-200 dark:border-slate-800 pb-6 gap-4">
+                <div>
+                    <h1 class="text-3xl md:text-5xl font-black dark:text-white mb-2 flex items-center gap-3">
+                        <i class="fa-solid fa-newspaper text-brand"></i> Blog & Noticias
+                    </h1>
+                    <p class="text-slate-500 text-base md:text-lg max-w-2xl">Descubre las últimas novedades, consejos y tendencias culinarias en nuestra plataforma.</p>
+                </div>
+            </div>
+
+            <!-- LOADING -->
+            <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
+                <div v-for="i in 6" :key="i" class="bg-white dark:bg-slate-800 rounded-3xl p-4">
+                    <div class="h-48 bg-slate-200 dark:bg-slate-700 rounded-2xl mb-4"></div>
+                    <div class="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-3"></div>
+                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full mb-2"></div>
+                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                </div>
+            </div>
+
+            <!-- ERROR -->
+            <div v-else-if="error" class="text-center py-20">
+                <div class="inline-block p-4 rounded-full bg-red-100 text-red-500 mb-4 text-3xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <h3 class="font-bold text-xl dark:text-white">Algo salió mal</h3>
+                <p class="text-slate-500">{{ error }}</p>
+                <button @click="fetchBlogs" class="mt-4 text-brand font-bold hover:underline">Reintentar</button>
+            </div>
+
+            <!-- LISTA VACÍA -->
+            <div v-else-if="blogs.length === 0" class="text-center py-20 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl text-slate-300">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="font-bold text-xl dark:text-white">Aún no hay artículos</h3>
+                <p class="text-slate-500 max-w-md mx-auto mt-2">Pronto publicaremos novedades emocionantes. ¡Vuelve más tarde!</p>
+            </div>
+
+            <!-- GRID DE BLOGS -->
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <article v-for="post in blogs" :key="post._id" @click="openPost(post)" class="blog-card bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 dark:border-slate-700 cursor-pointer group flex flex-col">
+                    <div class="relative h-56 overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0">
+                        <img v-if="post.image" :src="post.image" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Blog cover">
+                        <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-300 group-hover:scale-105 transition duration-500">
+                            <i class="fa-solid fa-newspaper text-5xl mb-2"></i>
+                            <span class="font-bold text-sm">Tengo Hambre Blog</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xs font-bold px-2 py-1 bg-brand/10 text-brand rounded-md uppercase tracking-wide">Actualidad</span>
+                            <span class="text-xs text-slate-400 font-medium"><i class="fa-regular fa-calendar mr-1"></i> {{ formatDate(post.createdAt) }}</span>
+                        </div>
+                        <h2 class="text-xl font-bold dark:text-white mb-3 line-clamp-2 leading-tight group-hover:text-brand transition">{{ post.title }}</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm line-clamp-3 mb-4 flex-1">{{ post.content }}</p>
+                        
+                        <div class="mt-auto border-t border-slate-100 dark:border-slate-700 pt-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 flex items-center justify-center font-bold text-xs uppercase">
+                                    {{ post.author ? post.author.substring(0,2) : 'ADM' }}
+                                </div>
+                                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ post.author || 'Administrador' }}</span>
+                            </div>
+                            <span class="text-brand font-bold text-sm group-hover:underline flex items-center gap-1">
+                                Leer más <i class="fa-solid fa-arrow-right text-[10px] transform group-hover:translate-x-1 transition"></i>
+                            </span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <!-- FOOTER WEB -->
+        <footer class="bg-white dark:bg-slate-950 pt-16 pb-8 border-t border-slate-100 dark:border-slate-800 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row justify-between items-center pb-8 border-b border-slate-100 dark:border-slate-800 mb-8">
+                    <div class="flex items-center gap-2 mb-4 md:mb-0">
+                        <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white shadow-md">
+                            <img src="/assets/images/logo.jpg" alt="">
+                        </div>
+                        <span class="font-bold text-xl text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row justify-between items-center text-xs text-slate-400">
+                    <p>&copy; 2026 Tengo Hambre Inc.</p>
+                    <div class="flex space-x-4 mt-4 md:mt-0 text-lg">
+                        <a href="#" class="hover:text-brand transition"><i class="fa-brands fa-facebook"></i></a>
+                        <a href="#" class="hover:text-brand transition"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="hover:text-brand transition"><i class="fa-brands fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- MODAL LEER POST -->
+        <div v-if="selectedPost" class="fixed inset-0 z-[60] flex items-center justify-center p-0 md:p-4 bg-slate-900/90 backdrop-blur-sm transition-opacity">
+            <div class="bg-white dark:bg-slate-900 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-4xl md:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fade-in relative">
+                
+                <button @click="selectedPost = null" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur text-white flex items-center justify-center hover:bg-black/50 transition shadow-lg">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+
+                <!-- IMAGEN -->
+                <div class="w-full md:w-2/5 h-64 md:h-full bg-slate-100 dark:bg-slate-800 relative hidden md:block">
+                    <img v-if="selectedPost.image" :src="selectedPost.image" class="w-full h-full object-cover">
+                    <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
+                        <i class="fa-solid fa-newspaper text-6xl"></i>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO -->
+                <div class="w-full md:w-3/5 flex-1 flex flex-col bg-white dark:bg-slate-900">
+                    <div class="flex-1 overflow-y-auto p-6 md:p-10 thin-scroll">
+                        
+                        <!-- Header del Post -->
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-xs font-bold px-3 py-1 bg-brand/10 text-brand rounded-full uppercase tracking-wide">Noticia</span>
+                                <span class="text-sm font-medium text-slate-400 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> {{ formatDate(selectedPost.createdAt) }}</span>
+                            </div>
+                            <h2 class="text-2xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight mb-4">
+                                {{ selectedPost.title }}
+                            </h2>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold border border-slate-200 dark:border-slate-700">
+                                    {{ selectedPost.author ? selectedPost.author.substring(0,2) : 'AD' }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white">{{ selectedPost.author || 'Administrador' }}</p>
+                                    <p class="text-xs text-slate-500">Equipo Tengo Hambre</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Imagen Mobile -->
+                        <div v-if="selectedPost.image" class="w-full h-48 md:hidden rounded-2xl overflow-hidden mb-6 relative">
+                            <img :src="selectedPost.image" class="w-full h-full object-cover">
+                        </div>
+
+                        <!-- Cuerpo del Post -->
+                        <div class="prose prose-slate dark:prose-invert prose-brand max-w-none">
+                            <p class="text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed text-sm md:text-base">
+                                {{ selectedPost.content }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-slate-500">Compartir:</span>
+                            <div class="flex gap-2">
+                                <button class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-[#1877F2] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 flex items-center justify-center transition shadow-sm">
+                                    <i class="fa-brands fa-facebook-f"></i>
+                                </button>
+                                <button class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-[#1DA1F2] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 flex items-center justify-center transition shadow-sm">
+                                    <i class="fa-brands fa-twitter"></i>
+                                </button>
+                                <button class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-[#25D366] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 flex items-center justify-center transition shadow-sm">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script Vue -->
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const blogs = ref([]);
+                const loading = ref(true);
+                const error = ref(null);
+                const selectedPost = ref(null);
+
+                const fetchBlogs = async () => {
+                    loading.value = true;
+                    error.value = null;
+                    try {
+                        const res = await fetch('/api/blog/public');
+                        const data = await res.json();
+                        blogs.value = data || [];
+                    } catch (err) {
+                        console.error('Error al obtener blogs:', err);
+                        error.value = 'No se pudieron cargar los artículos.';
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const formatDate = (dateString) => {
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    return new Date(dateString).toLocaleDateString('es-ES', options);
+                };
+
+                const openPost = (post) => {
+                    selectedPost.value = post;
+                    document.body.style.overflow = 'hidden';
+                };
+
+                // Watcher para restaurar scroll al cerrar modal manual
+                Vue.watch(selectedPost, (newVal) => {
+                    if (!newVal) {
+                        document.body.style.overflow = '';
+                    }
+                });
+
+                onMounted(() => {
+                    fetchBlogs();
+                });
+
+                return {
+                    blogs,
+                    loading,
+                    error,
+                    fetchBlogs,
+                    formatDate,
+                    selectedPost,
+                    openPost
+                }
+            }
+        }).mount('#blogApp');
+    </script>    
+</body>
+</html>

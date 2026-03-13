@@ -18,6 +18,18 @@ const businessSchema = new mongoose.Schema({
     isTrending: { type: Boolean, default: false },
     isOpen: { type: Boolean, default: true },
     promo: { type: Boolean, default: false },
+    // Ubicación con coordenadas
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+    // Tipos de servicio
+    allowDelivery: { type: Boolean, default: true },
+    allowPickup: { type: Boolean, default: false },
+    schedule: [{
+        day: String,
+        open: String,
+        close: String,
+        isOpen: Boolean
+    }],
 
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
     avatar: { type: String }, // Para la url: app.com/menu/hamburguesas-pepe

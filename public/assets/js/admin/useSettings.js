@@ -20,6 +20,12 @@ export function useSettings(auth) {
         currency: 'MXN',
         iva: 0,
         slug: '',
+        // Ubicación GPS
+        lat: null,
+        lng: null,
+        // Tipos de servicio
+        allowDelivery: true,
+        allowPickup: false,
         // Categorías seleccionadas por el negocio - INICIALIZADO COMO ARRAY VACÍO
         categories: [],
         // Configuraciones de horario y entrega
@@ -29,6 +35,16 @@ export function useSettings(auth) {
         time: '',
         deliveryCost: 0,
         isOpen: true,
+        // Horarios de atención
+        schedule: [
+            { day: 'Lunes', open: '09:00', close: '22:00', isOpen: true },
+            { day: 'Martes', open: '09:00', close: '22:00', isOpen: true },
+            { day: 'Miércoles', open: '09:00', close: '22:00', isOpen: true },
+            { day: 'Jueves', open: '09:00', close: '22:00', isOpen: true },
+            { day: 'Viernes', open: '09:00', close: '23:00', isOpen: true },
+            { day: 'Sábado', open: '10:00', close: '23:00', isOpen: true },
+            { day: 'Domingo', open: '10:00', close: '21:00', isOpen: true }
+        ],
         
     });
      
@@ -58,6 +74,17 @@ export function useSettings(auth) {
                 // Asegurar que existan los arrays requeridos
                 if (!Array.isArray(settings.value.categories)) settings.value.categories = [];
                 if (!Array.isArray(settings.value.deliveryZones)) settings.value.deliveryZones = []; 
+                if (!Array.isArray(settings.value.schedule) || settings.value.schedule.length === 0) {
+                    settings.value.schedule = [
+                        { day: 'Lunes', open: '09:00', close: '22:00', isOpen: true },
+                        { day: 'Martes', open: '09:00', close: '22:00', isOpen: true },
+                        { day: 'Miércoles', open: '09:00', close: '22:00', isOpen: true },
+                        { day: 'Jueves', open: '09:00', close: '22:00', isOpen: true },
+                        { day: 'Viernes', open: '09:00', close: '23:00', isOpen: true },
+                        { day: 'Sábado', open: '10:00', close: '23:00', isOpen: true },
+                        { day: 'Domingo', open: '10:00', close: '21:00', isOpen: true }
+                    ];
+                }
             }
         } catch (e) { console.error(e); }
         

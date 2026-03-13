@@ -37,6 +37,7 @@ app.use('/api/quotes', require('./routes/quotes')); // <-- Gestion de Cotizacion
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
 app.use('/api/loyalty', require('./routes/loyalty'));
+app.use('/api/blog', require('./routes/blog'));
 
 // --- NUEVO: MANEJO DE RUTAS AMIGABLES (SPA) ---
 // Esto permite entrar a tengo-hambre.com/buffalucas

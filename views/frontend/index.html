@@ -55,7 +55,59 @@
         
         .thin-scroll::-webkit-scrollbar { width: 4px; }
         .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Map view */
+        #pickup-map { width: 100%; height: 100%; min-height: 400px; }
+
+        /* Mode toggle pill */
+        .mode-toggle-pill {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .dark .mode-toggle-pill { background: #1e293b; }
+        .mode-btn {
+            padding: 6px 18px;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            transition: all .25s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .mode-btn.active {
+            background: #fff;
+            color: #6366f1;
+            box-shadow: 0 2px 8px rgba(0,0,0,.12);
+        }
+        .dark .mode-btn.active { background: #334155; color: #818cf8; }
+        .mode-btn:not(.active) { color: #64748b; background: transparent; }
+        .mode-btn:not(.active):hover { color: #6366f1; }
+
+        /* pickup list card */
+        .pickup-card { transition: transform .2s, box-shadow .2s; border-left: 3px solid transparent; }
+        .pickup-card:hover { transform: translateX(3px); box-shadow: 0 4px 12px rgba(99,102,241,.15); border-left-color: #6366f1; }
+        .pickup-card.highlighted { border-left-color: #6366f1; background: #eef2ff; }
+        .dark .pickup-card.highlighted { background: #1e1b4b; }
+
+        /* Google info window reset */
+        .gm-style .gm-style-iw-c { border-radius: 14px !important; padding: 0 !important; box-shadow: 0 10px 30px rgba(0,0,0,.18) !important; }
+        .gm-style .gm-style-iw-d { overflow: hidden !important; padding: 0 !important; }
+        .gm-style .gm-style-iw-tc::after { display: none; }
     </style>
+    <!-- Google Maps API -->
+    <script>
+        function initMarketplaceMap() {
+            window._mapsReady = true;
+            document.dispatchEvent(new CustomEvent('maps-ready'));
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqYcfefGddEiqR-OlfaLMSWP5m2RdMk18&callback=initMarketplaceMap" async defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white">
 
@@ -63,7 +115,7 @@
         
         <!-- NAVBAR RESPONSIVE -->
         <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300" :class="{'py-3': !scrolled, 'py-2 shadow-sm': scrolled}">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-12 md:h-14">
                     
                     <!-- Logo & Ubicación -->
@@ -74,6 +126,20 @@
                             </div>
                             <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white hidden sm:block">Tengo <span class="text-brand">Hambre</span></span>
                         </a>
+
+                        <!-- Toggle Entrega / Recolectar (Desktop - Centrado) -->
+                        <div class="hidden md:flex flex-1 justify-center mx-6">
+                            <div class="mode-toggle-pill">
+                                <button class="mode-btn" :class="{ active: deliveryMode === 'delivery' }" @click="setDeliveryMode('delivery')">
+                                    <i class="fa-solid fa-motorcycle"></i>
+                                    <span>Entrega a domicilio</span>
+                                </button>
+                                <button class="mode-btn" :class="{ active: deliveryMode === 'pickup' }" @click="setDeliveryMode('pickup')">
+                                    <i class="fa-solid fa-store"></i>
+                                    <span>Recolectar</span>
+                                </button>
+                            </div>
+                        </div>
 
                         <!-- Selector Ubicación (Desktop & Mobile) -->
                         <div class="flex flex-col border-l border-slate-200 dark:border-slate-700 pl-4 md:pl-6 cursor-pointer group" @click="showLocationModal = true">
@@ -87,19 +153,15 @@
                         </div>
                     </div>
 
-                    <!-- Search Bar (Desktop - Centrado) -->
-                    <div class="hidden md:block flex-1 max-w-lg mx-6">
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fa-solid fa-search text-slate-400 group-focus-within:text-brand transition-colors"></i>
-                            </div>
-                            <input v-model="searchQuery" type="text" class="block w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-none rounded-full text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-slate-700 transition-all placeholder:text-slate-400" placeholder="Buscar restaurantes, comida, antojos...">
-                        </div>
-                    </div>
+                    
 
                     <!-- Acciones Derecha (SOLO USUARIO) -->
                     <div class="flex items-center gap-3 md:gap-4">
                         
+                        <a href="/blog.html" class="hidden md:flex text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition items-center gap-1.5 mr-2">
+                            <i class="fa-solid fa-newspaper text-brand"></i> Blog
+                        </a>
+
                         <!-- ESTADO: LOGUEADO -->
                         <div v-if="currentUser" class="relative group z-50">
                             <button class="flex items-center gap-2 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
@@ -133,8 +195,20 @@
                     </div> 
                 </div>
 
-                <!-- Mobile Search (Visible solo en móvil abajo del header) -->
-                <div class="md:hidden mt-3 pb-1">
+                <!-- Mobile: Toggle visible debajo del header en móvil -->
+                <div class="md:hidden mt-2 flex justify-center">
+                    <div class="mode-toggle-pill">
+                        <button class="mode-btn" :class="{ active: deliveryMode === 'delivery' }" @click="setDeliveryMode('delivery')">
+                            <i class="fa-solid fa-motorcycle"></i><span>Entrega</span>
+                        </button>
+                        <button class="mode-btn" :class="{ active: deliveryMode === 'pickup' }" @click="setDeliveryMode('pickup')">
+                            <i class="fa-solid fa-store"></i><span>Recolectar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Search (solo en modo entrega en móvil) -->
+                <div v-show="deliveryMode === 'delivery'" class="md:hidden mt-2 pb-1">
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <i class="fa-solid fa-search text-slate-400"></i>
@@ -146,10 +220,10 @@
         </nav>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 pt-28 md:pt-24 pb-12">
+        <main class="flex-1 pt-32 md:pt-24 pb-12">
             
-            <!-- HERO SLIDER SECTION -->
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
+            <!-- HERO SLIDER SECTION (oculto en modo Recolectar) -->
+            <div v-show="deliveryMode === 'delivery'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
                 <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-48 md:h-64 bg-slate-100 dark:bg-slate-800 group">
                     
                     <!-- Slides Container -->
@@ -200,15 +274,14 @@
             </div>
 
             <!-- CATEGORÍAS (Sticky Wrapper) -->
-            <div class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-4 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
+            <div v-show="deliveryMode === 'delivery'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar snap-x items-center">
-                        <button @click="selectedCategory = 'all'" class="snap-start flex-shrink-0 px-5 py-2 md:py-3 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2" 
+                        <button @click="selectedCategory = 'all'" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2"
                             :class="selectedCategory === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-lg dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
                             <i class="fa-solid fa-utensils"></i> Todo
                         </button>
-                        
-                        <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id" class="snap-start flex-shrink-0 px-5 py-2 md:py-3 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2 group" 
+                        <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2 group"
                             :class="selectedCategory === cat.id ? 'bg-brand text-white border-brand shadow-lg shadow-brand/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
                             <span class="group-hover:scale-110 transition-transform duration-200">{{ cat.emoji }}</span> {{ cat.name }}
                         </button>
@@ -216,7 +289,22 @@
                 </div>
             </div>
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <!-- Pickup: barra de búsqueda sticky (solo en modo recolectar) -->
+            <div v-show="deliveryMode === 'pickup'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-0 transition-all" :class="{'shadow-sm': scrolled}">
+                <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-3">
+                    <div class="relative flex-1 max-w-sm">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input v-model="searchQuery" type="text" placeholder="Buscar restaurante para recoger..."
+                            class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-sm focus:ring-2 focus:ring-brand outline-none transition">
+                    </div>
+                    <span class="text-xs text-slate-400 font-medium whitespace-nowrap">
+                        {{ pickupBusinesses.length }} disponibles
+                    </span>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div :class="deliveryMode === 'delivery' ? 'max-w-7xl' : 'max-w-full'"  class="mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
                 <!-- LOADING -->
                 <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
@@ -235,7 +323,8 @@
                     <button @click="fetchBusinesses" class="mt-4 text-brand font-bold hover:underline">Reintentar</button>
                 </div>
 
-                <div v-else>
+                <!-- ========================= MODO ENTREGA (default) ========================= -->
+                <div v-else-if="deliveryMode === 'delivery'">
                     <!-- TRENDING TOP (Carousel en móvil, Grid destacado en Desktop) -->
                     <div v-if="!searchQuery && selectedCategory === 'all' && trendingBusinesses.length > 0" class="mb-12">
                         <div class="flex justify-between items-end mb-6">
@@ -263,8 +352,13 @@
                                         <span v-if="biz.promo" class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
                                             <i class="fa-solid fa-tag"></i> OFERTA
                                         </span>
-                                        <span v-if="!biz.isOpen" class="bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm backdrop-blur-md">
-                                            CERRADO
+                                        <span class="text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm backdrop-blur-md flex items-center gap-1.5"
+                                            :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500/90 text-white' : 'bg-slate-800/90 text-white'">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-white animate-pulse' : 'bg-slate-400'"></span>
+                                            {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
+                                        </span>
+                                        <span v-if="isBusinessCurrentlyOpen(biz) && getTodayHours(biz)" class="bg-black/50 text-white text-[9px] font-medium px-2 py-0.5 rounded-md backdrop-blur-sm flex items-center gap-1">
+                                            <i class="fa-regular fa-clock text-[8px]"></i> {{ getTodayHours(biz) }}
                                         </span>
                                     </div>
                                     <div class="absolute bottom-3 right-3 bg-white/95 dark:bg-black/80 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
@@ -324,8 +418,13 @@
                                     <div v-if="biz.promo" class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
                                         %
                                     </div>
-                                    <div class="absolute bottom-2 right-2 bg-white/90 dark:bg-black/70 backdrop-blur px-1.5 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 shadow-sm sm:hidden">
-                                        <i class="fa-solid fa-star text-yellow-400"></i> {{ biz.rating }}
+                                    <!-- Open/Closed badge en grid general -->
+                                    <div class="absolute top-2 right-2">
+                                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm"
+                                            :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500/90 text-white' : 'bg-slate-800/80 text-white'">
+                                            <span class="w-1 h-1 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-white animate-pulse' : 'bg-slate-400'"></span>
+                                            {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
+                                        </span>
                                     </div>
                                 </div>
                                 
@@ -344,8 +443,12 @@
                                     
                                     <div class="flex items-center justify-between ">
                                         <div class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-3">
-                                            <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand-300"></i> {{ biz.time }} min</span>
-                                            <span class="flex items-center gap-1"><i class="fa-solid fa-motorcycle text-brand-300"></i> ${{ biz.deliveryCost }}</span>
+                                            <span v-if="isBusinessCurrentlyOpen(biz)" class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand-300"></i> {{ biz.time }} min</span>
+                                            <span v-if="isBusinessCurrentlyOpen(biz)" class="flex items-center gap-1"><i class="fa-solid fa-motorcycle text-brand-300"></i> ${{ biz.deliveryCost }}</span>
+                                            <span class="flex items-center gap-1" :class="isBusinessCurrentlyOpen(biz) ? 'text-white animate-pulse' : 'text-red-400'">
+                                                <span class="w-1 h-1 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-white animate-pulse' : 'bg-red-400'"></span>
+                                                {{ isBusinessCurrentlyOpen(biz) ? '' : 'Cerrado' }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -353,8 +456,111 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ========================= MODO RECOLECTAR ========================= -->
+                <div v-else-if="deliveryMode === 'pickup'" class="animate-fade-in -mx-4 sm:mx-0">
+                    <!-- Layout: en móvil apilado, en desktop lado a lado -->
+                    <div class="flex flex-col lg:flex-row gap-0 lg:gap-0 lg:h-[calc(100vh-200px)]">
+
+                        <!-- PANEL IZQUIERDO: Lista de negocios -->
+                        <div class="w-full lg:w-1/2 overflow-y-auto thin-scroll lg:h-full">
+                            <!-- Header del panel -->
+                            <div class="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
+                                <h2 class="text-lg font-bold dark:text-white">🍽️ Restaurantes cerca de ti</h2>
+                                <p class="text-xs text-slate-400 mt-0.5">Haz clic en un restaurante para verlo en el mapa</p>
+                            </div>
+
+                            <!-- Sin negocios con pickup -->
+                            <div v-if="pickupBusinesses.length === 0" class="flex flex-col items-center justify-center py-20 text-center px-6">
+                                <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl mb-4">🛍️</div>
+                                <h3 class="font-bold text-lg dark:text-white">Sin resultados</h3>
+                                <p class="text-slate-500 text-sm mt-1">Ningún restaurante ofrece recolección en tu zona aún.</p>
+                            </div>
+
+                            <!-- Grid 2 columnas -->
+                            <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-0">
+                                <div v-for="(biz, idx) in pickupBusinesses" :key="biz._id"
+                                    class="pickup-card bg-white dark:bg-slate-900 border-b border-r border-slate-100 dark:border-slate-800 cursor-pointer p-4 flex gap-3 items-start"
+                                    :class="{ highlighted: highlightedBiz === biz._id }"
+                                    @click="selectPickupBiz(biz)">
+
+                                    <!-- Avatar -->
+                                    <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+                                        <img :src="biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : 'https://www.falmouthinn.com/integration/tc-theme/public/img/placeholder_4_3.png'"
+                                            class="w-full h-full object-cover">
+                                    </div>
+
+                                    <!-- Info -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <h3 class="font-bold text-sm dark:text-white leading-snug line-clamp-1">{{ biz.name }}</h3>
+                                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1"
+                                                :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'">
+                                                <span class="w-1 h-1 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+                                                {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 line-clamp-1 mt-0.5">{{ biz.address || 'Sin dirección registrada' }}</p>
+                                        <div class="flex items-center gap-3 mt-2">
+                                            <span v-if="getTodayHours(biz)" class="flex items-center gap-1 text-[10px] text-slate-500">
+                                                <i class="fa-regular fa-clock text-brand text-[9px]"></i> {{ getTodayHours(biz) }}
+                                            </span>
+                                            <button @click.stop="goToBusiness(biz)"
+                                                class="ml-auto text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1 rounded-full transition flex items-center gap-1">
+                                                Ver menú <i class="fa-solid fa-arrow-right text-[8px]"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PANEL DERECHO: Mapa -->
+                        <div class="w-full lg:w-1/2 lg:h-full h-80 relative flex-shrink-0">
+                            <!-- Map container -->
+                            <div id="pickup-map" class="w-full h-full"></div>
+
+                            <!-- Overlay sin mapa si no hay API cargada -->
+                            <div v-if="!mapReady" class="absolute inset-0 bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center gap-3">
+                                <i class="fa-solid fa-map-location-dot text-4xl text-slate-400 animate-pulse"></i>
+                                <p class="text-slate-500 text-sm">Cargando mapa...</p>
+                            </div>
+
+                            <!-- Info card flotante al seleccionar -->
+                            <transition name="slide-up">
+                                <div v-if="selectedPickupBiz" class="absolute bottom-4 left-4 right-4 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-4 flex items-center gap-4 border border-slate-100 dark:border-slate-700">
+                                    <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
+                                        <img :src="selectedPickupBiz.avatar ? 'https://tengo-hambre.com' + selectedPickupBiz.avatar : 'https://www.falmouthinn.com/integration/tc-theme/public/img/placeholder_4_3.png'"
+                                            class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-bold text-sm dark:text-white line-clamp-1">{{ selectedPickupBiz.name }}</h4>
+                                        <p class="text-xs text-slate-500 line-clamp-1 mt-0.5">{{ selectedPickupBiz.address }}</p>
+                                        <div v-if="getTodayHours(selectedPickupBiz)" class="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
+                                            <i class="fa-regular fa-clock text-[9px]"></i> {{ getTodayHours(selectedPickupBiz) }}
+                                        </div>
+                                    </div>
+                                    <button @click="goToBusiness(selectedPickupBiz)"
+                                        class="flex-shrink-0 bg-primary text-white font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-primaryDark transition shadow-lg shadow-primary/30">
+                                        <i class="fa-solid fa-store mr-1"></i> Ver menú
+                                    </button>
+                                    <button @click="selectedPickupBiz = null" class="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 flex items-center justify-center text-xs hover:bg-slate-200 transition">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </transition>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </main>
+
+        <style>
+        .slide-up-enter-active, .slide-up-leave-active { transition: all .3s cubic-bezier(.4,0,.2,1); }
+        .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(12px); }
+        </style>
 
         <!-- FOOTER WEB COMPLETO -->
         <footer class="bg-white dark:bg-slate-950 pt-16 pb-8 border-t border-slate-100 dark:border-slate-800">

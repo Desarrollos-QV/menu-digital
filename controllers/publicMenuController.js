@@ -5,6 +5,7 @@ const Addon = require('../models/Addon');
 const Banner = require('../models/Banner');
 const Config = require('../models/Config');
 const User = require('../models/User');
+const Review = require('../models/Review');
 const jwt = require('jsonwebtoken');
 
 const SECRET_KEY = process.env.JWT_SECRET; 
@@ -68,16 +69,40 @@ exports.getPublicData = async (req, res) => {
                 break;
                 
             case 'config':
+                // Check if reviews exist to calculate rating (simple avg)
+                const reviews = await Review.find({ businessId: business._id });
+                const reviewsCount = reviews.length;
+                let calculatedRating = business.rating || 5.0;
+                if (reviewsCount > 0) {
+                    const totalScore = reviews.reduce((acc, curr) => acc + curr.rating, 0);
+                    calculatedRating = (totalScore / reviewsCount).toFixed(1);
+                }
+
                 // Retornar configuración del negocio
                 return res.json({
                     appName: business.name,
                     phone: business.phone,
                     ownerEmail: business.ownerEmail,
+                    schedule: business.schedule || [],
+                    time: business.time,
+                    deliveryCost: business.deliveryCost,
+                    isOpen: business.isOpen,
                     currency: business.settings?.currency || 'MXN',
                     primaryColor: business.settings?.primaryColor || '#6366f1',
                     avatar: business?.avatar || '',
-                    plan: business.plan // Enviamos el plan por si el front quiere ocultar/mostrar cosas extra
+                    plan: business.plan, // Enviamos el plan por si el front quiere ocultar/mostrar cosas extra
+                    address: business.address || 'Ubicación pendiente',
+                    lat: business.lat || null,
+                    lng: business.lng || null,
+                    description: business.description || '',
+                    tags: business.tags || [],
+                    calculatedRating: parseFloat(calculatedRating),
+                    reviewsCount: reviewsCount
                 });
+
+            case 'reviews':
+                data = await Review.find({ businessId }).sort({ createdAt: -1 }).limit(10);
+                break;
 
             default:
                 return res.status(400).json({ message: 'Tipo de datos no válido' });
@@ -159,5 +184,30 @@ exports.registerBusiness = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+// --- FUNCIÓN DE ENVIAR REVIEW ---
+exports.submitReview = async (req, res) => {
+    const { slug, customerName, rating, comment } = req.body;
+    try {
+        if (!slug || !customerName || !rating || !comment) {
+            return res.status(400).json({ message: 'Campos incompletos' });
+        }
+        const businessId = await getBusinessIdBySlug(slug);
+        if (!businessId) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+        const review = new Review({
+            businessId,
+            customerName,
+            rating: Number(rating),
+            comment
+        });
+        await review.save();
+
+        res.status(201).json({ message: 'Review enviada!', review });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error interno guardando review' });
     }
 };

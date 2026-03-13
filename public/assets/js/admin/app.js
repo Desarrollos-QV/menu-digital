@@ -20,6 +20,7 @@ import { useKds } from './useKds.js';
 import { useMunicipios } from './useMunicipios.js';
 import { useCategoriesStore } from './useCategoriesStore.js';
 import { usePrinter } from './usePrinter.js'; // Gestor de impresion universal
+import { useBlog } from './useBlog.js'; // Blog Logic
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -77,13 +78,15 @@ createApp({
         const municipios = useMunicipios(auth.isDark);
         const categoriesStore = useCategoriesStore(auth.isDark);
         const printer = usePrinter(settings);
+        const blog = useBlog(auth.isDark, media.fetchMedia);
 
         const saasMenu = ref([
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
             { id: 103, label: 'Categorias', icon: 'fa-solid fa-burger', view: 'categoriesStore' },
-            { id: 103, label: 'Municipios', icon: 'fa-solid fa-map-location-dot', view: 'municipios' },
+            { id: 104, label: 'Municipios', icon: 'fa-solid fa-map-location-dot', view: 'municipios' },
+            { id: 105, label: 'Blog (Noticias)', icon: 'fa-solid fa-newspaper', view: 'blog' },
             //  { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
 
@@ -489,6 +492,7 @@ createApp({
                     settings.scanPrinters(); // <-- Buscamos impresoras
                 }
                 if (item.view === 'municipios') municipios.fetchMunicipios();
+                if (item.view === 'blog') blog.fetchBlogs();
 
                 // Vistas Específicas
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
@@ -887,6 +891,76 @@ createApp({
         };
 
 
+        // --- GOOGLE PLACES AUTOCOMPLETE para Modal SaaS ---
+        let _saasAutocomplete = null;
+
+        const initSaasPlaces = () => {
+            if (!window.google || !window.google.maps) return;
+            const input = document.getElementById('saas-address-input');
+            if (!input || _saasAutocomplete) return;
+
+            _saasAutocomplete = new window.google.maps.places.Autocomplete(input, {
+                types: ['establishment', 'geocode'],
+                fields: ['formatted_address', 'geometry']
+            });
+
+            _saasAutocomplete.addListener('place_changed', () => {
+                const place = _saasAutocomplete.getPlace();
+                if (!place.geometry) return;
+                saas.saasForm.value.address = place.formatted_address;
+                saas.saasForm.value.lat = place.geometry.location.lat();
+                saas.saasForm.value.lng = place.geometry.location.lng();
+            });
+        };
+
+        watch(saas.showSaasModal, (val) => {
+            if (val) {
+                _saasAutocomplete = null; // Reset para reinicializar
+                nextTick(() => {
+                    if (window._googlePlacesReady) {
+                        initSaasPlaces();
+                    } else {
+                        document.addEventListener('google-places-ready', initSaasPlaces, { once: true });
+                    }
+                });
+            }
+        });
+
+        // --- GOOGLE PLACES AUTOCOMPLETE para Vista SETTINGS ---
+        let _settingsAutocomplete = null;
+
+        const initSettingsPlaces = () => {
+            if (!window.google || !window.google.maps) return;
+            const input = document.getElementById('settings-address-input');
+            if (!input || _settingsAutocomplete) return;
+
+            _settingsAutocomplete = new window.google.maps.places.Autocomplete(input, {
+                types: ['establishment', 'geocode'],
+                fields: ['formatted_address', 'geometry']
+            });
+
+            _settingsAutocomplete.addListener('place_changed', () => {
+                const place = _settingsAutocomplete.getPlace();
+                if (!place.geometry) return;
+                settings.settings.value.address = place.formatted_address;
+                settings.settings.value.lat     = place.geometry.location.lat();
+                settings.settings.value.lng     = place.geometry.location.lng();
+            });
+        };
+
+        watch(currentView, (val) => {
+            if (val === 'settings') {
+                _settingsAutocomplete = null; // Reset al entrar a la vista
+                nextTick(() => {
+                    if (window._googlePlacesReady) {
+                        initSettingsPlaces();
+                    } else {
+                        document.addEventListener('google-places-ready', initSettingsPlaces, { once: true });
+                    }
+                });
+            }
+        });
+
         onMounted(async () => {
             auth.checkSession();
             const path = window.location.pathname; // Ej: /admin/pos
@@ -1064,6 +1138,7 @@ createApp({
             showTicketModal, ticketData, openTicketPreview, printTicketNow, finishSale,
             categoriesStore,
             toggleCategory,
+            blog
         };
     }
 }).mount('#app');

@@ -64,8 +64,8 @@ exports.getAdminConfig = async (req, res) => {
 
             return res.json({
                 role: 'admin_negocio',
-                appName: business.name, // El nombre del negocio será el nombre de la App para ellos
-                adminName: req.user.username, // O un campo específico si lo agregas
+                appName: business.name,
+                adminName: req.user.username,
                 address: business.address || '',
                 slug : business.slug || '',
                 urlApp: 'https://'+req.hostname+'/'+business.slug,
@@ -74,8 +74,15 @@ exports.getAdminConfig = async (req, res) => {
                 deliveryZones: business.deliveryZones,
                 municipioId: business.municipioId,
                 time: business.time,
+                schedule: business.schedule || [],
                 deliveryCost: business.deliveryCost,
                 isOpen: business.isOpen,
+                // Ubicación GPS
+                lat: business.lat || null,
+                lng: business.lng || null,
+                // Tipos de servicio
+                allowDelivery: business.allowDelivery !== false,
+                allowPickup: business.allowPickup === true,
                 // Campos extra de negocio
                 avatar: business.avatar || '',
                 phone: business.phone || '',
@@ -120,12 +127,19 @@ exports.updateAdminConfig = async (req, res) => {
             if (req.body.categories) business.categories = req.body.categories;
             if (req.body.municipioId) business.municipioId = req.body.municipioId;
             if (req.body.deliveryZones) business.deliveryZones = req.body.deliveryZones;
+            if (req.body.schedule) business.schedule = req.body.schedule;
 
             if (req.body.time) business.time = req.body.time;
             if (req.body.deliveryCost) business.deliveryCost = req.body.deliveryCost;
-            business.isOpen = req.body.isOpen; // <-- Aca siempre actualizamos porque al llegar False significa que esta cerrado....
-            
+            business.isOpen = req.body.isOpen;
 
+            // Ubicación GPS
+            if (req.body.lat  !== undefined) business.lat  = req.body.lat;
+            if (req.body.lng  !== undefined) business.lng  = req.body.lng;
+
+            // Tipos de servicio
+            if (req.body.allowDelivery !== undefined) business.allowDelivery = req.body.allowDelivery;
+            if (req.body.allowPickup  !== undefined) business.allowPickup  = req.body.allowPickup;
 
             // Settings anidados
             if (!business.settings) business.settings = {};

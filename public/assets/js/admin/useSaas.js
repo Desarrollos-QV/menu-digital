@@ -1,27 +1,60 @@
 import { ref } from 'vue';
-import { authFetch } from './api.js'; // <-- Helper para Fetch
+import { authFetch } from './api.js';
 
 export function useSaas() {
     const businesses = ref([]);
     const showSaasModal = ref(false);
     const editingBusiness = ref(null);
 
-    // Formulario de Alta de Negocio
-    const defaultForm = { _id: null, businessName: '', username: '',ownerEmail: '',  password: '', plan: 'free', slug: '' };
+    const defaultForm = {
+        _id: null,
+        businessName: '',
+        username: '',
+        ownerEmail: '',
+        password: '',
+        plan: 'free',
+        slug: '',
+        phone: '',
+        address: '',
+        lat: null,
+        lng: null,
+        allowDelivery: true,
+        allowPickup: false,
+        isOpen: true,
+        active: true,
+        isTrending: false,
+        _stats: null
+    };
     const saasForm = ref({ ...defaultForm });
 
     const openSaasModal = (business = null) => {
         if (business) {
             editingBusiness.value = true;
-            // Mapeamos los datos del negocio al formulario
             saasForm.value = {
                 _id: business._id,
                 businessName: business.name,
-                ownerEmail: business.ownerEmail,
-                slug: business.slug,
-                plan: business.plan,
-                username: '---', // No mostramos usuario ni password al editar por seguridad
-                password: ''
+                ownerEmail: business.ownerEmail || '',
+                slug: business.slug || '',
+                plan: business.plan || 'free',
+                phone: business.phone || '',
+                address: business.address || '',
+                lat: business.lat || null,
+                lng: business.lng || null,
+                allowDelivery: business.allowDelivery !== false,
+                allowPickup: business.allowPickup === true,
+                isOpen: business.isOpen !== false,
+                active: business.active !== false,
+                isTrending: business.isTrending === true,
+                username: '---',
+                password: '',
+                _stats: {
+                    deliveryCost: business.deliveryCost || 0,
+                    time: business.time || '—',
+                    currency: business.settings?.currency || 'MXN',
+                    primaryColor: business.settings?.primaryColor || '#6366f1',
+                    deliveryZonesCount: Array.isArray(business.deliveryZones) ? business.deliveryZones.length : 0,
+                    categoriesCount: Array.isArray(business.categories) ? business.categories.length : 0,
+                }
             };
         } else {
             editingBusiness.value = false;
@@ -31,54 +64,47 @@ export function useSaas() {
     };
 
     const saveBusiness = async () => {
-        // Validaciones
-        if (!saasForm.value.businessName) {
-            toastr.warning('El nombre del negocio es requerido');
-            return;
-        }
-
-        if (!saasForm.value.ownerEmail) {
-            toastr.warning('El Email del negocio es requerido');
-            return;
-        }
-
-        // Si es nuevo, requerimos usuario y contraseña
+        if (!saasForm.value.businessName) { toastr.warning('El nombre del negocio es requerido'); return; }
+        if (!saasForm.value.ownerEmail)   { toastr.warning('El Email del negocio es requerido'); return; }
         if (!editingBusiness.value && (!saasForm.value.username || !saasForm.value.password)) {
-            toastr.warning('Usuario y contraseña son requeridos para nuevos negocios');
-            return;
+            toastr.warning('Usuario y contraseña son requeridos para nuevos negocios'); return;
         }
 
         try {
-            let url = '/api/saas/businesses';
+            let url    = '/api/saas/businesses';
             let method = 'POST';
+            let payload;
 
             if (editingBusiness.value) {
-                url = `/api/saas/businesses/${saasForm.value._id}`;
+                url    = `/api/saas/businesses/${saasForm.value._id}`;
                 method = 'PUT';
-                // Preparamos payload para update (nombre, slug, plan)
-                var payload = {
-                    name: saasForm.value.businessName,
-                    ownerEmail: saasForm.value.ownerEmail,
-                    slug: saasForm.value.slug,
-                    plan: saasForm.value.plan
+                payload = {
+                    name:          saasForm.value.businessName,
+                    ownerEmail:    saasForm.value.ownerEmail,
+                    slug:          saasForm.value.slug,
+                    plan:          saasForm.value.plan,
+                    phone:         saasForm.value.phone,
+                    address:       saasForm.value.address,
+                    lat:           saasForm.value.lat,
+                    lng:           saasForm.value.lng,
+                    allowDelivery: saasForm.value.allowDelivery,
+                    allowPickup:   saasForm.value.allowPickup,
+                    isOpen:        saasForm.value.isOpen,
+                    active:        saasForm.value.active,
+                    isTrending:    saasForm.value.isTrending
                 };
             } else {
-                // Payload para create (incluye usuario)
                 payload = {
                     businessName: saasForm.value.businessName,
-                    username: saasForm.value.username,
-                    ownerEmail: saasForm.value.ownerEmail,
-                    password: saasForm.value.password,
-                    plan: saasForm.value.plan,
-                    slug: saasForm.value.slug
+                    username:     saasForm.value.username,
+                    ownerEmail:   saasForm.value.ownerEmail,
+                    password:     saasForm.value.password,
+                    plan:         saasForm.value.plan,
+                    slug:         saasForm.value.slug
                 };
             }
 
-            const res = await authFetch(url, {
-                method: method,
-                body: JSON.stringify(payload)
-            });
-
+            const res = await authFetch(url, { method, body: JSON.stringify(payload) });
             if (!res.ok) throw new Error('Error en la operación');
 
             toastr.success(editingBusiness.value ? 'Negocio actualizado' : 'Negocio creado');
@@ -86,16 +112,17 @@ export function useSaas() {
             await fetchBusinesses();
 
         } catch (error) {
-            toastr.error("Error: "+error.message);
+            toastr.error('Error: ' + error.message);
         }
     };
 
     const deleteBusiness = async (id) => {
         Swal.fire({
             title: '¿Eliminar Negocio?',
-            text: "Se borrará el acceso y todos sus datos. Esta acción es irreversible.",
+            text: 'Se borrará el acceso y todos sus datos. Esta acción es irreversible.',
             icon: 'warning',
-            showCancelButton: true, confirmButtonColor: '#ef4444',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
             confirmButtonText: 'Sí, eliminar todo'
         }).then(async (result) => {
             if (result.isConfirmed) {
@@ -111,29 +138,23 @@ export function useSaas() {
         try {
             const res = await fetch('/api/saas/businesses');
             if (res.ok) businesses.value = await res.json();
-            console.log("businesses ",businesses.value)
         } catch (e) { console.error(e); }
     };
 
     const createBusiness = async () => {
         if (!saasForm.value.businessName || !saasForm.value.ownerEmail || !saasForm.value.username || !saasForm.value.password) {
-            toastr.warning('Completa todos los campos');
-            return;
+            toastr.warning('Completa todos los campos'); return;
         }
-
         try {
             const res = await fetch('/api/saas/businesses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(saasForm.value)
             });
-
             if (!res.ok) throw new Error('Error al crear negocio');
-
             toastr.success('Negocio y Usuario creados exitosamente');
             showSaasModal.value = false;
-            // Limpiar form
-            saasForm.value = { businessName: '', username: '', ownerEmail: '', password: '', plan: 'free' };
+            saasForm.value = { ...defaultForm };
             await fetchBusinesses();
         } catch (error) {
             toastr.error(error.message);
@@ -152,16 +173,32 @@ export function useSaas() {
         }
     };
 
+    const toggleTrending = async (business) => {
+        try {
+            const res = await authFetch(`/api/saas/businesses/${business._id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ isTrending: !business.isTrending })
+            });
+            if (res.ok) {
+                business.isTrending = !business.isTrending;
+                toastr.success(`Negocio ${business.isTrending ? 'marcado como Trending 🔥' : 'quitado de Trending'}`);
+            }
+        } catch (error) {
+            toastr.error('Error de conexión');
+        }
+    };
+
     return {
         businesses,
         showSaasModal,
         saasForm,
-        editingBusiness, // Exportamos estado de edición
+        editingBusiness,
         fetchBusinesses,
-        openSaasModal,   // Modificado para recibir parámetro
-        saveBusiness,    // Modificado para manejar PUT/POST
-        deleteBusiness,  // Nueva
+        openSaasModal,
+        saveBusiness,
+        deleteBusiness,
         createBusiness,
-        toggleStatus
+        toggleStatus,
+        toggleTrending
     };
 }
