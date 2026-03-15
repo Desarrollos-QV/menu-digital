@@ -73,6 +73,7 @@ createApp({
         const customerReference = ref('');
         const paymentMethod = ref('cash');
         const customerHowToPay = ref('');
+        const deliveryType = ref('delivery');
 
         // Product Logic
         const showProductModal = ref(false);
@@ -306,19 +307,24 @@ createApp({
             const phone = config.value.phone;
             if (!phone) return toastr.error('Este negocio no tiene WhatsApp configurado');
 
-            let msg = `👋 Hola, soy *${customerName.value}*, mi pedido es:\n\n`;
+            let msg = `👋 Hola, soy *${customerName.value}*, ${deliveryType.value === 'pickup' ? 'pasaré a recoger mi pedido' : 'mi pedido es'}:\n\n`;
             cart.value.forEach(i => {
                 msg += `▪️ *${i.quantity}x ${i.product.name}* ($${i.unitPrice * i.quantity})\n`;
                 if (i.selectedOptions?.length) msg += `   _Extras: ${i.selectedOptions.map(o => o.name).join(', ')}_\n`;
             });
             msg += `\n💰 *TOTAL: ${config.value.currency || '$'}${cartTotalPrice.value}*\n\n`;
 
-            // Agregar Datos de Entrega y Pago al mensaje
-            msg += `📍 *_Datos de Entrega_*:\n`;
-            msg += `Calle: ${customerStreet.value} #${customerNumber.value}\n`;
-            msg += `Colonia: ${customerColony.value}\n`;
-            msg += `CP: ${customerZipCode.value}\n`;
-            msg += `Ref: ${customerReference.value}\n\n`;
+            if (deliveryType.value === 'pickup') {
+                msg += `🛍️ *_Retiro en tienda_*\n\n`;
+            } else {
+                // Agregar Datos de Entrega y Pago al mensaje
+                msg += `📍 *_Datos de Entrega_*:\n`;
+                msg += `Calle: ${customerStreet.value} #${customerNumber.value}\n`;
+                msg += `Colonia: ${customerColony.value}\n`;
+                msg += `CP: ${customerZipCode.value}\n`;
+                msg += `Ref: ${customerReference.value}\n\n`;
+            }
+
             msg += `💳 *_Método de Pago_*: ${paymentMethod.value === 'cash' ? 'Efectivo' : 'Tarjeta'}\n`;
             if (paymentMethod.value === 'cash' && customerHowToPay.value) {
                 msg += `💵 *¿Con cuanto paga?*: $${customerHowToPay.value}\n`;
@@ -332,11 +338,12 @@ createApp({
                 customerName: customerName.value,
                 customerId: (cs._value) ? cs._value._id : null,
                 customerPhone: customerPhone.value,
-                customerStreet: customerStreet.value,
-                customerColony: customerColony.value,
-                customerNumber: customerNumber.value,
-                customerZipCode: customerZipCode.value,
-                customerReference: customerReference.value,
+                deliveryType: deliveryType.value,
+                customerStreet: deliveryType.value === 'delivery' ? customerStreet.value : '',
+                customerColony: deliveryType.value === 'delivery' ? customerColony.value : '',
+                customerNumber: deliveryType.value === 'delivery' ? customerNumber.value : '',
+                customerZipCode: deliveryType.value === 'delivery' ? customerZipCode.value : '',
+                customerReference: deliveryType.value === 'delivery' ? customerReference.value : '',
                 paymentMethod: paymentMethod.value,
                 customerHowToPay: customerHowToPay.value,
                 cart: cart.value,
@@ -521,7 +528,7 @@ createApp({
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             showBusinessModal, reviews, newReview, submittingReview, submitReview,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout,
+            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout, deliveryType,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
             isBusinessOpen, todaySchedule,
