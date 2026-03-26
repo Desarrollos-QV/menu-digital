@@ -203,6 +203,78 @@ export function useSaas() {
         }
     };
 
+    // ─── GESTIÓN DE COMISIONES ────────────────────────────────────────
+    const showCommissionModal = ref(false);
+    const selectedBizStats    = ref(null);   // Datos del negocio seleccionado
+    const abonarForm          = ref({ amount: '', note: '' });
+
+    const fetchCommissionStats = async (bizId) => {
+        try {
+            const res = await authFetch(`/api/saas/businesses/${bizId}/commission-stats`);
+            if (res.ok) {
+                selectedBizStats.value = await res.json();
+                showCommissionModal.value = true;
+            } else {
+                toastr.error('Error al obtener estadísticas');
+            }
+        } catch (e) { toastr.error('Error de conexión'); }
+    };
+
+    const submitAbono = async () => {
+        const amount = parseFloat(abonarForm.value.amount);
+        if (!amount || amount <= 0) return toastr.warning('Ingresa un monto válido');
+        try {
+            const res = await authFetch(`/api/saas/businesses/${selectedBizStats.value.businessId}/commission-payment`, {
+                method: 'POST',
+                body: JSON.stringify({ amount, note: abonarForm.value.note })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                toastr.success(data.message);
+                abonarForm.value = { amount: '', note: '' };
+                await fetchCommissionStats(selectedBizStats.value.businessId);
+                await fetchBusinesses();
+            } else {
+                const err = await res.json();
+                toastr.error(err.message);
+            }
+        } catch (e) { toastr.error('Error de conexión'); }
+    };
+
+    const submitLiquidar = async () => {
+        if (!selectedBizStats.value || selectedBizStats.value.currentDebt <= 0) {
+            return toastr.warning('No hay deuda pendiente');
+        }
+        Swal.fire({
+            title: '¿Liquidar deuda completa?',
+            text: `Se marcará como pagada la deuda de $${selectedBizStats.value.currentDebt.toFixed(2)}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            confirmButtonText: 'Sí, liquidar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await authFetch(`/api/saas/businesses/${selectedBizStats.value.businessId}/commission-settle`, {
+                        method: 'POST',
+                        body: JSON.stringify({ note: 'Liquidación total' })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        toastr.success(data.message);
+                        await fetchCommissionStats(selectedBizStats.value.businessId);
+                        await fetchBusinesses();
+                    } else {
+                        const err = await res.json();
+                        toastr.error(err.message);
+                    }
+                } catch (e) { toastr.error('Error de conexión'); }
+            }
+        });
+    };
+    // ─────────────────────────────────────────────────────────────────────
+
     return {
         businesses,
         showSaasModal,
@@ -214,6 +286,13 @@ export function useSaas() {
         deleteBusiness,
         createBusiness,
         toggleStatus,
-        toggleTrending
+        toggleTrending,
+        // Comisiones
+        showCommissionModal,
+        selectedBizStats,
+        abonarForm,
+        fetchCommissionStats,
+        submitAbono,
+        submitLiquidar
     };
 }

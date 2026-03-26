@@ -10,4 +10,9 @@ router.put('/businesses/:id/toggle', saasController.toggleBusinessStatus);
 router.put('/businesses/:id', saasController.updateBusiness);
 router.delete('/businesses/:id', saasController.deleteBusiness);
 
+// Comisiones por negocio
+router.get('/businesses/:id/commission-stats', saasController.getCommissionStats);
+router.post('/businesses/:id/commission-payment', saasController.addCommissionPayment);
+router.post('/businesses/:id/commission-settle', saasController.settleCommission);
+
 module.exports = router;

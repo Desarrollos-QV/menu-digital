@@ -46,7 +46,15 @@ const businessSchema = new mongoose.Schema({
     commissionWebType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
     commissionWebAmount: { type: Number, default: 0, min: 0 }, // % o monto fijo por venta WebApp
     commissionPosType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
-    commissionPosAmount: { type: Number, default: 0, min: 0 }  // % o monto fijo por venta POS (0 = inactivo)
+    commissionPosAmount: { type: Number, default: 0, min: 0 }, // % o monto fijo por venta POS (0 = inactivo)
+    // Deuda y pagos de comisiones
+    commissionDebt: { type: Number, default: 0, min: 0 }, // Monto total adeudado al admin SaaS
+    commissionPayments: [{
+        amount:    { type: Number, required: true },
+        type:      { type: String, enum: ['abono', 'liquidacion'], default: 'abono' },
+        note:      { type: String, default: '' },
+        createdAt: { type: Date, default: Date.now }
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', businessSchema);

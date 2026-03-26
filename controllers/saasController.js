@@ -1,5 +1,7 @@
 const Business = require('../models/Business');
 const User = require('../models/User');
+const Order = require('../models/Order');
+
 
 // Listar todos los negocios (Solo para SuperAdmin)
 exports.getAllBusinesses = async (req, res) => {
@@ -116,6 +118,102 @@ exports.toggleBusinessStatus = async (req, res) => {
         business.active = !business.active;
         await business.save();
         res.json({ message: `Negocio ${business.active ? 'Activado' : 'Bloqueado'}`, active: business.active });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Obtener stats de comisiones de UN negocio
+exports.getCommissionStats = async (req, res) => {
+    try {
+        const business = await Business.findById(req.params.id);
+        if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+        // Sumar total ganado por comisiones de órdenes registradas
+        const orders = await Order.find({ businessId: req.params.id });
+
+        let totalWebEarned = 0;
+        let totalPosEarned = 0;
+        let totalOrders = orders.length;
+
+        for (const order of orders) {
+            if (order.commission && order.commission.amount > 0) {
+                const subtotal = order.subtotal || (order.total - (order.tax || 0));
+                if (order.commission.origin === 'whatsapp' || order.source === 'whatsapp') {
+                    if (order.commission.type === 'percent') {
+                        totalWebEarned += subtotal * (order.commission.amount / 100);
+                    } else {
+                        totalWebEarned += order.commission.amount;
+                    }
+                } else if (order.commission.origin === 'pos' || order.source === 'pos') {
+                    if (order.commission.type === 'percent') {
+                        totalPosEarned += subtotal * (order.commission.amount / 100);
+                    } else {
+                        totalPosEarned += order.commission.amount;
+                    }
+                }
+            }
+        }
+
+        const totalEarned = totalWebEarned + totalPosEarned;
+        const totalPaid   = business.commissionPayments.reduce((s, p) => s + p.amount, 0);
+        const currentDebt = Math.max(0, totalEarned - totalPaid);
+
+        // Actualizar el campo rápido de deuda
+        business.commissionDebt = currentDebt;
+        await business.save();
+
+        res.json({
+            businessId:     business._id,
+            businessName:   business.name,
+            totalEarned:    parseFloat(totalEarned.toFixed(2)),
+            totalWebEarned: parseFloat(totalWebEarned.toFixed(2)),
+            totalPosEarned: parseFloat(totalPosEarned.toFixed(2)),
+            totalPaid:      parseFloat(totalPaid.toFixed(2)),
+            currentDebt:    parseFloat(currentDebt.toFixed(2)),
+            totalOrders,
+            payments:       business.commissionPayments.slice().reverse() // Más recientes primero
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Registrar un Abono
+exports.addCommissionPayment = async (req, res) => {
+    try {
+        const { amount, note } = req.body;
+        if (!amount || amount <= 0) return res.status(400).json({ message: 'Monto inválido' });
+
+        const business = await Business.findById(req.params.id);
+        if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+        business.commissionPayments.push({ amount: parseFloat(amount), type: 'abono', note: note || '' });
+        const totalPaid = business.commissionPayments.reduce((s, p) => s + p.amount, 0);
+        business.commissionDebt = Math.max(0, business.commissionDebt - parseFloat(amount));
+        await business.save();
+
+        res.json({ message: `Abono de $${amount} registrado`, debt: business.commissionDebt });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Liquidar deuda completa
+exports.settleCommission = async (req, res) => {
+    try {
+        const { note } = req.body;
+        const business = await Business.findById(req.params.id);
+        if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+        const debtToSettle = business.commissionDebt;
+        if (debtToSettle <= 0) return res.status(400).json({ message: 'No hay deuda pendiente' });
+
+        business.commissionPayments.push({ amount: debtToSettle, type: 'liquidacion', note: note || 'Liquidación total' });
+        business.commissionDebt = 0;
+        await business.save();
+
+        res.json({ message: `Deuda de $${debtToSettle.toFixed(2)} liquidada`, debt: 0 });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
