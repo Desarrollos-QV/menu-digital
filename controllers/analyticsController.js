@@ -36,7 +36,7 @@ exports.registerVisit = async (req, res) => {
 // 2. Registrar Pedido / Clic WhatsApp (Público)
 exports.registerOrder = async (req, res) => {
     try {
-        const { slug, customerName, customerPhone, customerId, cart, total, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay } = req.body;
+        const { slug, customerName, customerPhone, customerId, cart, total, subtotal, commission, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay } = req.body;
         const business = await Business.findOne({ slug });
         
         // Guardar Orden
@@ -57,7 +57,13 @@ exports.registerOrder = async (req, res) => {
                 quantity: item.quantity,
                 price: item.product.price
             })),
-            total
+            total,
+            subtotal,
+            commission: commission ? {
+                type: commission.type,
+                amount: commission.amount,
+                origin: commission.origin
+            } : undefined
         });
         await newOrder.save();
 
@@ -175,7 +181,7 @@ exports.getDashboardStats = async (req, res) => {
 // 3. Registrar Venta POS
 exports.createPosOrder = async (req, res) => {
     try {
-        const { cart, customer, discount, paymentMethod, totals } = req.body;
+        const { cart, customer, discount, commission, paymentMethod, totals } = req.body;
         
         const newOrder = new Order({
             businessId: req.user.businessId,
@@ -193,6 +199,11 @@ exports.createPosOrder = async (req, res) => {
             tax: totals.tax,
             total: totals.total,
             discount: discount,
+            commission: {
+                type: commission.type,
+                amount: commission.amount,
+                origin: commission.origin
+            },
             source: 'pos',
             status: 'pending', // del POS pasa al KDS
             paymentMethod: paymentMethod

@@ -45,6 +45,9 @@ export function useSettings(auth) {
             { day: 'Sábado', open: '10:00', close: '23:00', isOpen: true },
             { day: 'Domingo', open: '10:00', close: '21:00', isOpen: true }
         ],
+        // Comisiones
+        commissionPosType: 'percent',
+        commissionPosAmount: 0
         
     });
      
@@ -67,7 +70,8 @@ export function useSettings(auth) {
         try {
             const res = await authFetch('/api/config/admin');
             if (res.ok) {
-                const data = await res.json(); 
+                const data = await res.json();
+                console.log("Data inicial : " , data); 
                 // Mezclamos la respuesta con el estado actual
                 settings.value = { ...settings.value, ...data };
                 console.log("Configuraciones: " , settings.value);

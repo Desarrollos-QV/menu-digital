@@ -13,7 +13,9 @@ exports.getAllBusinesses = async (req, res) => {
 
 // Registrar un Nuevo Negocio + Su Usuario Admin
 exports.createBusiness = async (req, res) => {
-    const { businessName, ownerEmail, username, password, plan } = req.body;
+    const { businessName, ownerEmail, username, password, plan,
+            commissionWebType, commissionWebAmount,
+            commissionPosType, commissionPosAmount } = req.body;
     
     try {
         // 1. Crear el Negocio
@@ -21,7 +23,11 @@ exports.createBusiness = async (req, res) => {
             name: businessName,
             ownerEmail: ownerEmail,
             slug: businessName.toLowerCase().replace(/ /g, '-'),
-            plan: plan || 'free'
+            plan: plan || 'free',
+            commissionWebType:   commissionWebType   || 'percent',
+            commissionWebAmount: commissionWebAmount  ?? 0,
+            commissionPosType:   commissionPosType   || 'percent',
+            commissionPosAmount: commissionPosAmount  ?? 0
         });
         const savedBusiness = await newBusiness.save();
 
@@ -51,19 +57,26 @@ exports.createBusiness = async (req, res) => {
 exports.updateBusiness = async (req, res) => {
     try {
         const { name, ownerEmail, slug, plan, phone, address, isOpen, active, isTrending,
-                lat, lng, allowDelivery, allowPickup } = req.body;
+                lat, lng, allowDelivery, allowPickup,
+                commissionWebType, commissionWebAmount,
+                commissionPosType, commissionPosAmount } = req.body;
 
         const updateData = { name, ownerEmail, slug, plan };
 
-        if (phone        !== undefined) updateData.phone        = phone;
-        if (address      !== undefined) updateData.address      = address;
-        if (isOpen       !== undefined) updateData.isOpen       = isOpen;
-        if (active       !== undefined) updateData.active       = active;
-        if (isTrending   !== undefined) updateData.isTrending   = isTrending;
-        if (lat          !== undefined) updateData.lat          = lat;
-        if (lng          !== undefined) updateData.lng          = lng;
-        if (allowDelivery !== undefined) updateData.allowDelivery = allowDelivery;
-        if (allowPickup  !== undefined) updateData.allowPickup  = allowPickup;
+        if (phone             !== undefined) updateData.phone             = phone;
+        if (address           !== undefined) updateData.address           = address;
+        if (isOpen            !== undefined) updateData.isOpen            = isOpen;
+        if (active            !== undefined) updateData.active            = active;
+        if (isTrending        !== undefined) updateData.isTrending        = isTrending;
+        if (lat               !== undefined) updateData.lat               = lat;
+        if (lng               !== undefined) updateData.lng               = lng;
+        if (allowDelivery     !== undefined) updateData.allowDelivery     = allowDelivery;
+        if (allowPickup       !== undefined) updateData.allowPickup       = allowPickup;
+        // Comisiones
+        if (commissionWebType   !== undefined) updateData.commissionWebType   = commissionWebType;
+        if (commissionWebAmount !== undefined) updateData.commissionWebAmount = commissionWebAmount;
+        if (commissionPosType   !== undefined) updateData.commissionPosType   = commissionPosType;
+        if (commissionPosAmount !== undefined) updateData.commissionPosAmount = commissionPosAmount;
 
         const updatedBusiness = await Business.findByIdAndUpdate(
             req.params.id,

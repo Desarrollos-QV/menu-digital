@@ -26,6 +26,11 @@ const orderSchema = new mongoose.Schema({
         type: { type: String, enum: ['percentage', 'fixed'], default: 'fixed' },
         reason: String 
     },
+    commission: {
+        type: { type: String, enum: ['percent', 'fixed'], default: 'fixed' },
+        amount: { type: Number, default: 0 },
+        origin: { type: String, enum: ['whatsapp', 'pos'], default: 'whatsapp' }
+    },
     tax: Number,
     total: { type: Number, required: true },
     source: { type: String, enum: ['whatsapp', 'pos'], default: 'whatsapp' },

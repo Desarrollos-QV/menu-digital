@@ -312,7 +312,16 @@ createApp({
                 msg += `▪️ *${i.quantity}x ${i.product.name}* ($${i.unitPrice * i.quantity})\n`;
                 if (i.selectedOptions?.length) msg += `   _Extras: ${i.selectedOptions.map(o => o.name).join(', ')}_\n`;
             });
-            msg += `\n💰 *TOTAL: ${config.value.currency || '$'}${cartTotalPrice.value}*\n\n`;
+
+            msg += `\n`;
+            msg += `📄 *SubTotal: ${config.value.currency || '$'}${cartSubTotal.value.toFixed(2)}*\n`;
+            
+            if (commissionWebAmountCmp.value > 0) {
+                const typeLabel = config.value.commissionWebType === 'percent' ? `${config.value.commissionWebAmount}%` : `$`;
+                msg += `⚙️ *Comisión de Plataforma (${typeLabel}): +${config.value.currency || '$'}${commissionWebAmountCmp.value.toFixed(2)}*\n`;
+            }
+
+            msg += `💰 *TOTAL A PAGAR: ${config.value.currency || '$'}${cartTotalPrice.value.toFixed(2)}*\n\n`;
 
             if (deliveryType.value === 'pickup') {
                 msg += `🛍️ *_Retiro en tienda_*\n\n`;
@@ -347,7 +356,13 @@ createApp({
                 paymentMethod: paymentMethod.value,
                 customerHowToPay: customerHowToPay.value,
                 cart: cart.value,
-                total: cartTotalPrice.value
+                total: cartTotalPrice.value,
+                subtotal: cartSubTotal.value,
+                commission: {
+                    type: config.value.commissionWebType || 'percent',
+                    amount: parseFloat(config.value.commissionWebAmount) || 0,
+                    origin: 'whatsapp'
+                }
             };
 
             fetch('/api/analytics/order', {
@@ -365,7 +380,17 @@ createApp({
         };
 
         const cartTotalItems = computed(() => cart.value.reduce((s, i) => s + i.quantity, 0));
-        const cartTotalPrice = computed(() => cart.value.reduce((s, i) => s + (i.unitPrice * i.quantity), 0));
+        
+        const cartSubTotal = computed(() => cart.value.reduce((s, i) => s + (i.unitPrice * i.quantity), 0));
+        
+        const commissionWebAmountCmp = computed(() => {
+            const amount = parseFloat(config.value.commissionWebAmount) || 0;
+            if (amount <= 0 || cartSubTotal.value === 0) return 0;
+            const type = config.value.commissionWebType || 'percent';
+            return type === 'percent' ? cartSubTotal.value * (amount / 100) : amount;
+        });
+
+        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value);
 
         // Filters & UI
         const filteredProducts = computed(() => {
@@ -528,7 +553,7 @@ createApp({
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             showBusinessModal, reviews, newReview, submittingReview, submitReview,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartTotalPrice, checkout, deliveryType,
+            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, cartTotalPrice, checkout, deliveryType,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
             isBusinessOpen, todaySchedule,

@@ -99,6 +99,77 @@
         .gm-style .gm-style-iw-c { border-radius: 14px !important; padding: 0 !important; box-shadow: 0 10px 30px rgba(0,0,0,.18) !important; }
         .gm-style .gm-style-iw-d { overflow: hidden !important; padding: 0 !important; }
         .gm-style .gm-style-iw-tc::after { display: none; }
+
+        /* ===== MOBILE DRAWER ===== */
+        .mobile-drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px); z-index: 200;
+            transition: opacity .3s ease;
+        }
+        .mobile-drawer {
+            position: fixed; top: 0; left: 0; height: 100dvh;
+            width: 82vw; max-width: 320px;
+            background: #fff;
+            z-index: 201;
+            display: flex; flex-direction: column;
+            box-shadow: 8px 0 40px rgba(0,0,0,0.18);
+            transform: translateX(-100%);
+            transition: transform .32s cubic-bezier(.4,0,.2,1);
+            border-radius: 0 24px 24px 0;
+            overflow: hidden;
+        }
+        .dark .mobile-drawer { background: #0f172a; }
+        .mobile-drawer.open { transform: translateX(0); }
+        .mobile-drawer-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 20px 14px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            flex-shrink: 0;
+        }
+        .dark .mobile-drawer-header { border-bottom-color: rgba(255,255,255,0.06); }
+        .mobile-drawer-section {
+            padding: 16px 20px 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .mobile-drawer-section { border-bottom-color: rgba(255,255,255,0.05); }
+        .mobile-drawer-label {
+            font-size: 10px; font-weight: 800; letter-spacing: .08em;
+            text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;
+        }
+        .mobile-drawer-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 14px; border-radius: 14px;
+            font-weight: 600; font-size: 14px;
+            color: #334155; cursor: pointer;
+            transition: background .2s, color .2s;
+            text-decoration: none; width: 100%;
+            background: none; border: none; text-align: left;
+        }
+        .dark .mobile-drawer-item { color: #cbd5e1; }
+        .mobile-drawer-item:hover { background: #f1f5f9; color: #6366f1; }
+        .dark .mobile-drawer-item:hover { background: #1e293b; color: #818cf8; }
+        .mobile-drawer-item .icon-wrap {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; flex-shrink: 0;
+            background: #f1f5f9;
+        }
+        .dark .mobile-drawer-item .icon-wrap { background: #1e293b; }
+        .mobile-drawer-item.danger { color: #ef4444; }
+        .mobile-drawer-item.danger .icon-wrap { background: #fff1f2; color: #ef4444; }
+        .dark .mobile-drawer-item.danger .icon-wrap { background: #450a0a;  }
+        .mobile-drawer-item.danger:hover { background: #fff1f2; color: #dc2626; }
+        .dark .mobile-drawer-item.danger:hover { background: #450a0a; }
+        /* Location pill inside drawer */
+        .drawer-location-btn {
+            display: flex; align-items: center; gap: 10px;
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 14px; padding: 12px 16px;
+            cursor: pointer; transition: border-color .2s, box-shadow .2s;
+            width: 100%;
+        }
+        .dark .drawer-location-btn { background: #1e293b; border-color: #334155; }
+        .drawer-location-btn:hover { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
     </style>
     <!-- Google Maps API -->
     <script>
@@ -112,40 +183,111 @@
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white">
 
     <div id="app" v-cloak class="min-h-screen flex flex-col">
-        
+
+        <!-- ===== MOBILE DRAWER OVERLAY ===== -->
+        <div v-if="mobileDrawerOpen" class="mobile-drawer-overlay md:hidden" @click="mobileDrawerOpen = false"></div>
+
+        <!-- ===== MOBILE SIDE DRAWER ===== -->
+        <aside class="mobile-drawer md:hidden" :class="{ open: mobileDrawerOpen }" id="mobile-drawer">
+            <!-- Drawer Header -->
+            <div class="mobile-drawer-header">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-brand rounded-xl flex items-center justify-center shadow-md shadow-brand/20">
+                        <img src="/assets/images/logo.jpg" alt="" class="w-full h-full object-cover rounded-xl">
+                    </div>
+                    <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
+                </div>
+                <button @click="mobileDrawerOpen = false" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-brand transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Drawer Body (scrollable) -->
+            <div class="flex-1 overflow-y-auto thin-scroll py-2">
+
+                <!-- Sección: Ubicación -->
+                <div class="mobile-drawer-section">
+                    <p class="mobile-drawer-label"><i class="fa-solid fa-location-dot mr-1"></i> Municipio Seleccionado</p>
+                    <button class="drawer-location-btn" @click="mobileDrawerOpen = false; showLocationModal = true">
+                        <div class="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-map-pin text-brand"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-xs text-slate-400 font-semibold">Tu zona</p>
+                            <p class="font-bold text-sm text-brand truncate">{{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Sección: Navegación -->
+                <div class="mobile-drawer-section">
+                    <p class="mobile-drawer-label">Explorar</p>
+                    <a href="/blog.html" class="mobile-drawer-item">
+                        <span class="icon-wrap text-brand"><i class="fa-solid fa-newspaper"></i></span>
+                        Blog
+                    </a>
+                </div>
+
+                <!-- Sección: Usuario Logeado -->
+                <div v-if="currentUser" class="mobile-drawer-section">
+                    <p class="mobile-drawer-label">Mi Cuenta</p>
+                    <!-- Saludo -->
+                    <div class="flex items-center gap-3 px-2 py-3 mb-2 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+                        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
+                            {{ userInitial }}
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm text-slate-800 dark:text-white">{{ currentUser.customer.name }}</p>
+                            <p class="text-xs text-slate-400">Cuenta activa</p>
+                        </div>
+                    </div>
+                    <button @click="logout" class="mobile-drawer-item danger" style="margin-top:4px">
+                        <span class="icon-wrap"><i class="fa-solid fa-right-from-bracket"></i></span>
+                        Cerrar Sesión
+                    </button>
+                </div>
+
+                <!-- Sección: Sin sesión -->
+                <div v-else class="mobile-drawer-section">
+                    <p class="mobile-drawer-label">Cuenta</p>
+                    <button @click="mobileDrawerOpen = false; showUserModal = true" class="mobile-drawer-item">
+                        <span class="icon-wrap text-brand"><i class="fa-regular fa-user"></i></span>
+                        Iniciar Sesión / Registro
+                    </button>
+                </div>
+
+            </div>
+        </aside>
+
         <!-- NAVBAR RESPONSIVE -->
         <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300" :class="{'py-3': !scrolled, 'py-2 shadow-sm': scrolled}">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-12 md:h-14">
-                    
-                    <!-- Logo & Ubicación -->
-                    <div class="flex items-center gap-6">
+
+                    <!-- Lado Izquierdo: Hamburger (mobile) + Logo -->
+                    <div class="flex items-center gap-3">
+
+                        <!-- Botón Hamburger (solo mobile) -->
+                        <button @click="mobileDrawerOpen = true"
+                            class="md:hidden w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition flex-shrink-0"
+                            id="hamburger-btn" aria-label="Abrir menú">
+                            <i class="fa-solid fa-bars text-base"></i>
+                        </button>
+
+                        <!-- Logo -->
                         <a href="/" class="flex items-center gap-2 group cursor-pointer">
                             <div class="w-8 h-8 md:w-10 md:h-10 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition">
                                 <img src="/assets/images/logo.jpg" alt="">
                             </div>
-                            <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white hidden sm:block">Tengo <span class="text-brand">Hambre</span></span>
+                            <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
                         </a>
 
-                        <!-- Toggle Entrega / Recolectar (Desktop - Centrado) -->
-                        <div class="hidden md:flex flex-1 justify-center mx-6">
-                            <div class="mode-toggle-pill">
-                                <button class="mode-btn" :class="{ active: deliveryMode === 'delivery' }" @click="setDeliveryMode('delivery')">
-                                    <i class="fa-solid fa-motorcycle"></i>
-                                    <span>Entrega a domicilio</span>
-                                </button>
-                                <button class="mode-btn" :class="{ active: deliveryMode === 'pickup' }" @click="setDeliveryMode('pickup')">
-                                    <i class="fa-solid fa-store"></i>
-                                    <span>Recolectar</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Selector Ubicación (Desktop & Mobile) -->
-                        <div class="flex flex-col border-l border-slate-200 dark:border-slate-700 pl-4 md:pl-6 cursor-pointer group" @click="showLocationModal = true">
+                        <!-- Selector Ubicación (solo Desktop) -->
+                        <div class="hidden md:flex flex-col border-l border-slate-200 dark:border-slate-700 pl-6 cursor-pointer group" @click="showLocationModal = true">
                             <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Municipio Seleccionado</span>
                             <div class="flex items-center gap-1 hover:opacity-80 transition">
-                                <span class="text-brand font-bold text-sm truncate max-w-[140px] md:max-w-[200px]">
+                                <span class="text-brand font-bold text-sm truncate max-w-[200px]">
                                     {{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}
                                 </span>
                                 <i class="fa-solid fa-chevron-down text-xs text-brand"></i>
@@ -153,11 +295,10 @@
                         </div>
                     </div>
 
-                    
-
-                    <!-- Acciones Derecha (SOLO USUARIO) -->
+                    <!-- Acciones Derecha -->
                     <div class="flex items-center gap-3 md:gap-4">
-                        
+
+                        <!-- Blog link (solo Desktop) -->
                         <a href="/blog.html" class="hidden md:flex text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition items-center gap-1.5 mr-2">
                             <i class="fa-solid fa-newspaper text-brand"></i> Blog
                         </a>
@@ -170,16 +311,12 @@
                                     {{ userInitial }}
                                 </div>
                             </button>
-                            
-                            <!-- Dropdown User -->
-                            <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 hidden group-hover:block animate-fade-in">
+
+                            <!-- Dropdown User (solo Desktop hover) -->
+                            <div class="hidden md:block absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 animate-fade-in">
                                 <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
                                     <p class="text-xs text-slate-400 font-bold">Hola, {{ currentUser.customer.name }}</p>
                                 </div>
-                                <!--
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"><i class="fa-solid fa-receipt mr-2"></i> Mis Pedidos</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"><i class="fa-solid fa-heart mr-2"></i> Favoritos</a>
-                                -->
                                 <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                                 <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold">
                                     <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
@@ -192,10 +329,10 @@
                             <i class="fa-regular fa-user group-hover:scale-110 transition-transform"></i>
                         </button>
 
-                    </div> 
+                    </div>
                 </div>
 
-                <!-- Mobile: Toggle visible debajo del header en móvil -->
+                <!-- Mobile: Toggle visible debajo del header en móvil 
                 <div class="md:hidden mt-2 flex justify-center">
                     <div class="mode-toggle-pill">
                         <button class="mode-btn" :class="{ active: deliveryMode === 'delivery' }" @click="setDeliveryMode('delivery')">
@@ -205,8 +342,8 @@
                             <i class="fa-solid fa-store"></i><span>Recolectar</span>
                         </button>
                     </div>
-                </div>
-
+                </div>-->
+                
                 <!-- Mobile Search (solo en modo entrega en móvil) -->
                 <div v-show="deliveryMode === 'delivery'" class="md:hidden mt-2 pb-1">
                     <div class="relative group">

@@ -97,7 +97,10 @@ exports.getPublicData = async (req, res) => {
                     description: business.description || '',
                     tags: business.tags || [],
                     calculatedRating: parseFloat(calculatedRating),
-                    reviewsCount: reviewsCount
+                    reviewsCount: reviewsCount,
+                    // COMISION WEB
+                    commissionWebType: business.commissionWebType || 'percent',
+                    commissionWebAmount: business.commissionWebAmount || 0
                 });
 
             case 'reviews':

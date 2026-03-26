@@ -866,6 +866,7 @@ createApp({
                     // Buscar la última orden para imprimir su ticket
                     await orders.fetchOrders();
                     const lastOrder = orders.ordersList.value[0];
+                    console.log(lastOrder);
 
                     if (lastOrder) {
                         ticketData.value = {
@@ -874,6 +875,9 @@ createApp({
                             folio: lastOrder._id.slice(-6).toUpperCase(),
                             customer: lastOrder.customerId ? lastOrder.customerId.name : 'Mostrador',
                             total: lastOrder.total,
+                            subtotal: lastOrder.subtotal,
+                            commission: lastOrder.commission,
+                            tax: lastOrder.tax,
                             method: lastOrder.paymentMethod,
                             items: lastOrder.items.map(i => ({ qty: i.quantity, name: i.name, price: i.price }))
                         };

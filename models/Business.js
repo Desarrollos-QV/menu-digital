@@ -41,7 +41,12 @@ const businessSchema = new mongoose.Schema({
         currency: { type: String, default: 'MXN' },
         iva: { type: Number, default: 16 },
         primaryColor: { type: String, default: '#6366f1' }
-    }
+    },
+    // Comisiones SaaS
+    commissionWebType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+    commissionWebAmount: { type: Number, default: 0, min: 0 }, // % o monto fijo por venta WebApp
+    commissionPosType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+    commissionPosAmount: { type: Number, default: 0, min: 0 }  // % o monto fijo por venta POS (0 = inactivo)
 }, { timestamps: true });
 
 module.exports = mongoose.model('Business', businessSchema);

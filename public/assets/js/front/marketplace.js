@@ -47,6 +47,7 @@ createApp({
         const loading = ref(true);
         const error = ref(false);
         const scrolled = ref(false);
+        const mobileDrawerOpen = ref(false);
         const businesses = ref([]);
 
         // --- MODO ENTREGA vs RECOLECTAR ---
@@ -308,6 +309,7 @@ createApp({
                 icon: 'success',
                 title: 'Sesión cerrada'
             });
+            mobileDrawerOpen.value = false;
         };
 
         // --- MODAL USUARIO (REGISTRO & LOGIN) ---
@@ -629,7 +631,9 @@ createApp({
             // Modo Recolectar + Mapa
             deliveryMode, setDeliveryMode,
             pickupBusinesses, mapReady,
-            highlightedBiz, selectedPickupBiz, selectPickupBiz
+            highlightedBiz, selectedPickupBiz, selectPickupBiz,
+            // Mobile Drawer
+            mobileDrawerOpen
         };
     }
 }).mount('#app');

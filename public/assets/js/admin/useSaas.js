@@ -23,6 +23,11 @@ export function useSaas() {
         isOpen: true,
         active: true,
         isTrending: false,
+        // Comisiones
+        commissionWebType:   'percent',
+        commissionWebAmount: 0,
+        commissionPosType:   'percent',
+        commissionPosAmount: 0,
         _stats: null
     };
     const saasForm = ref({ ...defaultForm });
@@ -45,6 +50,11 @@ export function useSaas() {
                 isOpen: business.isOpen !== false,
                 active: business.active !== false,
                 isTrending: business.isTrending === true,
+                // Comisiones
+                commissionWebType:   business.commissionWebType   || 'percent',
+                commissionWebAmount: business.commissionWebAmount  ?? 0,
+                commissionPosType:   business.commissionPosType   || 'percent',
+                commissionPosAmount: business.commissionPosAmount  ?? 0,
                 username: '---',
                 password: '',
                 _stats: {
@@ -87,11 +97,16 @@ export function useSaas() {
                     address:       saasForm.value.address,
                     lat:           saasForm.value.lat,
                     lng:           saasForm.value.lng,
-                    allowDelivery: saasForm.value.allowDelivery,
-                    allowPickup:   saasForm.value.allowPickup,
-                    isOpen:        saasForm.value.isOpen,
-                    active:        saasForm.value.active,
-                    isTrending:    saasForm.value.isTrending
+                    allowDelivery:       saasForm.value.allowDelivery,
+                    allowPickup:         saasForm.value.allowPickup,
+                    isOpen:              saasForm.value.isOpen,
+                    active:              saasForm.value.active,
+                    isTrending:          saasForm.value.isTrending,
+                    // Comisiones
+                    commissionWebType:   saasForm.value.commissionWebType,
+                    commissionWebAmount: saasForm.value.commissionWebAmount,
+                    commissionPosType:   saasForm.value.commissionPosType,
+                    commissionPosAmount: saasForm.value.commissionPosAmount
                 };
             } else {
                 payload = {

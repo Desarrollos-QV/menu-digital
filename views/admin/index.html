@@ -639,6 +639,10 @@
                                         <span>Descuento</span>
                                         <span class="font-bold">-${{ pos.currentTotals.value.discountAmount.toFixed(2) }}</span>
                                     </div>
+                                    <div v-if="pos.currentTotals.value.commissionAmount > 0" class="flex justify-between text-orange-500">
+                                        <span>Comisión ({{ settings.commissionPosAmount }}{{ settings.commissionPosType === 'percent' ? '%' : '$' }})</span>
+                                        <span class="font-bold">+${{ pos.currentTotals.value.commissionAmount.toFixed(2) }}</span>
+                                    </div>
                                     <div class="flex justify-between text-slate-600 dark:text-slate-400" v-if="settings.iva > 0">
                                         <span>IVA ({{ settings.iva }}%)</span>
                                         <span class="font-medium">${{ pos.currentTotals.value.tax.toFixed(2) }}</span>
@@ -1005,7 +1009,6 @@
                                     </button>
                                 </div>
 
-                                
                                 <!-- Card Financiero -->
                                 <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                                     <h3 class="font-bold text-slate-800 dark:text-white mb-4">Resumen Financiero</h3>
@@ -1017,6 +1020,14 @@
                                         <div v-if="orders.selectedOrder.value.discount > 0" class="flex justify-between text-red-500">
                                             <span>Descuentos</span>
                                             <span>-${{ orders.selectedOrder.value.discount?.toFixed(2) }}</span>
+                                        </div>
+                                        <div v-if="orders.selectedOrder.value.commission.amount > 0" class="flex justify-between text-orange-500">
+                                            <span>Comisión ({{ orders.selectedOrder.value.commission.type === 'percent' ? '%' : '$' }})</span>
+                                            <span class="font-bold">
+                                                ${{
+                                                    orders.selectedOrder.value.commission.type === 'percent' ? orders.selectedOrder.value.subtotal?.toFixed(2) * orders.selectedOrder.value.commission.amount / 100 : orders.selectedOrder.value.commission.amount?.toFixed(2)
+                                                }} 
+                                            </span>
                                         </div>
                                         <div class="flex justify-between text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-3">
                                             <span>IVA (16%)</span>
@@ -2131,6 +2142,7 @@
 
                     </div>
                 </div>
+
                 <!-- ===================== VIEW BLOG ===================== -->
                 <div v-if="currentView === 'blog'" class="animate-fade-in space-y-6 pb-10">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -2576,6 +2588,101 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- COMISIONES -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <!-- #1 Comisión WebApp -->
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700/50 rounded-2xl p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-300 flex-shrink-0">
+                                <i class="fa-solid fa-globe text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión WebApp</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Ventas realizadas desde el marketplace</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                <select v-model="saasForm.commissionWebType"
+                                    class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none transition">
+                                    <option value="percent">% Porcentaje</option>
+                                    <option value="fixed">$ Monto Fijo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                    {{ saasForm.commissionWebType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
+                                        {{ saasForm.commissionWebType === 'percent' ? '%' : '$' }}
+                                    </span>
+                                    <input v-model.number="saasForm.commissionWebAmount" type="number" min="0" step="0.01"
+                                        placeholder="0"
+                                        class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none transition">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1.5 text-[10px] text-indigo-600 dark:text-indigo-300 font-medium bg-indigo-100 dark:bg-indigo-800/40 px-2.5 py-1.5 rounded-lg">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span v-if="saasForm.commissionWebAmount > 0">
+                                Se cobra {{ saasForm.commissionWebType === 'percent' ? saasForm.commissionWebAmount + '%' : '$' + saasForm.commissionWebAmount }} por venta
+                            </span>
+                            <span v-else>Sin comisión configurada</span>
+                        </div>
+                    </div>
+
+                    <!-- #2 Comisión POS Interno -->
+                    <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-2xl p-4"
+                        :class="saasForm.commissionPosAmount == 0 ? 'opacity-70' : ''">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-300 flex-shrink-0">
+                                <i class="fa-solid fa-cash-register text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión POS Interno</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Ventas desde el punto de venta. 0 = Inactivo</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                <select v-model="saasForm.commissionPosType"
+                                    class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-emerald-400 outline-none transition">
+                                    <option value="percent">% Porcentaje</option>
+                                    <option value="fixed">$ Monto Fijo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                    {{ saasForm.commissionPosType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
+                                        {{ saasForm.commissionPosType === 'percent' ? '%' : '$' }}
+                                    </span>
+                                    <input v-model.number="saasForm.commissionPosAmount" type="number" min="0" step="0.01"
+                                        placeholder="0"
+                                        class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-emerald-400 outline-none transition">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg"
+                            :class="saasForm.commissionPosAmount > 0 
+                                ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-800/40' 
+                                : 'text-slate-500 bg-slate-100 dark:bg-slate-700'">
+                            <i :class="saasForm.commissionPosAmount > 0 ? 'fa-solid fa-circle-check' : 'fa-solid fa-ban'"></i>
+                            <span v-if="saasForm.commissionPosAmount > 0">
+                                Se cobra {{ saasForm.commissionPosType === 'percent' ? saasForm.commissionPosAmount + '%' : '$' + saasForm.commissionPosAmount }} por venta POS
+                            </span>
+                            <span v-else>Comisión POS inactiva (valor = 0)</span>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- TRENDING -->
@@ -3685,7 +3792,23 @@
                     <div class="ticket-dashed"></div>
 
                     <div class="flex justify-between font-bold text-sm">
-                        <span>TOTAL</span>
+                        <span>SubTotal</span>
+                        <span>${{ ticketData?.subtotal.toFixed(2) }}</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-sm">
+                        <span>Comisión</span>
+                        <span>
+                            ${{
+                                ticketData?.commission.type === 'percent' ? ticketData?.subtotal?.toFixed(2) * ticketData?.commission.amount / 100 : ticketData?.commission.amount?.toFixed(2)
+                            }} 
+                        </span>
+                    </div>
+                    <div class="flex justify-between font-bold text-sm">
+                        <span>IVA</span>
+                        <span>${{ ticketData?.tax.toFixed(2) }}</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-sm">
+                        <span>Total</span>
                         <span>${{ ticketData?.total.toFixed(2) }}</span>
                     </div>
                     

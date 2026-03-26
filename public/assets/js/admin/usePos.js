@@ -34,10 +34,17 @@ export function usePos(productsRef, fetchMedia, setingsRef) {
         let discountAmount = tab.discount.type === 'fixed' ? tab.discount.amount : subtotal * (tab.discount.amount / 100);
         if (discountAmount > subtotal) discountAmount = subtotal;
         let afterDiscount = subtotal - discountAmount;
-        let tax = afterDiscount * ivaform;
-        let total = afterDiscount + tax;
+        let commissionAmount = 0;
+        const posVal = parseFloat(setingsRef.settings.value.commissionPosAmount) || 0;
+        if (posVal > 0) {
+            const posType = setingsRef.settings.value.commissionPosType || 'percent';
+            commissionAmount = posType === 'percent' ? afterDiscount * (posVal / 100) : posVal;
+        }
 
-        return { subtotal, discountAmount, tax, total };
+        let tax = (afterDiscount + commissionAmount) * ivaform;
+        let total = afterDiscount + commissionAmount + tax;
+
+        return { subtotal, discountAmount, commissionAmount, tax, total };
     });
     const discountPreview = computed(() => { /* ... lógica existente ... */ return { original: 0, newTotal: 0, saving: 0 }; });
 
@@ -101,18 +108,23 @@ export function usePos(productsRef, fetchMedia, setingsRef) {
         if (paymentForm.method === 'cash' && paymentForm.amountReceived < currentTotals.value.total) {
             return toastr.error('Monto recibido insuficiente');
         }
- 
 
         try {
             const payload = {
                 cart: activeTab.value.cart,
                 customer: activeTab.value.customer,
                 discount: activeTab.value.discount,
+                commission: {
+                    type: setingsRef.settings.value.commissionPosType,
+                    amount: setingsRef.settings.value.commissionPosAmount,
+                    origin: 'pos'
+                },
                 paymentMethod: paymentForm.method, // 'cash', 'credit_card', 'debit_card', 'transfer'
                 paymentReference: paymentForm.reference, // Guardar referencia bancaria si existe
                 totals: currentTotals.value
             };
 
+            // Registramos la venta
             const res = await authFetch('/api/analytics/pos/sale', { method: 'POST', body: JSON.stringify(payload) });
 
             if (res.ok) {
@@ -126,6 +138,7 @@ export function usePos(productsRef, fetchMedia, setingsRef) {
 
                 // Restaurar sobrantes
                 handleSplitPaymentResult(true);
+
             } else {
                 const err = await res.json();
                 toastr.error(err.message || 'Error al procesar venta');

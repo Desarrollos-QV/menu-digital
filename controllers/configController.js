@@ -89,7 +89,12 @@ exports.getAdminConfig = async (req, res) => {
                 ownerEmail: business.ownerEmail || '',
                 currency: business.settings?.currency || 'MXN',
                 iva: business.settings?.iva || 16,
-                primaryColor: business.settings?.primaryColor || '#6366f1'
+                primaryColor: business.settings?.primaryColor || '#6366f1',
+                // Comisiones Pos
+                commissionWebType: business.commissionWebType || 'percent',
+                commissionWebAmount: business.commissionWebAmount || 0,
+                commissionPosType: business.commissionPosType || 'percent',
+                commissionPosAmount: business.commissionPosAmount || 0
             });
         }
 
