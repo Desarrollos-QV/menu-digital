@@ -32,6 +32,8 @@ const orderSchema = new mongoose.Schema({
         origin: { type: String, enum: ['whatsapp', 'pos'], default: 'whatsapp' }
     },
     tax: Number,
+    deliveryCost: { type: Number, default: 0 }, // Costo de envío por colonia/zona
+    deliveryZone: { type: String, default: '' }, // Nombre de la colonia/zona
     total: { type: Number, required: true },
     source: { type: String, enum: ['whatsapp', 'pos'], default: 'whatsapp' },
     

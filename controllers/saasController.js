@@ -218,3 +218,47 @@ exports.settleCommission = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ─── VENTAS DE UN NEGOCIO (SuperAdmin) ───────────────────────────────────────
+exports.getBusinessOrders = async (req, res) => {
+    try {
+        const bizId = req.params.id;
+        const page  = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit = Math.min(100, parseInt(req.query.limit) || 25);
+        const skip  = (page - 1) * limit;
+
+        const business = await Business.findById(bizId).select('name slug');
+        if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+        const filter = { businessId: bizId };
+
+        const [orders, total] = await Promise.all([
+            Order.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate('customerId', 'name phone')
+                .populate('createdBy', 'username')
+                .lean(),
+            Order.countDocuments(filter)
+        ]);
+
+        // KPIs rápidos del negocio completo
+        const allOrders   = await Order.find({ businessId: bizId }).lean();
+        const totalRevenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
+        const totalDelivery = allOrders.filter(o => o.deliveryType === 'delivery' || o.customerStreet).length;
+
+        res.json({
+            business: { _id: business._id, name: business.name, slug: business.slug },
+            orders,
+            pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+            kpis: {
+                totalOrders: total,
+                totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+                totalDelivery
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

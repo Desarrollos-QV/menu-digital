@@ -74,6 +74,9 @@ createApp({
         const paymentMethod = ref('cash');
         const customerHowToPay = ref('');
         const deliveryType = ref('delivery');
+        const municipios = ref([]); // Lista de municipios disponibles
+        const selectedMunicipio = ref(null); // Municipio seleccionado por el usuario
+        const selectedColonia = ref(null);   // Colonia específica (tiene el deliveryCost)
 
         // Product Logic
         const showProductModal = ref(false);
@@ -127,13 +130,14 @@ createApp({
             try {
                 // CAMBIO CLAVE: Usamos /api/public en lugar de /api/
                 const query = `?slug=${slug}`;
-                const [bannersRes, catsRes, prodsRes, addonsRes, configRes, reviewsRes] = await Promise.all([
+                const [bannersRes, catsRes, prodsRes, addonsRes, configRes, reviewsRes, municipiosRes] = await Promise.all([
                     fetch('/api/public/banners' + query),
                     fetch('/api/public/categories' + query),
                     fetch('/api/public/products' + query),
                     fetch('/api/public/addons' + query),
                     fetch('/api/public/config' + query),
-                    fetch('/api/public/reviews' + query)
+                    fetch('/api/public/reviews' + query),
+                    fetch('/api/municipios') // Cargar municipios para el costo de envío
                 ]);
 
                 if (!configRes.ok) throw new Error();
@@ -143,6 +147,7 @@ createApp({
                 if (prodsRes.ok) products.value = await prodsRes.json();
                 if (addonsRes.ok) addons.value = await addonsRes.json();
                 if (reviewsRes.ok) reviews.value = await reviewsRes.json();
+                if (municipiosRes && municipiosRes.ok) municipios.value = await municipiosRes.json();
 
                 // Organizamos por Sort catsRes y ProdsRes
                 categories.value.sort((a, b) => a.sort - b.sort);
@@ -321,6 +326,10 @@ createApp({
                 msg += `⚙️ *Comisión de Plataforma (${typeLabel}): +${config.value.currency || '$'}${commissionWebAmountCmp.value.toFixed(2)}*\n`;
             }
 
+            if (deliveryCostCmp.value > 0) {
+                msg += `🛵 *Costo de Envío (${selectedColonia.value?.name || selectedMunicipio.value?.name || 'Zona'}): +${config.value.currency || '$'}${deliveryCostCmp.value.toFixed(2)}*\n`;
+            }
+
             msg += `💰 *TOTAL A PAGAR: ${config.value.currency || '$'}${cartTotalPrice.value.toFixed(2)}*\n\n`;
 
             if (deliveryType.value === 'pickup') {
@@ -329,8 +338,9 @@ createApp({
                 // Agregar Datos de Entrega y Pago al mensaje
                 msg += `📍 *_Datos de Entrega_*:\n`;
                 msg += `Calle: ${customerStreet.value} #${customerNumber.value}\n`;
-                msg += `Colonia: ${customerColony.value}\n`;
-                msg += `CP: ${customerZipCode.value}\n`;
+                msg += `Colonia: ${selectedColonia.value?.name || customerColony.value}\n`;
+                msg += `Municipio: ${selectedMunicipio.value?.name || ''}\n`;
+                msg += `CP: ${selectedMunicipio.value?.zipCode || customerZipCode.value}\n`;
                 msg += `Ref: ${customerReference.value}\n\n`;
             }
 
@@ -349,15 +359,17 @@ createApp({
                 customerPhone: customerPhone.value,
                 deliveryType: deliveryType.value,
                 customerStreet: deliveryType.value === 'delivery' ? customerStreet.value : '',
-                customerColony: deliveryType.value === 'delivery' ? customerColony.value : '',
+                customerColony: deliveryType.value === 'delivery' ? (selectedColonia.value?.name || customerColony.value) : '',
                 customerNumber: deliveryType.value === 'delivery' ? customerNumber.value : '',
-                customerZipCode: deliveryType.value === 'delivery' ? customerZipCode.value : '',
+                customerZipCode: deliveryType.value === 'delivery' ? (selectedMunicipio.value?.zipCode || customerZipCode.value) : '',
                 customerReference: deliveryType.value === 'delivery' ? customerReference.value : '',
                 paymentMethod: paymentMethod.value,
                 customerHowToPay: customerHowToPay.value,
                 cart: cart.value,
                 total: cartTotalPrice.value,
                 subtotal: cartSubTotal.value,
+                deliveryCost: deliveryCostCmp.value,
+                deliveryZone: selectedColonia.value?.name || selectedMunicipio.value?.name || '',
                 commission: {
                     type: config.value.commissionWebType || 'percent',
                     amount: parseFloat(config.value.commissionWebAmount) || 0,
@@ -390,7 +402,13 @@ createApp({
             return type === 'percent' ? cartSubTotal.value * (amount / 100) : amount;
         });
 
-        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value);
+        const deliveryCostCmp = computed(() => {
+            if (deliveryType.value !== 'delivery') return 0;
+            if (!selectedColonia.value) return 0;
+            return parseFloat(selectedColonia.value.deliveryCost) || 0;
+        });
+
+        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value);
 
         // Filters & UI
         const filteredProducts = computed(() => {
@@ -553,7 +571,8 @@ createApp({
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             showBusinessModal, reviews, newReview, submittingReview, submitReview,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, cartTotalPrice, checkout, deliveryType,
+            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, deliveryCostCmp, cartTotalPrice, checkout, deliveryType,
+            municipios, selectedMunicipio, selectedColonia,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
             isBusinessOpen, todaySchedule,

@@ -7,7 +7,8 @@ const MunicipioSchema = new mongoose.Schema({
     active: { type: Boolean, default: true },
     colonias: [{
         name: { type: String, required: true },
-        zone: { type: String }, // Norte, Sur, Centro (Opcional para agrupar)
+        zone: { type: String },   // Norte, Sur, Centro (Opcional para agrupar)
+        deliveryCost: { type: Number, default: 0 }, // Costo de envío por esta colonia/zona
         active: { type: Boolean, default: true }
     }]
 });

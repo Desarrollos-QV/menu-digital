@@ -168,6 +168,7 @@ export function useMunicipios(isDark) {
         municipioForm.value.colonias.push({
             name: '',
             zone: '',
+            deliveryCost: 0,
             active: true
         });
     };

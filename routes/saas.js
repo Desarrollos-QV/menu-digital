@@ -15,4 +15,7 @@ router.get('/businesses/:id/commission-stats', saasController.getCommissionStats
 router.post('/businesses/:id/commission-payment', saasController.addCommissionPayment);
 router.post('/businesses/:id/commission-settle', saasController.settleCommission);
 
+// Ventas de un negocio específico (SuperAdmin)
+router.get('/businesses/:id/orders', saasController.getBusinessOrders);
+
 module.exports = router;

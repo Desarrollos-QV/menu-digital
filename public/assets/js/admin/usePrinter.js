@@ -68,19 +68,41 @@ export function usePrinter(settings) {
             data.push('--------------------------------\n');
             data.push('\x1B\x61\x02'); // Alinear Derecha
             data.push('\x1B\x21\x08'); // Negrita
-            data.push(`Subtotal: $${ticketData.subtotal.toFixed(2)}\n`);
-            data.push(`IVA: $${ticketData.tax.toFixed(2)}\n`);
-            // Verificamos si hubo descuento
-            if (ticketData.discount > 0) {
-                data.push(`Descuento: -$${ticketData.discount.toFixed(2)}\n`);
-                data.push(`TOTAL: $${(ticketData.total - ticketData.discount).toFixed(2)}\n`);
-            }else {
-                data.push(`TOTAL: $${ticketData.total.toFixed(2)}\n`);
+            data.push(`Subtotal: $${(ticketData.subtotal || 0).toFixed(2)}\n`);
+            if (ticketData.commission && ticketData.commission.amount > 0) {
+                const comm = ticketData.commission.type === 'percent'
+                    ? (ticketData.subtotal * ticketData.commission.amount / 100)
+                    : ticketData.commission.amount;
+                data.push(`Comision: +$${comm.toFixed(2)}\n`);
             }
+            if ((ticketData.deliveryCost || 0) > 0) {
+                const zone = ticketData.deliveryZone ? ` (${ticketData.deliveryZone})` : '';
+                data.push(`Envio${zone}: +$${ticketData.deliveryCost.toFixed(2)}\n`);
+            }
+            if (ticketData.discount && ticketData.discount.amount > 0) {
+                data.push(`Descuento: -$${ticketData.discount.amount.toFixed(2)}\n`);
+            }
+            data.push(`TOTAL: $${ticketData.total.toFixed(2)}\n`);
 
             data.push('\x1B\x21\x00'); // Normal
             data.push('\x1B\x61\x01'); // Centrar
-            data.push(`\n\nMetodo: ${ticketData?.paymentMethod}\n`);
+            data.push(`\n\nMetodo: ${ticketData?.paymentMethod || ticketData?.method}\n`);
+
+            // Datos de envio a domicilio
+            if (ticketData.customerStreet) {
+                data.push('--------------------------------\n');
+                data.push('\x1B\x61\x00'); // Izquierda
+                data.push('ENTREGA A DOMICILIO:\n');
+                data.push(`Calle: ${ticketData.customerStreet} ${ticketData.customerNumber || ''}\n`);
+                if (ticketData.customerColony || ticketData.deliveryZone) {
+                    data.push(`Colonia: ${ticketData.customerColony || ticketData.deliveryZone}\n`);
+                }
+                if (ticketData.customerReference) {
+                    data.push(`Ref: ${ticketData.customerReference}\n`);
+                }
+                data.push('\x1B\x61\x01'); // Centrar
+            }
+
             data.push('Gracias por su compra\n');
             data.push('Software: Tengo Hambre\n\n\n\n\n');
             data.push('\x1B\x69');     // Comando de Corte de papel (Cut)
@@ -184,19 +206,41 @@ export function usePrinter(settings) {
             printData.push('--------------------------------\n');
             printData.push('\x1B\x61\x02'); // Alinear Derecha
             printData.push('\x1B\x21\x08'); // Negrita
-            printData.push(`Subtotal: $${ticketData.subtotal.toFixed(2)}\n`);
-            printData.push(`IVA: $${ticketData.tax.toFixed(2)}\n`);
-            // Verificamos si hubo descuento
-            if (ticketData.discount > 0) {
-                printData.push(`Descuento: -$${ticketData.discount.toFixed(2)}\n`);
-                printData.push(`TOTAL: $${(ticketData.total - ticketData.discount).toFixed(2)}\n`);
-            }else {
-                printData.push(`TOTAL: $${ticketData.total.toFixed(2)}\n`);
+            printData.push(`Subtotal: $${(ticketData.subtotal || 0).toFixed(2)}\n`);
+            if (ticketData.commission && ticketData.commission.amount > 0) {
+                const comm = ticketData.commission.type === 'percent'
+                    ? (ticketData.subtotal * ticketData.commission.amount / 100)
+                    : ticketData.commission.amount;
+                printData.push(`Comision: +$${comm.toFixed(2)}\n`);
             }
+            if ((ticketData.deliveryCost || 0) > 0) {
+                const zone = ticketData.deliveryZone ? ` (${ticketData.deliveryZone})` : '';
+                printData.push(`Envio${zone}: +$${ticketData.deliveryCost.toFixed(2)}\n`);
+            }
+            if (ticketData.discount && ticketData.discount.amount > 0) {
+                printData.push(`Descuento: -$${ticketData.discount.amount.toFixed(2)}\n`);
+            }
+            printData.push(`TOTAL: $${ticketData.total.toFixed(2)}\n`);
 
             printData.push('\x1B\x21\x00'); // Normal
             printData.push('\x1B\x61\x01'); // Centrar
-            printData.push(`\n\nMetodo: ${ticketData?.paymentMethod}\n`);
+            printData.push(`\n\nMetodo: ${ticketData?.paymentMethod || ticketData?.method}\n`);
+
+            // Datos de envio a domicilio
+            if (ticketData.customerStreet) {
+                printData.push('--------------------------------\n');
+                printData.push('\x1B\x61\x00'); // Izquierda
+                printData.push('ENTREGA A DOMICILIO:\n');
+                printData.push(`Calle: ${ticketData.customerStreet} ${ticketData.customerNumber || ''}\n`);
+                if (ticketData.customerColony || ticketData.deliveryZone) {
+                    printData.push(`Colonia: ${ticketData.customerColony || ticketData.deliveryZone}\n`);
+                }
+                if (ticketData.customerReference) {
+                    printData.push(`Ref: ${ticketData.customerReference}\n`);
+                }
+                printData.push('\x1B\x61\x01'); // Centrar
+            }
+
             printData.push('Gracias por su compra\n');
             printData.push('Software: Tengo Hambre\n\n\n\n\n');
             printData.push('\x1B\x69');     // Comando de Corte de papel (Cut)

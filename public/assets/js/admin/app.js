@@ -611,10 +611,24 @@ createApp({
                 id: ord._id,
                 origin: 'reprint',
                 folio: ord._id.slice(-6).toUpperCase(),
-                customer: ord.customerId ? ord.customerId.name : 'Mostrador',
+                customer: ord.customerId ? ord.customerId.name : (ord.customerName || 'Mostrador'),
+                customerPhone: ord.customerPhone || '',
                 total: ord.total,
+                subtotal: ord.subtotal || 0,
+                tax: ord.tax || 0,
+                deliveryCost: ord.deliveryCost || 0,
+                deliveryZone: ord.deliveryZone || '',
+                deliveryType: ord.deliveryType || '',
+                customerStreet: ord.customerStreet || '',
+                customerNumber: ord.customerNumber || '',
+                customerColony: ord.customerColony || '',
+                customerZipCode: ord.customerZipCode || '',
+                customerReference: ord.customerReference || '',
+                commission: ord.commission || null,
+                discount: ord.discount || null,
                 method: ord.paymentMethod,
-                items: ord.items.map(i => ({ qty: i.quantity, name: i.name, price: i.price }))
+                customerHowToPay: ord.customerHowToPay || '',
+                items: ord.items.map(i => ({ qty: i.quantity, name: i.name, price: i.price, selectedOptions: i.selectedOptions || [] }))
             };
             showTicketModal.value = true;
         };
@@ -650,48 +664,183 @@ createApp({
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const business = settings.settings.value;
+            const lineH = 6; // line height
+            let y = 20;
 
-            // Título
-            doc.setFontSize(20);
-            doc.text(`${settings.settings.value.appName || 'TengoHambre'} - Comprobante de Venta`, 105, 20, { align: "center" });
-
-            // Info General
-            doc.setFontSize(10);
-            doc.text(`Folio: #${ord._id.slice(-6).toUpperCase()}`, 20, 40);
-            doc.text(`Fecha: ${new Date(ord.createdAt).toLocaleString()}`, 20, 46);
-            doc.text(`Cliente: ${ord.customerId ? ord.customerId.name : 'Mostrador'}`, 20, 52);
-            doc.text(`Estado: ${ord.status.toUpperCase()}`, 150, 40);
-
-            // Línea
-            doc.line(20, 60, 190, 60);
-
-            // Tabla Productos (Manual)
-            let y = 70;
+            // ---- ENCABEZADO ----
+            doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
-            doc.text("Producto", 20, y);
-            doc.text("Cant.", 120, y);
-            doc.text("Precio", 140, y);
-            doc.text("Total", 170, y);
+            doc.text(business.appName || 'Comprobante de Venta', 105, y, { align: 'center' });
+            y += 7;
+            doc.setFontSize(9);
             doc.setFont(undefined, 'normal');
+            doc.setTextColor(100);
+            if (business.address) { doc.text(business.address, 105, y, { align: 'center' }); y += 5; }
+            if (business.phone)   { doc.text(`Tel: ${business.phone}`, 105, y, { align: 'center' }); y += 5; }
+            doc.setTextColor(0);
 
+            // Línea separadora
+            y += 2;
+            doc.setLineWidth(0.5);
+            doc.line(20, y, 190, y);
             y += 6;
+
+            // ---- DATOS GENERALES ----
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.text('COMPROBANTE DE VENTA', 20, y);
+            y += lineH;
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            doc.text(`Folio:`, 20, y); doc.setFont(undefined, 'bold'); doc.text(`#${ord._id.slice(-6).toUpperCase()}`, 40, y); doc.setFont(undefined, 'normal');
+            doc.text(`Estado: ${ord.status.toUpperCase()}`, 140, y);
+            y += lineH;
+            doc.text(`Fecha: ${new Date(ord.createdAt).toLocaleString()}`, 20, y);
+            doc.text(`Canal: ${ord.source || 'N/A'}`, 140, y);
+            y += lineH;
+            doc.text(`Cliente: ${ord.customerId ? ord.customerId.name : (ord.customerName || 'Mostrador')}`, 20, y);
+            y += lineH;
+            if (ord.customerPhone) { doc.text(`Tel: ${ord.customerPhone}`, 20, y); y += lineH; }
+            doc.text(`Método de pago: ${ord.paymentMethod || 'N/A'}`, 20, y);
+            if (ord.customerHowToPay) { doc.text(`Paga con: $${ord.customerHowToPay}`, 110, y); }
+            y += lineH;
+            doc.text(`Atendido por: ${ord.createdBy ? ord.createdBy.username : 'Sistema (Web)'}`, 20, y);
+            y += lineH;
+
+            // ---- DATOS DE ENVÍO (solo si es a domicilio) ----
+            const isDelivery = ord.deliveryType === 'delivery' || ord.customerStreet;
+            if (isDelivery) {
+                y += 3;
+                doc.setLineWidth(0.2);
+                doc.line(20, y, 190, y);
+                y += 5;
+                doc.setFont(undefined, 'bold');
+                doc.setFontSize(9);
+                doc.text('DATOS DE ENTREGA A DOMICILIO', 20, y);
+                y += lineH;
+                doc.setFont(undefined, 'normal');
+                if (ord.customerStreet) {
+                    doc.text(`Calle: ${ord.customerStreet} ${ord.customerNumber || ''}`, 20, y); y += lineH;
+                }
+                if (ord.customerColony || ord.deliveryZone) {
+                    doc.text(`Colonia/Zona: ${ord.customerColony || ord.deliveryZone}`, 20, y); y += lineH;
+                }
+                if (ord.customerZipCode) {
+                    doc.text(`Código Postal: ${ord.customerZipCode}`, 20, y); y += lineH;
+                }
+                if (ord.customerReference) {
+                    doc.text(`Referencia: ${ord.customerReference}`, 20, y); y += lineH;
+                }
+            }
+
+            // Línea separadora
+            y += 3;
+            doc.setLineWidth(0.5);
+            doc.line(20, y, 190, y);
+            y += 7;
+
+            // ---- TABLA PRODUCTOS ----
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            doc.setFillColor(245, 245, 245);
+            doc.rect(20, y - 4, 170, 7, 'F');
+            doc.text('Producto', 22, y);
+            doc.text('Cant.', 122, y, { align: 'center' });
+            doc.text('Precio U.', 148, y, { align: 'right' });
+            doc.text('Total', 190, y, { align: 'right' });
+            doc.setFont(undefined, 'normal');
+            y += lineH;
+
             ord.items.forEach(item => {
-                doc.text(item.name.substring(0, 40), 20, y);
-                doc.text(item.quantity.toString(), 120, y);
-                doc.text(`$${item.price.toFixed(2)}`, 140, y);
-                doc.text(`$${(item.price * item.quantity).toFixed(2)}`, 170, y);
-                y += 6;
+                let name = (item.name || '').substring(0, 48);
+                doc.text(name, 22, y);
+                doc.text(item.quantity.toString(), 122, y, { align: 'center' });
+                doc.text(`$${item.price.toFixed(2)}`, 148, y, { align: 'right' });
+                doc.text(`$${(item.price * item.quantity).toFixed(2)}`, 190, y, { align: 'right' });
+                y += lineH;
+                // Complementos
+                if (item.selectedOptions && item.selectedOptions.length > 0) {
+                    item.selectedOptions.forEach(opt => {
+                        doc.setFontSize(7);
+                        doc.setTextColor(120);
+                        doc.text(`  + ${opt.name} ($${opt.price || 0})`, 22, y);
+                        doc.setFontSize(9);
+                        doc.setTextColor(0);
+                        y += 4;
+                    });
+                }
+                if (item.note) {
+                    doc.setFontSize(7);
+                    doc.setTextColor(180, 100, 0);
+                    doc.text(`  ★ Nota: ${item.note}`, 22, y);
+                    doc.setFontSize(9);
+                    doc.setTextColor(0);
+                    y += 4;
+                }
             });
 
-            doc.line(20, y + 4, 190, y + 4);
+            // Línea separadora
+            doc.setLineWidth(0.5);
+            doc.line(100, y + 2, 190, y + 2);
+            y += 9;
 
-            // Totales
-            y += 12;
-            doc.setFontSize(14);
+            // ---- DESGLOSE DE TOTALES ----
+            const subtotal = ord.subtotal || 0;
+            const commAmt = ord.commission && ord.commission.amount > 0
+                ? (ord.commission.type === 'percent' ? subtotal * ord.commission.amount / 100 : ord.commission.amount)
+                : 0;
+            const deliveryCost = ord.deliveryCost || 0;
+            const discount = ord.discount && ord.discount.amount > 0 ? ord.discount.amount : 0;
+
+            doc.setFontSize(9);
+            const labelX = 140;
+            const valX = 190;
+
+            doc.setTextColor(80);
+            doc.text('Subtotal:', labelX, y); doc.text(`$${subtotal.toFixed(2)}`, valX, y, { align: 'right' });
+            y += lineH;
+
+            if (commAmt > 0) {
+                doc.setTextColor(200, 100, 0);
+                const commLabel = `Comisión (${ord.commission.type === 'percent' ? ord.commission.amount + '%' : '$'}):` ;
+                doc.text(commLabel, labelX, y); doc.text(`+$${commAmt.toFixed(2)}`, valX, y, { align: 'right' });
+                y += lineH;
+            }
+
+            if (deliveryCost > 0) {
+                doc.setTextColor(0, 80, 180);
+                const zoneLabel = ord.deliveryZone ? ` (${ord.deliveryZone})` : '';
+                doc.text(`Envío${zoneLabel}:`, labelX, y); doc.text(`+$${deliveryCost.toFixed(2)}`, valX, y, { align: 'right' });
+                y += lineH;
+            }
+
+            if (discount > 0) {
+                doc.setTextColor(200, 0, 0);
+                doc.text(`Descuento:`, labelX, y); doc.text(`-$${discount.toFixed(2)}`, valX, y, { align: 'right' });
+                y += lineH;
+            }
+
+            // Total final
+            doc.setTextColor(0);
+            doc.setLineWidth(0.3);
+            doc.line(120, y, 190, y);
+            y += 5;
+            doc.setFontSize(13);
             doc.setFont(undefined, 'bold');
-            doc.text(`TOTAL: $${ord.total.toFixed(2)}`, 140, y);
+            doc.text('TOTAL:', labelX, y); doc.text(`$${ord.total.toFixed(2)}`, valX, y, { align: 'right' });
 
-            doc.save(`Venta_${ord._id.slice(-6)}.pdf`);
+            // ---- PIE ----
+            y += 14;
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(150);
+            doc.text('Gracias por su preferencia.', 105, y, { align: 'center' });
+            y += 4;
+            doc.text('Documento generado por TengoHambre.app', 105, y, { align: 'center' });
+
+            doc.save(`Comprobante_${ord._id.slice(-6).toUpperCase()}.pdf`);
+            toastr.success('PDF generado correctamente');
         };
 
         // --- LÓGICA DE COTIZACIONES (BRIDGE) ---
@@ -837,7 +986,24 @@ createApp({
             let msg = '';
             if (shareContext.value === 'ticket') {
                 const ord = orders.selectedOrder.value;
-                const msg = `Hola, aquí tienes el detalle de tu compra en ${settings.settings.value.appName || 'TengoHambre'}.\nFolio: #${ord._id.slice(-6).toUpperCase()}\nTotal: $${ord.total.toFixed(2)}\nFecha: ${new Date(ord.createdAt).toLocaleDateString()}\nGracias por tu preferencia.`;
+                const deliverySection = ord.customerStreet
+                    ? `\nEntrega: ${ord.customerStreet} ${ord.customerNumber || ''}, ${ord.customerColony || ord.deliveryZone || ''}`
+                    : '';
+                const deliveryCostLine = (ord.deliveryCost || 0) > 0
+                    ? `\nCosto de envío (${ord.deliveryZone || 'zona'}): +$${(ord.deliveryCost || 0).toFixed(2)}`
+                    : '';
+                const commLine = ord.commission && ord.commission.amount > 0
+                    ? `\nComisión: +$${ord.commission.type === 'percent' ? (ord.subtotal * ord.commission.amount / 100).toFixed(2) : ord.commission.amount.toFixed(2)}`
+                    : '';
+                const items = ord.items.map(i => `  • ${i.quantity}x ${i.name} - $${(i.price * i.quantity).toFixed(2)}`).join('\n');
+                msg = `¡Hola *${ord.customerId ? ord.customerId.name : (ord.customerName || 'Cliente')}*! Aquí tienes el detalle de tu pedido en *${settings.settings.value.appName || 'Tengo Hambre'}*.✅\n\n`;
+                msg += `📦 *Folio:* #${ord._id.slice(-6).toUpperCase()}\n`;
+                msg += `📅 *Fecha:* ${new Date(ord.createdAt).toLocaleString()}\n`;
+                msg += `💳 *Método de pago:* ${ord.paymentMethod}\n${deliverySection}\n\n`;
+                msg += `🛒 *Productos:*\n${items}\n\n`;
+                msg += `💰 *SubTotal:* $${(ord.subtotal || 0).toFixed(2)}${commLine}${deliveryCostLine}\n`;
+                msg += `⭐ *TOTAL: $${ord.total.toFixed(2)}*\n\n`;
+                msg += `🙏 ¡Gracias por tu preferencia!`;
             } else {
                 // Usar la lógica de mensaje de useQuotes
                 msg = decodeURIComponent(quotes.sendWhatsApp());
@@ -1119,7 +1285,8 @@ createApp({
             ...products, // products, saveProduct...
             ...categories, // categoriesList, saveCategory...
             ...addons, // addonsList, saveAddon, addOptionRow...
-            ...saas, // Multinegocios
+            ...saas, // Multinegocios (spread para compatibilidad existente)
+            saas,   // Expuesto como objeto para nuevas funcionalidades (ventas por negocio)
             ...useloyalty, // Loyalty
             ...municipios,
             toggleMunicipio,

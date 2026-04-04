@@ -275,6 +275,36 @@ export function useSaas() {
     };
     // ─────────────────────────────────────────────────────────────────────
 
+    // ─── VENTAS POR NEGOCIO (SuperAdmin) ─────────────────────────────────────
+    const showBizOrdersModal = ref(false);
+    const bizOrdersBusiness  = ref(null);       // { _id, name, slug }
+    const bizOrders          = ref([]);
+    const bizOrdersLoading   = ref(false);
+    const bizOrdersKpis      = ref({ totalOrders: 0, totalRevenue: 0, totalDelivery: 0 });
+    const bizOrdersPagination = ref({ total: 0, page: 1, limit: 25, pages: 1 });
+
+    const fetchBizOrders = async (bizId, page = 1) => {
+        bizOrdersLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/businesses/${bizId}/orders?page=${page}&limit=25`);
+            if (res.ok) {
+                const data = await res.json();
+                bizOrdersBusiness.value  = data.business;
+                bizOrders.value          = data.orders;
+                bizOrdersKpis.value      = data.kpis;
+                bizOrdersPagination.value = data.pagination;
+                showBizOrdersModal.value = true;
+            } else {
+                toastr.error('Error al cargar las ventas');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            bizOrdersLoading.value = false;
+        }
+    };
+    // ─────────────────────────────────────────────────────────────────────────
+
     return {
         businesses,
         showSaasModal,
@@ -293,6 +323,14 @@ export function useSaas() {
         abonarForm,
         fetchCommissionStats,
         submitAbono,
-        submitLiquidar
+        submitLiquidar,
+        // Ventas por negocio
+        showBizOrdersModal,
+        bizOrdersBusiness,
+        bizOrders,
+        bizOrdersLoading,
+        bizOrdersKpis,
+        bizOrdersPagination,
+        fetchBizOrders,
     };
 }
