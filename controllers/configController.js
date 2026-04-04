@@ -71,7 +71,7 @@ exports.getAdminConfig = async (req, res) => {
                 urlApp: 'https://'+req.hostname+'/'+business.slug,
                 plan: business.plan || 'free',
                 categories : business.categories,
-                deliveryZones: business.deliveryZones,
+                deliveryZones: business.deliveryZones || [],  // [{coloniaId, deliveryCost}]
                 municipioId: business.municipioId,
                 time: business.time,
                 schedule: business.schedule || [],
@@ -131,7 +131,7 @@ exports.updateAdminConfig = async (req, res) => {
             if (req.body.ownerEmail) business.ownerEmail = req.body.ownerEmail;
             if (req.body.categories) business.categories = req.body.categories;
             if (req.body.municipioId) business.municipioId = req.body.municipioId;
-            if (req.body.deliveryZones) business.deliveryZones = req.body.deliveryZones;
+            if (req.body.deliveryZones !== undefined) business.deliveryZones = req.body.deliveryZones; // [{coloniaId, deliveryCost}]
             if (req.body.schedule) business.schedule = req.body.schedule;
 
             if (req.body.time) business.time = req.body.time;

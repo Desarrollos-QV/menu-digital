@@ -1,0 +1,59 @@
+[
+  [
+    {
+      "deliveryCost": 0,
+      "_id": "69d1757c57bab7e9ca765d9b"
+    },
+    {
+      "coloniaId": "697d3ce93222d3f45938164d",
+      "deliveryCost": 35,
+      "_id": "69d1758b57bab7e9ca765dce"
+    }
+  ],
+  [
+    {
+      "deliveryCost": 0,
+      "_id": "69d17b5fabc99740bbcdb96d",
+      "buffer": {
+        "type": "Buffer",
+        "data": [
+          105,
+          112,
+          121,
+          113,
+          208,
+          131,
+          184,
+          128,
+          91,
+          152,
+          246,
+          194
+        ]
+      }
+    }
+  ],
+  [
+    {
+      "deliveryCost": 0,
+      "_id": "69d17b5fabc99740bbcdb96f",
+      "buffer": {
+        "type": "Buffer",
+        "data": [
+          105,
+          126,
+          24,
+          140,
+          132,
+          53,
+          131,
+          166,
+          26,
+          220,
+          174,
+          87
+        ]
+      }
+    }
+  ]
+]

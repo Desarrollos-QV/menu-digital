@@ -70,11 +70,9 @@ export function useSettings(auth) {
         try {
             const res = await authFetch('/api/config/admin');
             if (res.ok) {
-                const data = await res.json();
-                console.log("Data inicial : " , data); 
+                const data = await res.json(); 
                 // Mezclamos la respuesta con el estado actual
-                settings.value = { ...settings.value, ...data };
-                console.log("Configuraciones: " , settings.value);
+                settings.value = { ...settings.value, ...data }; 
                 // Asegurar que existan los arrays requeridos
                 if (!Array.isArray(settings.value.categories)) settings.value.categories = [];
                 if (!Array.isArray(settings.value.deliveryZones)) settings.value.deliveryZones = []; 
@@ -135,20 +133,46 @@ export function useSettings(auth) {
         }
     };
 
+    // Extraer el ID seguro contemplando el casteo antiguo raw de MongoDB
+    const getActualId = (z) => {
+        if (!z) return null;
+        if (z.buffer && Array.isArray(z.buffer.data)) {
+            return z.buffer.data.map(byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+        return (z.coloniaId?._id || z.coloniaId || z._id || z)?.toString();
+    };
+
+    // Verificar si una colonia está seleccionada
+    const isColoniaSelected = (coloniaId) => {
+        const id = coloniaId?.toString();
+        return settings.value.deliveryZones.some(z => getActualId(z) === id);
+    };
+
+    // Obtener el costo de envío de una colonia seleccionada
+    const getColoniaCost = (coloniaId) => {
+        const id = coloniaId?.toString();
+        const zone = settings.value.deliveryZones.find(z => getActualId(z) === id);
+        return zone ? (zone.deliveryCost ?? 0) : 0;
+    };
+
+    // Actualizar el costo de una colonia ya seleccionada
+    const updateColoniaCost = (coloniaId, cost) => {
+        const id = coloniaId?.toString();
+        const zone = settings.value.deliveryZones.find(z => getActualId(z) === id);
+        if (zone) zone.deliveryCost = parseFloat(cost) || 0;
+    };
+
     const toggleColoniaZone = (coloniaId) => {
-        const idx = settings.value.deliveryZones.indexOf(coloniaId);
+        const id = coloniaId?.toString();
+        const idx = settings.value.deliveryZones.findIndex(z => getActualId(z) === id);
         if (idx === -1) {
-            settings.value.deliveryZones.push(coloniaId);
+            settings.value.deliveryZones.push({ coloniaId, deliveryCost: 0 });
         } else {
             settings.value.deliveryZones.splice(idx, 1);
-            // Si nos quedamos sin colonias, ¿deberíamos limpiar el municipio? No necesariamente.
         }
     };
 
-    const toggleColonia = (id) => {
-        // Deprecated or alias to toggleColoniaZone
-        toggleColoniaZone(id);
-    };
+    const toggleColonia = (id) => toggleColoniaZone(id);
 
     const scanPrinters = async () => {
         scanningPrinters.value = true;
@@ -255,6 +279,9 @@ export function useSettings(auth) {
         closeColoniasModal,
         selectMunicipio,
         toggleColoniaZone,
+        isColoniaSelected,
+        getColoniaCost,
+        updateColoniaCost,
         profile,
         isUploadingAvatar, // Exportar estado
         avatarInput,       // Exportar ref

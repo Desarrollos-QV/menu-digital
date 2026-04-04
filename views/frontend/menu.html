@@ -260,27 +260,16 @@
                                     </div>
                                 </div>
 
-                                <!-- Selector de Municipio y Colonia -->
-                                <div class="mb-4 space-y-3">
-                                    <!-- Paso 1: Municipio -->
+                                <!-- Selector de Colonia / Zona de Entrega (Configurada por el negocio) -->
+                                <div class="mb-4 space-y-3" v-if="config.deliveryZones && config.deliveryZones.length > 0">
                                     <div>
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">
-                                            <i class="fa-solid fa-city mr-1"></i>Municipio / Ciudad
-                                        </label>
-                                        <select v-model="selectedMunicipio" @change="selectedColonia = null" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                                            <option :value="null">-- Selecciona tu municipio --</option>
-                                            <option v-for="mun in municipios" :key="mun._id" :value="mun">{{ mun.name }} ({{ mun.city }})</option>
-                                        </select>
-                                    </div>
-                                    <!-- Paso 2: Colonia (depende del municipio) -->
-                                    <div v-if="selectedMunicipio && selectedMunicipio.colonias && selectedMunicipio.colonias.length > 0">
-                                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">
-                                            <i class="fa-solid fa-map-location-dot mr-1"></i>Colonia / Zona
+                                            <i class="fa-solid fa-map-location-dot mr-1"></i>Colonia / Zona de Entrega
                                         </label>
                                         <select v-model="selectedColonia" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                             <option :value="null">-- Selecciona tu colonia --</option>
-                                            <option v-for="col in selectedMunicipio.colonias.filter(c => c.active !== false)" :key="col.name" :value="col">
-                                                {{ col.name }}{{ col.zone ? ' (' + col.zone + ')' : '' }} — {{ (col.deliveryCost || 0) > 0 ? 'Envío $' + (col.deliveryCost||0).toFixed(2) : 'Envío Gratis' }}
+                                            <option v-for="zone in config.deliveryZones" :key="zone.coloniaId" :value="zone">
+                                                {{ zone.name }} — {{ (zone.deliveryCost || 0) > 0 ? 'Envío $' + (zone.deliveryCost||0).toFixed(2) : 'Envío Gratis' }}
                                             </option>
                                         </select>
                                     </div>
@@ -296,11 +285,11 @@
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-4 mb-4">
-                                    <div>
+                                    <div v-if="!config.deliveryZones || config.deliveryZones.length === 0">
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Colonia</label>
                                         <input v-model="customerColony" type="text" placeholder="Ej: Colonia privada" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                     </div>
-                                    <div>
+                                    <div :class="{'col-span-2': config.deliveryZones && config.deliveryZones.length > 0}">
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Codigo Postal</label>
                                         <input v-model="customerZipCode" type="text" placeholder="Ej: 64000" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                     </div>

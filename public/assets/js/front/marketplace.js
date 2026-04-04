@@ -506,8 +506,7 @@ createApp({
                 banners.value = data[1].map((b, index) => ({
                     ...b, // Conservamos _id, title, description, etc.
                     bgClass: getGradient(index) // Asignamos un color visual
-                }));
-                console.log(businesses.value, banners.value, showUserModal.value);
+                })); 
             } catch (err) {
                 // const req = err.json();
                 console.log(err)
@@ -525,11 +524,21 @@ createApp({
         const filteredBusinesses = computed(() => {
             // 1. Filtro OBLIGATORIO de Ubicación
             if(!currentLag.value) return [];
-
             // Verificar si el negocio reparte en esta zona
             // Asegúrate de que tu modelo de negocio tenga 'deliveryZones' como array de IDs
             let filtered = businesses.value.filter(b => {
-                return b.deliveryZones && b.deliveryZones.includes(currentLag.value._id);
+                if (!b.deliveryZones) return false;
+                return b.deliveryZones.some(z => {
+                    let idToMatch = z.coloniaId || z._id || z;
+                    
+                    // Soporte para legados: extraer ID si MongoDB lo transformó a raw BSON Buffer
+                    if (z && z.buffer && Array.isArray(z.buffer.data)) {
+                        idToMatch = z.buffer.data.map(byte => byte.toString(16).padStart(2, '0')).join('');
+                    }
+
+                    const finalId = typeof idToMatch === 'object' ? idToMatch._id || idToMatch.toString() : idToMatch;
+                    return String(finalId) === String(currentLag.value._id);
+                });
             });
 
             // Filtro Categoría (soporta `b.categories` como array o string)

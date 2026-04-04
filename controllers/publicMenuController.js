@@ -78,6 +78,28 @@ exports.getPublicData = async (req, res) => {
                     calculatedRating = (totalScore / reviewsCount).toFixed(1);
                 }
 
+                // Obtener Municipio para hidratar los nombres de colonias
+                let municipioData = null;
+                if (business.municipioId) {
+                    const Municipio = require('../models/Municipio');
+                    municipioData = await Municipio.findById(business.municipioId);
+                }
+
+                // ZONAS DE ENTREGA CON COSTOS
+                const mappedZones = (business.deliveryZones || []).map(z => {
+                    let cName = '';
+                    if (municipioData && municipioData.colonias) {
+                        const idStr = z.coloniaId?.toString();
+                        const foundCol = municipioData.colonias.find(c => c._id.toString() === idStr);
+                        if (foundCol) cName = foundCol.name;
+                    }
+                    return {
+                        coloniaId: z.coloniaId,
+                        name: cName,
+                        deliveryCost: z.deliveryCost || 0
+                    };
+                });
+
                 // Retornar configuración del negocio
                 return res.json({
                     appName: business.name,
@@ -100,7 +122,9 @@ exports.getPublicData = async (req, res) => {
                     reviewsCount: reviewsCount,
                     // COMISION WEB
                     commissionWebType: business.commissionWebType || 'percent',
-                    commissionWebAmount: business.commissionWebAmount || 0
+                    commissionWebAmount: business.commissionWebAmount || 0,
+                    // ZONAS DE ENTREGA CON COSTOS
+                    deliveryZones: mappedZones
                 });
 
             case 'reviews':
