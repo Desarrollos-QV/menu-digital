@@ -172,63 +172,95 @@ createApp({
                 dataTable.destroy();
             }
 
-            // Esperamos que el DOM esté listo
             nextTick(() => {
                 if (!document.getElementById('productsTable')) return;
                 dataTable = $('#productsTable').DataTable({
-                    data: products.products.value, // Datos de Vue
-                    responsive: true,
-                    language: { url: "/es-ES.json" }, // Español
+                    data: products.products.value,
+                    responsive: {
+                        details: {
+                            renderer: $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
+                        }
+                    },
+                    language: { url: "/es-ES.json" },
+                    pageLength: 15,
+                    columnDefs: [
+                        { responsivePriority: 1, targets: 1 },  // Nombre: siempre visible
+                        { responsivePriority: 2, targets: -1 }, // Acciones: siempre visible
+                        { responsivePriority: 3, targets: 0 },  // Imagen
+                        { responsivePriority: 4, targets: 4 },  // Precio
+                        { responsivePriority: 5, targets: 6 },  // Estado
+                        { responsivePriority: 6, targets: 2 },  // Stock
+                        { responsivePriority: 7, targets: 5 },  // Categorías
+                        { responsivePriority: 8, targets: 3 },  // Orden (menos importante)
+                    ],
                     columns: [
                         {
                             data: 'image',
-                            render: (data) => `<img src="${data || 'https://via.placeholder.com/50'}" class="w-10 h-10 rounded object-cover">`
+                            orderable: false,
+                            render: (data) => `
+                                <div class="flex-shrink-0">
+                                    <img src="${data || 'https://via.placeholder.com/50'}" 
+                                         class="w-11 h-11 rounded-xl object-cover shadow-sm border border-slate-100">
+                                </div>`
                         },
                         {
                             data: 'name',
-                            render: (data, type, row) => `<div><div class="font-bold text-slate-800 dark:text-white">${data}</div><div class="text-xs text-slate-500">${row.description || ''}</div></div>`
+                            render: (data, type, row) => `
+                                <div class="min-w-0">
+                                    <div class="font-bold text-slate-800 text-sm">${data}</div>
+                                    <div class="text-xs text-slate-400 truncate max-w-[180px]">${row.description || ''}</div>
+                                </div>`
                         },
                         {
-                            // Validamos si existe el campo Stock
                             data: null,
                             render: (data, type, row) => {
-                                const stockValue = row.stock;
-                                if (stockValue === null || stockValue === undefined) return '<span class="rounded text-xs font-bold bg-slate-100 text-slate-700">No definido</span>';
-                                if (stockValue <= 0) {
-                                    return `<span class="rounded text-xs font-bold bg-red-100 text-red-700">Agotado</span>`
-                                }
-                                return `<span class="rounded text-xs font-bold bg-green-100 text-green-700">Qty ${stockValue}</span>`
+                                const s = row.stock;
+                                if (s === null || s === undefined)
+                                    return '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500"><i class="fa-solid fa-minus"></i> N/D</span>';
+                                if (s <= 0)
+                                    return '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-600"><i class="fa-solid fa-xmark"></i> Agotado</span>';
+                                return `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-boxes-stacked"></i> ${s}</span>`;
                             }
                         },
                         {
                             data: 'sort',
-                            render: (data) => `<span class="font-bold">${data}</span>`
+                            render: (data) => `<span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 text-slate-600 text-xs font-black">${data}</span>`
                         },
-                        { data: 'price', render: (data) => `<span class="font-bold">$${data}</span>` },
+                        {
+                            data: 'price',
+                            render: (data) => `<span class="font-black text-slate-800 text-sm">$${parseFloat(data).toFixed(2)}</span>`
+                        },
                         {
                             data: 'categories',
+                            orderable: false,
                             render: (data) => {
-                                if (!data) return '';
-                                return data.map(id => `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] mx-1">${products.getCategoryName(id)}</span>`).join('');
+                                if (!data || data.length === 0) return '<span class="text-slate-300 text-xs italic">—</span>';
+                                return data.slice(0, 2).map(id =>
+                                    `<span class="inline-block bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full text-[10px] font-bold mr-1">${products.getCategoryName(id)}</span>`
+                                ).join('') + (data.length > 2 ? `<span class="text-[10px] text-slate-400">+${data.length - 2}</span>` : '');
                             }
                         },
                         {
                             data: 'active',
-                            render: (data) => `<span class="px-2 py-1 rounded text-xs font-bold ${data ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${data ? 'Activo' : 'Inactivo'}</span>`
+                            render: (data) => data
+                                ? '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700"><i class="fa-solid fa-circle text-[6px]"></i> Activo</span>'
+                                : '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-600"><i class="fa-solid fa-circle text-[6px]"></i> Inactivo</span>'
                         },
                         {
                             data: null,
                             orderable: false,
+                            className: 'dt-nowrap',
                             render: (data, type, row) => `
-                                    <div class="flex gap-2 justify-end">
-                                        <button class="btn-edit w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition flex items-center justify-center" data-id="${row._id}">
-                                            <i class="fa-solid fa-pen text-xs"></i>
-                                        </button>
-                                        <button class="btn-delete w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition flex items-center justify-center" data-id="${row._id}">
-                                            <i class="fa-solid fa-trash text-xs"></i>
-                                        </button>
-                                    </div>
-                                `
+                                <div class="flex items-center gap-1.5 justify-end">
+                                    <button class="btn-edit inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition text-xs font-bold border border-blue-100 hover:border-blue-600" data-id="${row._id}">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                        <span class="hidden sm:inline">Editar</span>
+                                    </button>
+                                    <button class="btn-delete inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition text-xs font-bold border border-red-100 hover:border-red-500" data-id="${row._id}">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                        <span class="hidden sm:inline">Eliminar</span>
+                                    </button>
+                                </div>`
                         }
                     ]
                 });

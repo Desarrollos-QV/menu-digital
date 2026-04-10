@@ -4,10 +4,40 @@ const Order = require('../models/Order');
 
 
 // Listar todos los negocios (Solo para SuperAdmin)
+// Calcula commissionDebt en tiempo real desde las órdenes de cada negocio
 exports.getAllBusinesses = async (req, res) => {
     try {
-        const businesses = await Business.find().sort({ createdAt: -1 });
-        res.json(businesses);
+        const businesses = await Business.find().sort({ createdAt: -1 }).lean();
+
+        // Calcular deuda real de comisiones para cada negocio en paralelo
+        const businessesWithDebt = await Promise.all(
+            businesses.map(async (biz) => {
+                try {
+                    const orders = await Order.find({ businessId: biz._id }).lean();
+
+                    let totalEarned = 0;
+                    for (const order of orders) {
+                        if (order.commission && order.commission.amount > 0) {
+                            const subtotal = order.subtotal || (order.total - (order.tax || 0));
+                            if (order.commission.type === 'percent') {
+                                totalEarned += subtotal * (order.commission.amount / 100);
+                            } else {
+                                totalEarned += order.commission.amount;
+                            }
+                        }
+                    }
+
+                    const totalPaid = (biz.commissionPayments || []).reduce((s, p) => s + p.amount, 0);
+                    const currentDebt = Math.max(0, totalEarned - totalPaid);
+
+                    return { ...biz, commissionDebt: parseFloat(currentDebt.toFixed(2)) };
+                } catch (e) {
+                    return biz; // Si falla para uno, devuélvelo sin cambios
+                }
+            })
+        );
+
+        res.json(businessesWithDebt);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
