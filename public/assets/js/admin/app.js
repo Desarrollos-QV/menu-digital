@@ -81,6 +81,7 @@ createApp({
         const blog = useBlog(auth.isDark, media.fetchMedia);
 
         const saasMenu = ref([
+            { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
@@ -450,8 +451,10 @@ createApp({
                     analytics.fetchDashboardStats(); // <-- Cargamos stadisticas
                     // Redirección inteligente
                     if (role === 'superadmin') {
-                        currentView.value = 'saas_clients';
+                        currentView.value = 'saas_dashboard';
                         saas.fetchBusinesses();
+                        await saas.fetchDashboardStats();
+                        nextTick(() => renderDashboardCharts(saas.dashboardStats));
                     } else {
                         currentView.value = 'dashboard';
                         analytics.fetchDashboardStats();
@@ -1150,7 +1153,7 @@ createApp({
             });
         };
 
-        watch(currentView, (val) => {
+        watch(currentView, async (val) => {
             if (val === 'settings') {
                 _settingsAutocomplete = null; // Reset al entrar a la vista
                 nextTick(() => {
@@ -1161,7 +1164,95 @@ createApp({
                     }
                 });
             }
+            if (val === 'saas_dashboard' && currentUserRole.value === 'superadmin') {
+                if (saas.dashboardStats.value.visits.length === 0) {
+                    await saas.fetchDashboardStats();
+                }
+                nextTick(() => {
+                    if (window.renderDashboardCharts) {
+                        window.renderDashboardCharts(saas.dashboardStats);
+                    }
+                });
+            }
         });
+
+        let _dashboardVisitsChart = null;
+        let _dashboardProfitsChart = null;
+
+        const renderDashboardCharts = (statsObj) => {
+            if (!window.Chart) return;
+            if (!statsObj || !statsObj.value) return;
+            const stats = statsObj.value;
+
+            const formatHumanDate = (dateStr) => {
+                if (!dateStr) return '';
+                let d, formatter;
+                if (dateStr.length === 7) {
+                    // Formato YYYY-MM (Filtro Todo el Año)
+                    d = new Date(`${dateStr}-01T12:00:00`);
+                    formatter = new Intl.DateTimeFormat('es-MX', { month: 'long' });
+                } else {
+                    // Formato YYYY-MM-DD
+                    d = new Date(`${dateStr}T12:00:00`);
+                    formatter = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric' });
+                }
+                let finalStr = formatter.format(d);
+                return finalStr.charAt(0).toUpperCase() + finalStr.slice(1);
+            };
+
+            // Visit Chart (Bar chart requested by user)
+            const visitCanvas = document.getElementById('superAdminVisitsChart');
+            if (visitCanvas) {
+                if (_dashboardVisitsChart) _dashboardVisitsChart.destroy();
+                const ctx = visitCanvas.getContext('2d');
+                _dashboardVisitsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: stats.visits.map(v => formatHumanDate(v.date)),
+                        datasets: [{
+                            label: 'Visitas',
+                            data: stats.visits.map(v => v.count),
+                            backgroundColor: '#6366f1',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            // Profit Chart (Points requested by user - best as a line with points or scatter)
+            const profitCanvas = document.getElementById('superAdminProfitsChart');
+            if (profitCanvas) {
+                if (_dashboardProfitsChart) _dashboardProfitsChart.destroy();
+                const ctx2 = profitCanvas.getContext('2d');
+                _dashboardProfitsChart = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: stats.profits.map(p => formatHumanDate(p.date)),
+                        datasets: [{
+                            label: 'Ganancias (MXN)',
+                            data: stats.profits.map(p => p.amount),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            tension: 0.3, // Curve slightly
+                            fill: true,
+                            showLine: true, // Force the line to be drawn
+                            pointBackgroundColor: '#059669',
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+        };
+
+        // Exponer la funcion global para llamarla desde los selects en el HTML
+        window.renderDashboardCharts = renderDashboardCharts;
 
         onMounted(async () => {
             auth.checkSession();
@@ -1182,9 +1273,12 @@ createApp({
                     if (found) {
                         currentView.value = found.view;
                     }
-                    // Si recargamos y estamos en dashboard, mover a saas
-                    if (currentView.value === 'dashboard') currentView.value = 'saas_clients';
                     // Cargar datos según la vista inicial
+                    if (currentView.value === 'saas_dashboard') {
+                        saas.fetchBusinesses();
+                        await saas.fetchDashboardStats();
+                        nextTick(() => renderDashboardCharts(saas.dashboardStats));
+                    }
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
                     if (currentView.value === 'ads') banners.fetchBanners();
                     if (currentView.value === 'media') media.fetchMedia();

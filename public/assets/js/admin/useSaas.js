@@ -6,6 +6,11 @@ export function useSaas() {
     const showSaasModal = ref(false);
     const editingBusiness = ref(null);
 
+    // Dashboard global
+    const dashboardStats = ref({ visits: [], profits: [] });
+    const dashboardLoading = ref(false);
+    const dashboardMonthFilter = ref('current');
+
     const defaultForm = {
         _id: null,
         businessName: '',
@@ -203,6 +208,22 @@ export function useSaas() {
         }
     };
 
+    const fetchDashboardStats = async () => {
+        dashboardLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/dashboard-stats?month=${dashboardMonthFilter.value}`);
+            if (res.ok) {
+                const data = await res.json();
+                dashboardStats.value = data;
+                setTimeout(() => { if (window.renderDashboardCharts) window.renderDashboardCharts(dashboardStats); }, 50);
+            }
+        } catch (e) {
+            console.error('Error fetching dashboard stats', e);
+        } finally {
+            dashboardLoading.value = false;
+        }
+    };
+
     // ─── GESTIÓN DE COMISIONES ────────────────────────────────────────
     const showCommissionModal = ref(false);
     const selectedBizStats    = ref(null);   // Datos del negocio seleccionado
@@ -311,6 +332,10 @@ export function useSaas() {
         saasForm,
         editingBusiness,
         fetchBusinesses,
+        dashboardStats,
+        dashboardLoading,
+        dashboardMonthFilter,
+        fetchDashboardStats,
         openSaasModal,
         saveBusiness,
         deleteBusiness,

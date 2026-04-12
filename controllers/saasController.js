@@ -3,6 +3,103 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 
 
+const Visit = require('../models/Visit');
+
+// Obtener estadísticas globales del Dashboard (Visitas y Ganancias por modelo temporal)
+exports.getDashboardStats = async (req, res) => {
+    try {
+        const queryFilter = {}; // Toda la historia base
+        const monthFilter = req.query.month; // 'current', 'last', 'year'
+        
+        const now = new Date();
+        const start = new Date();
+        
+        const visitQueryFilter = {};
+        const orderQueryFilter = {};
+        const visitCountByDate = {};
+        const profitByDate = {};
+
+        const fillDays = (startDate, endDate) => {
+            let cursor = new Date(startDate);
+            while (cursor <= endDate) {
+                const k = cursor.toISOString().split('T')[0];
+                visitCountByDate[k] = 0;
+                profitByDate[k] = 0;
+                cursor.setDate(cursor.getDate() + 1);
+            }
+        };
+
+        const fillMonths = (startDate, endDate) => {
+            let cursor = new Date(startDate);
+            while (cursor <= endDate) {
+                const k = cursor.toISOString().substring(0, 7);
+                visitCountByDate[k] = 0;
+                profitByDate[k] = 0;
+                cursor.setMonth(cursor.getMonth() + 1);
+            }
+        };
+
+        if (monthFilter === 'current') {
+            start.setDate(1); start.setHours(0,0,0,0);
+            visitQueryFilter.date = { $gte: start, $lte: now };
+            orderQueryFilter.createdAt = { $gte: start, $lte: now };
+            fillDays(start, now);
+        } else if (monthFilter === 'last') {
+            start.setMonth(start.getMonth() - 1); start.setDate(1); start.setHours(0,0,0,0);
+            const end = new Date(start); end.setMonth(end.getMonth() + 1); end.setDate(0); end.setHours(23,59,59,999);
+            visitQueryFilter.date = { $gte: start, $lte: end };
+            orderQueryFilter.createdAt = { $gte: start, $lte: end };
+            fillDays(start, end);
+        } else if (monthFilter === 'year') {
+            start.setMonth(0); start.setDate(1); start.setHours(0,0,0,0);
+            visitQueryFilter.date = { $gte: start, $lte: now };
+            orderQueryFilter.createdAt = { $gte: start, $lte: now };
+            fillMonths(start, now);
+        }
+
+        // 1. Obtener Visitas según filtro
+        const visits = await Visit.find(visitQueryFilter).select('date');
+        visits.forEach(v => {
+            if (!v.date) return;
+            let groupKey = v.date.toISOString().split('T')[0];
+            if (monthFilter === 'year') {
+                groupKey = v.date.toISOString().substring(0, 7); // YYYY-MM
+            }
+            visitCountByDate[groupKey] = (visitCountByDate[groupKey] || 0) + 1;
+        });
+
+        // 2. Obtener Comisiones (Órdenes) según filtro
+        const orders = await Order.find({
+            ...orderQueryFilter,
+            $or: [ { "commission.amount": { $gt: 0 } } ]
+        }).select('createdAt commission total tax subtotal');
+
+        orders.forEach(o => {
+            let groupKey = o.createdAt.toISOString().split('T')[0];
+            if (monthFilter === 'year') {
+                groupKey = o.createdAt.toISOString().substring(0, 7); // YYYY-MM
+            }
+            
+            const subtotal = o.subtotal || (o.total - (o.tax || 0));
+            let profit = 0;
+            if (o.commission?.type === 'percent') {
+                profit = subtotal * (o.commission.amount / 100);
+            } else if (o.commission?.type === 'fixed') {
+                profit = o.commission.amount;
+            }
+            profitByDate[groupKey] = (profitByDate[groupKey] || 0) + profit;
+        });
+
+        res.json({
+            visits: Object.keys(visitCountByDate).map(date => ({ date, count: visitCountByDate[date] })).sort((a,b) => a.date.localeCompare(b.date)),
+            profits: Object.keys(profitByDate).map(date => ({ date, amount: profitByDate[date] })).sort((a,b) => a.date.localeCompare(b.date))
+        });
+
+    } catch(e) {
+        res.status(500).json({ message: e.message });
+    }
+};
+
 // Listar todos los negocios (Solo para SuperAdmin)
 // Calcula commissionDebt en tiempo real desde las órdenes de cada negocio
 exports.getAllBusinesses = async (req, res) => {

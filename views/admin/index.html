@@ -239,19 +239,21 @@
             <!-- Content Scrollable -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 p-8 transition-colors duration-300">
                 <!-- === VISTAS SUPER ADMIN === -->
-                <!-- SAAS CLIENTS VIEW -->
-                <div v-if="currentView === 'saas_clients'" class="space-y-6 animate-fade-in">
+                <!-- DASHBOARD SUPER ADMIN VIEW -->
+                <div v-if="currentView === 'saas_dashboard'" class="space-y-6 animate-fade-in">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Gestión de Negocios</h2>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Administra clientes, planes y comisiones SaaS</p>
+                            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Dashboard Global</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Visión general del estado de la plataforma SaaS y ganancias</p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <button @click="saas.fetchBusinesses()" title="Actualizar datos" class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary hover:text-primary dark:hover:text-primary transition shadow-sm">
-                                <i class="fa-solid fa-rotate-right"></i>
-                            </button>
-                            <button @click="openSaasModal()" class="bg-primary hover:bg-primaryDark text-white px-6 py-2.5 rounded-xl shadow-lg transition">
-                                <i class="fa-solid fa-plus mr-2"></i> Registrar Negocio
+                            <select v-model="dashboardMonthFilter" @change="fetchDashboardStats()" class="px-4 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                                <option value="current">Este Mes</option>
+                                <option value="last">Mes Pasado</option>
+                                <option value="year">Todo el Año</option>
+                            </select>
+                            <button @click="fetchBusinesses(); fetchDashboardStats();" title="Actualizar datos" class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary hover:text-primary dark:hover:text-primary transition shadow-sm">
+                                <i class="fa-solid fa-rotate-right" :class="{ 'animate-spin': dashboardLoading }"></i>
                             </button>
                         </div>
                     </div>
@@ -269,6 +271,43 @@
                         <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
                             <p class="text-xs uppercase text-slate-400 font-bold mb-1">Deuda Total Pendiente</p>
                             <p class="text-3xl font-black text-orange-500">${{ businesses.reduce((s,b) => s + (b.commissionDebt || 0), 0).toFixed(2) }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Gráfico Visitas (Line Chart instead of Pie due to dates) -->
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Visitas Generales por Día</h3>
+                            <div class="w-full h-72">
+                                <canvas id="superAdminVisitsChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico Ganancias (Comisiones) -->
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Ganancias por Comisiones (MXN)</h3>
+                            <div class="w-full h-72">
+                                <canvas id="superAdminProfitsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAAS CLIENTS VIEW -->
+                <div v-if="currentView === 'saas_clients'" class="space-y-6 animate-fade-in">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Gestión de Negocios</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Administra clientes, planes y comisiones SaaS</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button @click="saas.fetchBusinesses()" title="Actualizar datos" class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:border-primary hover:text-primary dark:hover:text-primary transition shadow-sm">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button @click="openSaasModal()" class="bg-primary hover:bg-primaryDark text-white px-6 py-2.5 rounded-xl shadow-lg transition">
+                                <i class="fa-solid fa-plus mr-2"></i> Registrar Negocio
+                            </button>
                         </div>
                     </div>
 
@@ -291,7 +330,9 @@
                                             <div class="font-bold text-slate-800 dark:text-white">{{ biz.name }}</div>
                                             <div class="text-xs text-slate-400">{{ biz.ownerEmail }}</div>
                                         </td>
-                                        <td class="p-4 text-sm text-slate-500 font-mono">/menu/{{ biz.slug }}</td>
+                                        <td class="p-4 text-sm text-slate-500 font-mono">
+                                            <a :href="`/${biz.slug}`" target="_blank" class="text-primary hover:text-primaryDark font-bold">/{{ biz.slug }}</a>
+                                        </td>
                                         <td class="p-4">
                                             <span class="text-xs px-2 py-1 rounded font-bold uppercase" :class="biz.plan === 'pro' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'">{{ biz.plan }}</span>
                                         </td>
