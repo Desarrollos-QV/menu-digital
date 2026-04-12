@@ -8,7 +8,11 @@ exports.getCustomerStatus = async (req, res) => {
     try {
         const { slug, phone, pin } = req.body; // Recibimos PIN opcional
         
-        const business = await Business.findOne({ slug });
+        let decodedSlug = slug;
+        try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+
+        const business = await Business.findOne({ slug: { $in: possibleSlugs } });
         if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
 
         const program = await LoyaltyProgram.findOne({ businessId: business._id });
@@ -57,7 +61,11 @@ exports.registerCustomer = async (req, res) => {
             return res.status(400).json({ message: 'El PIN debe ser de 4 dígitos' });
         }
 
-        const business = await Business.findOne({ slug });
+        let decodedSlug = slug;
+        try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+
+        const business = await Business.findOne({ slug: { $in: possibleSlugs } });
         
         const newCustomer = new Customer({
             businessId: business._id,

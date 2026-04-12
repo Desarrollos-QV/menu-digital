@@ -9,7 +9,12 @@ const mongoose = require('mongoose');
 exports.registerVisit = async (req, res) => {
     try {
         const { slug, visitorId } = req.body;
-        const business = await Business.findOne({ slug });
+        
+        let decodedSlug = slug;
+        try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+
+        const business = await Business.findOne({ slug: { $in: possibleSlugs } });
         if(!business) return res.status(404).json({error: 'Negocio no encontrado'});
 
         // Evitar duplicados el mismo día para el mismo usuario
@@ -37,7 +42,13 @@ exports.registerVisit = async (req, res) => {
 exports.registerOrder = async (req, res) => {
     try {
         const { slug, customerName, customerPhone, customerId, cart, total, subtotal, commission, deliveryCost, deliveryZone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay } = req.body;
-        const business = await Business.findOne({ slug });
+        
+        let decodedSlug = slug;
+        try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+
+        const business = await Business.findOne({ slug: { $in: possibleSlugs } });
+        if (!business) return res.status(404).json({ error: 'Negocio no encontrado' });
         
         // Guardar Orden
         const newOrder = new Order({

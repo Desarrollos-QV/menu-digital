@@ -12,8 +12,11 @@ const SECRET_KEY = process.env.JWT_SECRET;
 
 // Helper para obtener ID del negocio desde el slug
 const getBusinessIdBySlug = async (slug) => {
-    if (!slug) return null;
-    const business = await Business.findOne({ slug, active: true });
+    let decodedSlug = slug;
+    try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+    const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+
+    const business = await Business.findOne({ slug: { $in: possibleSlugs }, active: true });
     return business ? business._id : null;
 };
 
@@ -23,8 +26,11 @@ exports.getPublicData = async (req, res) => {
     const type = req.params.type; // products, categories, etc.
 
     try {
-        // 1. Buscamos el negocio completo primero para saber su PLAN
-        const business = await Business.findOne({ slug, active: true });
+        let decodedSlug = slug;
+        try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+
+        const business = await Business.findOne({ slug: { $in: possibleSlugs }, active: true });
         
         if (!business) {
             return res.status(404).json({ message: 'Negocio no encontrado o inactivo' });
