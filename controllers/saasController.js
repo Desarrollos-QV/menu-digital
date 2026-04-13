@@ -10,6 +10,7 @@ exports.getDashboardStats = async (req, res) => {
     try {
         const queryFilter = {}; // Toda la historia base
         const monthFilter = req.query.month; // 'current', 'last', 'year'
+        const clientTzOffset = parseInt(req.query.tzOffset) || 0; // Offset en minutos enviado desde el browser
         
         const now = new Date();
         const start = new Date();
@@ -21,8 +22,9 @@ exports.getDashboardStats = async (req, res) => {
 
         // Helper para evitar desfase de Zona Horaria al imprimir YYYY-MM
         const getLocalKey = (d, isMonth) => {
-            const tzOff = d.getTimezoneOffset() * 60000;
-            const localISO = new Date(d.getTime() - tzOff).toISOString();
+            // El browser manda 360 para -06:00. Restamos eso al tiempo UTC para obtener el tiempo local del cliente
+            const tzOffMs = clientTzOffset * 60000; 
+            const localISO = new Date(d.getTime() - tzOffMs).toISOString();
             return isMonth ? localISO.substring(0, 7) : localISO.split('T')[0];
         };
 

@@ -222,7 +222,8 @@ export function useSaas() {
     const fetchDashboardStats = async () => {
         dashboardLoading.value = true;
         try {
-            const res = await authFetch(`/api/saas/dashboard-stats?month=${dashboardMonthFilter.value}`);
+            const tzOffset = new Date().getTimezoneOffset();
+            const res = await authFetch(`/api/saas/dashboard-stats?month=${dashboardMonthFilter.value}&tzOffset=${tzOffset}`);
             if (res.ok) {
                 const data = await res.json();
                 dashboardStats.value = data;
