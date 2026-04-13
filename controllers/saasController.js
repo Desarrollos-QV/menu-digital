@@ -19,10 +19,17 @@ exports.getDashboardStats = async (req, res) => {
         const visitCountByDate = {};
         const profitByDate = {};
 
+        // Helper para evitar desfase de Zona Horaria al imprimir YYYY-MM
+        const getLocalKey = (d, isMonth) => {
+            const tzOff = d.getTimezoneOffset() * 60000;
+            const localISO = new Date(d.getTime() - tzOff).toISOString();
+            return isMonth ? localISO.substring(0, 7) : localISO.split('T')[0];
+        };
+
         const fillDays = (startDate, endDate) => {
             let cursor = new Date(startDate);
             while (cursor <= endDate) {
-                const k = cursor.toISOString().split('T')[0];
+                const k = getLocalKey(cursor, false);
                 visitCountByDate[k] = 0;
                 profitByDate[k] = 0;
                 cursor.setDate(cursor.getDate() + 1);
@@ -32,7 +39,7 @@ exports.getDashboardStats = async (req, res) => {
         const fillMonths = (startDate, endDate) => {
             let cursor = new Date(startDate);
             while (cursor <= endDate) {
-                const k = cursor.toISOString().substring(0, 7);
+                const k = getLocalKey(cursor, true);
                 visitCountByDate[k] = 0;
                 profitByDate[k] = 0;
                 cursor.setMonth(cursor.getMonth() + 1);
@@ -61,10 +68,7 @@ exports.getDashboardStats = async (req, res) => {
         const visits = await Visit.find(visitQueryFilter).select('date');
         visits.forEach(v => {
             if (!v.date) return;
-            let groupKey = v.date.toISOString().split('T')[0];
-            if (monthFilter === 'year') {
-                groupKey = v.date.toISOString().substring(0, 7); // YYYY-MM
-            }
+            let groupKey = getLocalKey(v.date, monthFilter === 'year');
             visitCountByDate[groupKey] = (visitCountByDate[groupKey] || 0) + 1;
         });
 
@@ -75,10 +79,7 @@ exports.getDashboardStats = async (req, res) => {
         }).select('createdAt commission total tax subtotal');
 
         orders.forEach(o => {
-            let groupKey = o.createdAt.toISOString().split('T')[0];
-            if (monthFilter === 'year') {
-                groupKey = o.createdAt.toISOString().substring(0, 7); // YYYY-MM
-            }
+            let groupKey = getLocalKey(o.createdAt, monthFilter === 'year');
             
             const subtotal = o.subtotal || (o.total - (o.tax || 0));
             let profit = 0;
@@ -90,7 +91,50 @@ exports.getDashboardStats = async (req, res) => {
             profitByDate[groupKey] = (profitByDate[groupKey] || 0) + profit;
         });
 
+        // 3. Totales de Hoy
+        const todayStr = getLocalKey(now, false);
+        const todayVisits = visitCountByDate[todayStr] || 0;
+        const todayProfits = profitByDate[todayStr] || 0;
+        
+        // Contar pedidos de hoy independientemente de si tienen comisión o no
+        const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+        const todayOrdersCount = await Order.countDocuments({ createdAt: { $gte: todayStart, $lte: now } });
+
+        // 4. Totales Globales (Negocios y Clientes/Usuarios)
+        const totalBusinesses = await Business.countDocuments();
+        const activeBusinesses = await Business.countDocuments({ active: true });
+        
+        // Nota: commissionDebt se calcula sumando las deudas de todos los negocios
+        // Para eficiencia, podríamos usar una agregación, pero usaremos el cálculo de getAllBusinesses simplificado
+        const allBusinesses = await Business.find().lean();
+        let totalPlatformDebt = 0;
+        
+        // Cálculo rápido de deuda (basado en lógica de getAllBusinesses)
+        const allOrders = await Order.find({ "commission.amount": { $gt: 0 } }).lean();
+        const bizProfits = {};
+        allOrders.forEach(o => {
+            const subtotal = o.subtotal || (o.total - (o.tax || 0));
+            let profit = 0;
+            if (o.commission?.type === 'percent') profit = subtotal * (o.commission.amount / 100);
+            else profit = o.commission.amount;
+            bizProfits[o.businessId] = (bizProfits[o.businessId] || 0) + profit;
+        });
+        
+        allBusinesses.forEach(biz => {
+            const earned = bizProfits[biz._id] || 0;
+            const paid = (biz.commissionPayments || []).reduce((s, p) => s + p.amount, 0);
+            totalPlatformDebt += Math.max(0, earned - paid);
+        });
+
         res.json({
+            kpis: {
+                todayProfits: parseFloat(todayProfits.toFixed(2)),
+                todayOrders: todayOrdersCount,
+                todayVisits: todayVisits,
+                totalBusinesses,
+                activeBusinesses,
+                totalDebt: parseFloat(totalPlatformDebt.toFixed(2))
+            },
             visits: Object.keys(visitCountByDate).map(date => ({ date, count: visitCountByDate[date] })).sort((a,b) => a.date.localeCompare(b.date)),
             profits: Object.keys(profitByDate).map(date => ({ date, amount: profitByDate[date] })).sort((a,b) => a.date.localeCompare(b.date))
         });

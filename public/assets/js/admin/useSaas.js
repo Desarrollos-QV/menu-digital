@@ -7,7 +7,18 @@ export function useSaas() {
     const editingBusiness = ref(null);
 
     // Dashboard global
-    const dashboardStats = ref({ visits: [], profits: [] });
+    const dashboardStats = ref({ 
+        visits: [], 
+        profits: [],
+        kpis: {
+            todayProfits: 0,
+            todayOrders: 0,
+            todayVisits: 0,
+            totalBusinesses: 0,
+            activeBusinesses: 0,
+            totalDebt: 0
+        }
+    });
     const dashboardLoading = ref(false);
     const dashboardMonthFilter = ref('current');
 
