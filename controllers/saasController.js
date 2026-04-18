@@ -159,7 +159,11 @@ exports.getAllBusinesses = async (req, res) => {
                     const orders = await Order.find({ businessId: biz._id }).lean();
 
                     let totalEarned = 0;
+                    let totalRevenue = 0;
+                    const totalOrders = orders.length;
+
                     for (const order of orders) {
+                        totalRevenue += order.total || 0;
                         if (order.commission && order.commission.amount > 0) {
                             const subtotal = order.subtotal || (order.total - (order.tax || 0));
                             if (order.commission.type === 'percent') {
@@ -173,12 +177,18 @@ exports.getAllBusinesses = async (req, res) => {
                     const totalPaid = (biz.commissionPayments || []).reduce((s, p) => s + p.amount, 0);
                     const currentDebt = Math.max(0, totalEarned - totalPaid);
 
-                    return { ...biz, commissionDebt: parseFloat(currentDebt.toFixed(2)) };
+                    return {
+                        ...biz,
+                        commissionDebt: parseFloat(currentDebt.toFixed(2)),
+                        totalRevenue:   parseFloat(totalRevenue.toFixed(2)),
+                        totalOrders
+                    };
                 } catch (e) {
-                    return biz; // Si falla para uno, devuélvelo sin cambios
+                    return biz;
                 }
             })
         );
+
 
         res.json(businessesWithDebt);
     } catch (error) {
@@ -389,6 +399,68 @@ exports.settleCommission = async (req, res) => {
         res.json({ message: `Deuda de $${debtToSettle.toFixed(2)} liquidada`, debt: 0 });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+// ─── KPIs POR RANGO DE FECHAS (SuperAdmin Dashboard) ────────────────────────
+exports.getKpisByRange = async (req, res) => {
+    try {
+        const { from, to } = req.query;
+        if (!from || !to) return res.status(400).json({ message: 'Parámetros from y to requeridos' });
+
+        const start = new Date(from);
+        const end   = new Date(to);
+        // Asegurar que el día final incluya hasta las 23:59:59
+        end.setHours(23, 59, 59, 999);
+
+        if (isNaN(start) || isNaN(end)) return res.status(400).json({ message: 'Fechas inválidas' });
+
+        // Órdenes con comisión en el rango
+        const orders = await Order.find({
+            createdAt: { $gte: start, $lte: end },
+            "commission.amount": { $gt: 0 }
+        }).lean();
+
+        let totalCommissions = 0;
+        let totalOrders = 0;
+
+        // Todos los pedidos del rango (con o sin comisión) para contar volumen
+        const allOrders = await Order.find({
+            createdAt: { $gte: start, $lte: end }
+        }).lean();
+        totalOrders = allOrders.length;
+
+        const bizProfits = {};
+        orders.forEach(o => {
+            const subtotal = o.subtotal || (o.total - (o.tax || 0));
+            let profit = 0;
+            if (o.commission?.type === 'percent') profit = subtotal * (o.commission.amount / 100);
+            else profit = o.commission.amount;
+            totalCommissions += profit;
+            bizProfits[o.businessId] = (bizProfits[o.businessId] || 0) + profit;
+        });
+
+        // Deuda total considerando solo comisiones generadas en el rango menos lo ya pagado
+        const allBusinesses = await require('../models/Business').find().lean();
+        let totalDebt = 0;
+        allBusinesses.forEach(biz => {
+            const earned = bizProfits[biz._id] || 0;
+            const paid   = (biz.commissionPayments || []).reduce((s, p) => s + p.amount, 0);
+            // Deuda en este rango = lo ganado en este rango (sin descontar pagos ya que los pagos son globales)
+            // Se muestra la comision generada en el rango
+            totalDebt += earned;
+        });
+
+        res.json({
+            from: start.toISOString(),
+            to:   end.toISOString(),
+            totalCommissions: parseFloat(totalCommissions.toFixed(2)),
+            totalOrders,
+            totalDebt: parseFloat(totalDebt.toFixed(2))
+        });
+
+    } catch (e) {
+        res.status(500).json({ message: e.message });
     }
 };
 

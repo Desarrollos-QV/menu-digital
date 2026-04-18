@@ -22,6 +22,39 @@ export function useSaas() {
     const dashboardLoading = ref(false);
     const dashboardMonthFilter = ref('current');
 
+    // KPIs por rango de fechas (para los cards de comisiones/pedidos/deuda)
+    const today = new Date().toISOString().split('T')[0];
+    const kpiDateFrom    = ref(today);
+    const kpiDateTo      = ref(today);
+    const kpiRangeLoading = ref(false);
+    const kpiRangeStats  = ref({ totalCommissions: 0, totalOrders: 0, totalDebt: 0 });
+    const kpiRangeApplied = ref(false); // true cuando el usuario aplica el filtro
+
+    const fetchKpisByRange = async () => {
+        if (!kpiDateFrom.value || !kpiDateTo.value) return;
+        kpiRangeLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/kpis-range?from=${kpiDateFrom.value}&to=${kpiDateTo.value}`);
+            if (res.ok) {
+                kpiRangeStats.value = await res.json();
+                kpiRangeApplied.value = true;
+            } else {
+                toastr.error('Error al obtener KPIs por rango');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            kpiRangeLoading.value = false;
+        }
+    };
+
+    const clearKpiRange = () => {
+        kpiRangeApplied.value = false;
+        kpiRangeStats.value = { totalCommissions: 0, totalOrders: 0, totalDebt: 0 };
+        kpiDateFrom.value = today;
+        kpiDateTo.value   = today;
+    };
+
     const defaultForm = {
         _id: null,
         businessName: '',
@@ -348,6 +381,14 @@ export function useSaas() {
         dashboardLoading,
         dashboardMonthFilter,
         fetchDashboardStats,
+        // KPIs por rango
+        kpiDateFrom,
+        kpiDateTo,
+        kpiRangeLoading,
+        kpiRangeStats,
+        kpiRangeApplied,
+        fetchKpisByRange,
+        clearKpiRange,
         openSaasModal,
         saveBusiness,
         deleteBusiness,

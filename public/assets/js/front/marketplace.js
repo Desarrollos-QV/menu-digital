@@ -560,6 +560,14 @@ createApp({
                     (b.tags && b.tags.some(tag => tag.toLowerCase().includes(query)))
                 );
             }
+
+            // Ordenar: Abiertos primero, Cerrados al final
+            filtered.sort((a, b) => {
+                const aOpen = isBusinessCurrentlyOpen(a) ? 1 : 0;
+                const bOpen = isBusinessCurrentlyOpen(b) ? 1 : 0;
+                return bOpen - aOpen;
+            });
+
             return filtered;
         });
 
