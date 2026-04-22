@@ -471,11 +471,20 @@ exports.getBusinessOrders = async (req, res) => {
         const page  = Math.max(1, parseInt(req.query.page)  || 1);
         const limit = Math.min(100, parseInt(req.query.limit) || 25);
         const skip  = (page - 1) * limit;
+        const { from, to } = req.query;
 
         const business = await Business.findById(bizId).select('name slug');
         if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
 
         const filter = { businessId: bizId };
+
+        if (from && to) {
+            const start = new Date(from);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(to);
+            end.setHours(23, 59, 59, 999);
+            filter.createdAt = { $gte: start, $lte: end };
+        }
 
         const [orders, total] = await Promise.all([
             Order.find(filter)
@@ -488,8 +497,8 @@ exports.getBusinessOrders = async (req, res) => {
             Order.countDocuments(filter)
         ]);
 
-        // KPIs rápidos del negocio completo
-        const allOrders   = await Order.find({ businessId: bizId }).lean();
+        // KPIs rápidos del negocio (con o sin filtro)
+        const allOrders   = await Order.find(filter).lean();
         const totalRevenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
         const totalDelivery = allOrders.filter(o => o.deliveryType === 'delivery' || o.customerStreet).length;
 

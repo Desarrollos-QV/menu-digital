@@ -349,10 +349,20 @@ export function useSaas() {
     const bizOrdersKpis      = ref({ totalOrders: 0, totalRevenue: 0, totalDelivery: 0 });
     const bizOrdersPagination = ref({ total: 0, page: 1, limit: 25, pages: 1 });
 
+    // Filtros de fecha para Ventas de Negocio
+    const bizOrdersDateFrom = ref(today);
+    const bizOrdersDateTo   = ref(today);
+    const bizOrdersRangeApplied = ref(false);
+
     const fetchBizOrders = async (bizId, page = 1) => {
         bizOrdersLoading.value = true;
         try {
-            const res = await authFetch(`/api/saas/businesses/${bizId}/orders?page=${page}&limit=25`);
+            let url = `/api/saas/businesses/${bizId}/orders?page=${page}&limit=25`;
+            if (bizOrdersRangeApplied.value && bizOrdersDateFrom.value && bizOrdersDateTo.value) {
+                url += `&from=${bizOrdersDateFrom.value}&to=${bizOrdersDateTo.value}`;
+            }
+
+            const res = await authFetch(url);
             if (res.ok) {
                 const data = await res.json();
                 bizOrdersBusiness.value  = data.business;
@@ -367,6 +377,23 @@ export function useSaas() {
             toastr.error('Error de conexión');
         } finally {
             bizOrdersLoading.value = false;
+        }
+    };
+
+    const applyBizOrdersFilter = async () => {
+        if (!bizOrdersDateFrom.value || !bizOrdersDateTo.value) return;
+        bizOrdersRangeApplied.value = true;
+        if (bizOrdersBusiness.value) {
+            await fetchBizOrders(bizOrdersBusiness.value._id, 1);
+        }
+    };
+
+    const clearBizOrdersFilter = async () => {
+        bizOrdersDateFrom.value = today;
+        bizOrdersDateTo.value = today;
+        bizOrdersRangeApplied.value = false;
+        if (bizOrdersBusiness.value) {
+            await fetchBizOrders(bizOrdersBusiness.value._id, 1);
         }
     };
     // ─────────────────────────────────────────────────────────────────────────
@@ -410,5 +437,10 @@ export function useSaas() {
         bizOrdersKpis,
         bizOrdersPagination,
         fetchBizOrders,
+        bizOrdersDateFrom,
+        bizOrdersDateTo,
+        bizOrdersRangeApplied,
+        applyBizOrdersFilter,
+        clearBizOrdersFilter
     };
 }

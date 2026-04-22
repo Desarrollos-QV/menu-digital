@@ -2509,6 +2509,34 @@
                 </button>
             </div>
 
+            <!-- ── FILTRO POR RANGO DE FECHAS ── -->
+            <div class="px-5 pt-5 pb-0 bg-slate-50 dark:bg-slate-800 shrink-0">
+                <div class="flex flex-wrap items-end gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1"><i class="fa-solid fa-calendar-day mr-1"></i>Fecha Inicio</label>
+                        <input type="date" v-model="saas.bizOrdersDateFrom.value" class="px-3 py-2 border rounded-xl text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1"><i class="fa-solid fa-calendar-day mr-1"></i>Fecha Fin</label>
+                        <input type="date" v-model="saas.bizOrdersDateTo.value" class="px-3 py-2 border rounded-xl text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                    </div>
+                    <button @click="saas.applyBizOrdersFilter()" :disabled="saas.bizOrdersLoading.value"
+                        class="flex items-center gap-2 px-5 py-2 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primaryDark transition disabled:opacity-60">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        <span v-if="saas.bizOrdersLoading.value"><i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...</span>
+                        <span v-else>Aplicar Filtro</span>
+                    </button>
+                    <button v-if="saas.bizOrdersRangeApplied.value" @click="saas.clearBizOrdersFilter()"
+                        class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 font-bold rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition">
+                        <i class="fa-solid fa-xmark"></i> Limpiar
+                    </button>
+                    <div v-if="saas.bizOrdersRangeApplied.value" class="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold border border-indigo-100 dark:border-indigo-800">
+                        <i class="fa-solid fa-filter"></i>
+                        Mostrando: {{ saas.bizOrdersDateFrom.value }} → {{ saas.bizOrdersDateTo.value }}
+                    </div>
+                </div>
+            </div>
+
             <!-- KPIs -->
             <div class="grid grid-cols-3 gap-4 p-5 bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 shrink-0">
                 <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm">
