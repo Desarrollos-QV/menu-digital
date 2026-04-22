@@ -428,12 +428,12 @@
                         </div>
                         <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
                             <p class="text-xs uppercase text-slate-400 font-bold mb-1">Total Ventas Plataforma</p>
-                            <p class="text-3xl font-black text-indigo-500">${{ businesses.reduce((s,b) => s + (b.totalRevenue || 0), 0).toFixed(2) }}</p>
+                            <p class="text-3xl font-black text-indigo-500">${{ businesses.reduce((s,b) => s + (b.totalRevenue || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</p>
                             <p class="text-xs text-slate-400 mt-1">{{ businesses.reduce((s,b) => s + (b.totalOrders || 0), 0) }} pedidos en total</p>
                         </div>
                         <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
                             <p class="text-xs uppercase text-slate-400 font-bold mb-1">Deuda Total Pendiente</p>
-                            <p class="text-3xl font-black text-orange-500">${{ businesses.reduce((s,b) => s + (b.commissionDebt || 0), 0).toFixed(2) }}</p>
+                            <p class="text-3xl font-black text-orange-500">${{ businesses.reduce((s,b) => s + (b.commissionDebt || 0), 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</p>
                         </div>
                     </div>
 
@@ -468,14 +468,14 @@
                                         </td>
                                         <td class="p-4 text-center">
                                             <div class="flex flex-col items-center">
-                                                <span class="text-sm font-black text-slate-800 dark:text-white">${{ (biz.totalRevenue || 0).toFixed(2) }}</span>
+                                                <span class="text-sm font-black text-slate-800 dark:text-white">${{ (biz.totalRevenue || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</span>
                                                 <span class="text-[10px] text-slate-400 mt-0.5">{{ biz.totalOrders || 0 }} pedidos</span>
                                             </div>
                                         </td>
                                         <td class="p-4 text-center">
                                             <span class="inline-flex items-center gap-1 text-sm font-bold" :class="(biz.commissionDebt || 0) > 0 ? 'text-orange-500' : 'text-slate-400'">
                                                 <i class="fa-solid fa-circle-exclamation" v-if="(biz.commissionDebt || 0) > 0"></i>
-                                                ${{ (biz.commissionDebt || 0).toFixed(2) }}
+                                                ${{ (biz.commissionDebt || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}
                                             </span>
                                         </td>
                                         <td class="p-4 text-right">
