@@ -361,28 +361,30 @@
             
             <!-- HERO SLIDER SECTION (oculto en modo Recolectar) -->
             <div v-show="deliveryMode === 'delivery'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
-                <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-48 md:h-64 bg-slate-100 dark:bg-slate-800 group">
+                <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-48 md:h-72 bg-slate-100 dark:bg-slate-800 group">
                     
                     <!-- Slides Container -->
                     <div v-for="(banner, index) in banners" :key="banner._id" 
                          class="absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center"
                          :class="{'opacity-100 z-10': activeBanner === index, 'opacity-0 z-0': activeBanner !== index}">
                         
-                        <!-- Background Gradient -->
-                        <div class="absolute inset-0 opacity-90 z-10 bg-gradient-to-r" :class="banner.bgClass"></div>
-                        <div class="absolute inset-0 hero-pattern z-10 mix-blend-overlay"></div>
-                        
-                        <!-- Decorative Image -->
-                        <img :src="'https://tengo-hambre.com/'+banner.imageUrl || 'https://via.placeholder.com/800x400'" class="absolute right-0 top-0 w-full h-full  object-cover opacity-0 md:opacity-60 mix-blend-overlay z-0 transition-transform duration-[2000ms] ease-out" 
+                        <!-- Background Image (visible a full, con object-cover) -->
+                        <img :src="'https://tengo-hambre.com/'+banner.imageUrl || 'https://via.placeholder.com/800x400'" 
+                             class="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-[2000ms] ease-out" 
                              :class="{'scale-110': activeBanner === index, 'scale-100': activeBanner !== index}">
+                        
+                        <!-- Overlay degradado: oscuro en la izquierda (texto) → transparente a la derecha (imagen visible) -->
+                        <div class="absolute inset-0 z-10 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
+                        <!-- Degradado inferior sutil para los dots -->
+                        <div class="absolute inset-0 z-10 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                         
                         <!-- Content -->
                         <div class="relative z-20 px-6 md:px-12 max-w-2xl text-white">
                             
-                            <h1 class="text-2xl md:text-5xl font-black mb-2 md:mb-4 leading-tight drop-shadow-sm">
+                            <h1 class="text-2xl md:text-5xl font-black mb-2 md:mb-4 leading-tight" style="text-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);">
                                 <span v-html="banner.title"></span>
                             </h1>
-                            <p class="text-white/90 text-sm md:text-lg mb-6 max-w-md hidden md:block font-medium drop-shadow-sm">
+                            <p class="text-white/95 text-sm md:text-lg mb-6 max-w-md hidden md:block font-medium" style="text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
                                 {{ banner.description }}
                             </p>
                         </div>
