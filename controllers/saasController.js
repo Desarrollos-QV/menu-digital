@@ -473,12 +473,13 @@ exports.getBusinessOrders = async (req, res) => {
         const skip  = (page - 1) * limit;
         const { from, to } = req.query;
 
-        const business = await Business.findById(bizId).select('name slug');
+        const business = await Business.findById(bizId).select('name slug commissionPayments');
         if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
 
         const filter = { businessId: bizId };
+        const hasDateFilter = !!(from && to);
 
-        if (from && to) {
+        if (hasDateFilter) {
             const start = new Date(from);
             start.setHours(0, 0, 0, 0);
             const end = new Date(to);
@@ -502,6 +503,39 @@ exports.getBusinessOrders = async (req, res) => {
         const totalRevenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
         const totalDelivery = allOrders.filter(o => o.deliveryType === 'delivery' || o.customerStreet).length;
 
+        let totalDebt = 0;
+        
+        if (hasDateFilter) {
+            // "Deuda Generada": solo comisiones de las órdenes en el rango
+            let generatedCommission = 0;
+            allOrders.forEach(o => {
+                if (o.commission && o.commission.amount > 0) {
+                    const subtotal = o.subtotal || (o.total - (o.tax || 0));
+                    if (o.commission.type === 'percent') {
+                        generatedCommission += subtotal * (o.commission.amount / 100);
+                    } else {
+                        generatedCommission += o.commission.amount;
+                    }
+                }
+            });
+            totalDebt = generatedCommission;
+        } else {
+            // "Total Normal" (Deuda Total Pendiente actual): Comisiones históricas menos abonos
+            let totalEarned = 0;
+            allOrders.forEach(o => {
+                if (o.commission && o.commission.amount > 0) {
+                    const subtotal = o.subtotal || (o.total - (o.tax || 0));
+                    if (o.commission.type === 'percent') {
+                        totalEarned += subtotal * (o.commission.amount / 100);
+                    } else {
+                        totalEarned += o.commission.amount;
+                    }
+                }
+            });
+            const totalPaid = (business.commissionPayments || []).reduce((s, p) => s + p.amount, 0);
+            totalDebt = Math.max(0, totalEarned - totalPaid);
+        }
+
         res.json({
             business: { _id: business._id, name: business.name, slug: business.slug },
             orders,
@@ -509,7 +543,8 @@ exports.getBusinessOrders = async (req, res) => {
             kpis: {
                 totalOrders: total,
                 totalRevenue: parseFloat(totalRevenue.toFixed(2)),
-                totalDelivery
+                totalDelivery,
+                totalDebt: parseFloat(totalDebt.toFixed(2))
             }
         });
     } catch (error) {
