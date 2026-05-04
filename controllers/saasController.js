@@ -4,7 +4,7 @@ const Order = require('../models/Order');
 
 
 const Visit = require('../models/Visit');
-
+const tzHelper = require('../helper/timezone');
 // Obtener estadísticas globales del Dashboard (Visitas y Ganancias por modelo temporal)
 exports.getDashboardStats = async (req, res) => {
     try {
@@ -13,7 +13,7 @@ exports.getDashboardStats = async (req, res) => {
         const clientTzOffset = parseInt(req.query.tzOffset) || 0; // Offset en minutos enviado desde el browser
         
         const now = new Date();
-        const start = new Date();
+        let start = new Date();
         
         const visitQueryFilter = {};
         const orderQueryFilter = {};
@@ -49,18 +49,20 @@ exports.getDashboardStats = async (req, res) => {
         };
 
         if (monthFilter === 'current') {
-            start.setDate(1); start.setHours(0,0,0,0);
+            start = tzHelper.getStartOfMonth(now);
             visitQueryFilter.date = { $gte: start, $lte: now };
             orderQueryFilter.createdAt = { $gte: start, $lte: now };
             fillDays(start, now);
         } else if (monthFilter === 'last') {
-            start.setMonth(start.getMonth() - 1); start.setDate(1); start.setHours(0,0,0,0);
-            const end = new Date(start); end.setMonth(end.getMonth() + 1); end.setDate(0); end.setHours(23,59,59,999);
+            const lastMonthDate = new Date(now);
+            lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+            start = tzHelper.getStartOfMonth(lastMonthDate);
+            const end = tzHelper.getEndOfMonth(lastMonthDate);
             visitQueryFilter.date = { $gte: start, $lte: end };
             orderQueryFilter.createdAt = { $gte: start, $lte: end };
             fillDays(start, end);
         } else if (monthFilter === 'year') {
-            start.setMonth(0); start.setDate(1); start.setHours(0,0,0,0);
+            start = tzHelper.getStartOfYear(now);
             visitQueryFilter.date = { $gte: start, $lte: now };
             orderQueryFilter.createdAt = { $gte: start, $lte: now };
             fillMonths(start, now);
@@ -99,7 +101,7 @@ exports.getDashboardStats = async (req, res) => {
         const todayProfits = profitByDate[todayStr] || 0;
         
         // Contar pedidos de hoy independientemente de si tienen comisión o no
-        const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+        const todayStart = tzHelper.getStartOfDay();
         const todayOrdersCount = await Order.countDocuments({ createdAt: { $gte: todayStart, $lte: now } });
 
         // 4. Totales Globales (Negocios y Clientes/Usuarios)
@@ -408,10 +410,8 @@ exports.getKpisByRange = async (req, res) => {
         const { from, to } = req.query;
         if (!from || !to) return res.status(400).json({ message: 'Parámetros from y to requeridos' });
 
-        const start = new Date(from);
-        const end   = new Date(to);
-        // Asegurar que el día final incluya hasta las 23:59:59
-        end.setHours(23, 59, 59, 999);
+        const start = tzHelper.getStartOfDay(from);
+        const end   = tzHelper.getEndOfDay(to);
 
         if (isNaN(start) || isNaN(end)) return res.status(400).json({ message: 'Fechas inválidas' });
 
@@ -480,10 +480,8 @@ exports.getBusinessOrders = async (req, res) => {
         const hasDateFilter = !!(from && to);
 
         if (hasDateFilter) {
-            const start = new Date(from);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(to);
-            end.setHours(23, 59, 59, 999);
+            const start = tzHelper.getStartOfDay(from);
+            const end = tzHelper.getEndOfDay(to);
             filter.createdAt = { $gte: start, $lte: end };
         }
 

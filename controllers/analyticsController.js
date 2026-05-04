@@ -3,8 +3,7 @@ const Visit = require('../models/Visit');
 const Product = require('../models/Product');
 const Business = require('../models/Business');
 const mongoose = require('mongoose');
-
-
+const tzHelper = require('../helper/timezone');
 // 1. Registrar Visita (Público)
 exports.registerVisit = async (req, res) => {
     try {
@@ -18,8 +17,7 @@ exports.registerVisit = async (req, res) => {
         if(!business) return res.status(404).json({error: 'Negocio no encontrado'});
 
         // Evitar duplicados el mismo día para el mismo usuario
-        const startOfDay = new Date();
-        startOfDay.setHours(0,0,0,0);
+        const startOfDay = tzHelper.getStartOfDay();
 
         const exists = await Visit.findOne({
             businessId: business._id,
@@ -122,8 +120,7 @@ exports.registerOrder = async (req, res) => {
 exports.getDashboardStats = async (req, res) => {
     try {
         const businessId = req.user.businessId;
-        const today = new Date();
-        today.setHours(0,0,0,0);
+        const today = tzHelper.getStartOfDay();
 
         // 1. KPIs Básicos
         const ordersToday = await Order.find({ businessId, createdAt: { $gte: today } });
@@ -133,12 +130,12 @@ exports.getDashboardStats = async (req, res) => {
         const visitsToday = await Visit.countDocuments({ businessId, date: { $gte: today } });
 
         // 2. Gráfica de Ventas (Últimos 7 días)
-        const last7Days = new Date();
-        last7Days.setDate(last7Days.getDate() - 6);
-        last7Days.setHours(0,0,0,0);
+        const last7DaysDate = new Date();
+        last7DaysDate.setDate(last7DaysDate.getDate() - 6);
+        const last7Days = tzHelper.getStartOfDay(last7DaysDate);
 
         // --- ZONA HORARIA ---
-        const TIMEZONE_OFFSET = "-07:00"; 
+        const TIMEZONE_OFFSET = "-06:00"; 
 
         // Agregación para sumar ventas por día
         const salesAgg = await Order.aggregate([
