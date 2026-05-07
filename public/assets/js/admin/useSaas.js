@@ -398,6 +398,55 @@ export function useSaas() {
     };
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ─── VENTAS GLOBALES (SuperAdmin Dashboard) ───────────────────────────────
+    const globalOrders          = ref([]);
+    const globalOrdersLoading   = ref(false);
+    const globalOrdersPagination = ref({ total: 0, page: 1, limit: 20, pages: 1 });
+    const globalOrdersKpis      = ref({ totalOrders: 0, totalRevenue: 0, totalCommissions: 0 });
+
+    // Filtros
+    const globalOrdersStatusFilter = ref('');   // '' = todos
+    const globalOrdersSourceFilter = ref('');   // '' = todos
+    const globalOrdersDateFrom     = ref('');
+    const globalOrdersDateTo       = ref('');
+    const globalOrdersBizFilter    = ref('');
+
+    const fetchGlobalOrders = async (page = 1) => {
+        globalOrdersLoading.value = true;
+        try {
+            const params = new URLSearchParams({ page, limit: 20 });
+            if (globalOrdersStatusFilter.value) params.set('status', globalOrdersStatusFilter.value);
+            if (globalOrdersSourceFilter.value) params.set('source', globalOrdersSourceFilter.value);
+            if (globalOrdersDateFrom.value)     params.set('from', globalOrdersDateFrom.value);
+            if (globalOrdersDateTo.value)       params.set('to', globalOrdersDateTo.value);
+            if (globalOrdersBizFilter.value)    params.set('bizId', globalOrdersBizFilter.value);
+
+            const res = await authFetch(`/api/saas/global-orders?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                globalOrders.value          = data.orders;
+                globalOrdersPagination.value = data.pagination;
+                globalOrdersKpis.value      = data.kpis;
+            } else {
+                toastr.error('Error al cargar las ventas globales');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            globalOrdersLoading.value = false;
+        }
+    };
+
+    const clearGlobalOrdersFilters = () => {
+        globalOrdersStatusFilter.value = '';
+        globalOrdersSourceFilter.value = '';
+        globalOrdersDateFrom.value = '';
+        globalOrdersDateTo.value = '';
+        globalOrdersBizFilter.value = '';
+        fetchGlobalOrders(1);
+    };
+    // ─────────────────────────────────────────────────────────────────────────
+
     return {
         businesses,
         showSaasModal,
@@ -441,6 +490,18 @@ export function useSaas() {
         bizOrdersDateTo,
         bizOrdersRangeApplied,
         applyBizOrdersFilter,
-        clearBizOrdersFilter
+        clearBizOrdersFilter,
+        // Ventas globales
+        globalOrders,
+        globalOrdersLoading,
+        globalOrdersPagination,
+        globalOrdersKpis,
+        globalOrdersStatusFilter,
+        globalOrdersSourceFilter,
+        globalOrdersDateFrom,
+        globalOrdersDateTo,
+        globalOrdersBizFilter,
+        fetchGlobalOrders,
+        clearGlobalOrdersFilters
     };
 }

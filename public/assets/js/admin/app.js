@@ -454,6 +454,7 @@ createApp({
                         currentView.value = 'saas_dashboard';
                         saas.fetchBusinesses();
                         await saas.fetchDashboardStats();
+                        saas.fetchGlobalOrders();
                         nextTick(() => renderDashboardCharts(saas.dashboardStats));
                     } else {
                         currentView.value = 'dashboard';
@@ -531,6 +532,10 @@ createApp({
 
                 // Vistas Específicas
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
+                if (item.view === 'saas_dashboard') {
+                    saas.fetchDashboardStats();
+                    saas.fetchGlobalOrders();
+                }
                 if (item.view === 'products') products.fetchProducts();
                 if (item.view === 'categories') categories.fetchCategories();
                 if (item.view === 'addons') addons.fetchAddons();

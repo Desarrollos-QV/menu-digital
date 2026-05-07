@@ -548,4 +548,65 @@ exports.getBusinessOrders = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
+};
+
+// ─── VENTAS GLOBALES (SuperAdmin) ─────────────────────────────────────────────
+exports.getGlobalOrders = async (req, res) => {
+    try {
+        const page   = Math.max(1, parseInt(req.query.page)  || 1);
+        const limit  = Math.min(100, parseInt(req.query.limit) || 20);
+        const skip   = (page - 1) * limit;
+        const { status, source, from, to, bizId } = req.query;
+
+        // ── Solo órdenes de negocios REGISTRADOS (igual que getAllBusinesses) ──
+        // Esto evita que pedidos huérfanos (de negocios eliminados) inflen los totales
+        const validBusinessIds = await Business.find().distinct('_id');
+
+        const filter = { businessId: { $in: validBusinessIds } };
+        if (status) filter.status = status;
+        if (source) filter.source = source;
+        if (bizId)  filter.businessId = bizId;   // override: un negocio específico
+        if (from && to) {
+            const start = tzHelper.getStartOfDay(from);
+            const end   = tzHelper.getEndOfDay(to);
+            if (!isNaN(start) && !isNaN(end)) {
+                filter.createdAt = { $gte: start, $lte: end };
+            }
+        }
+
+        const [orders, total] = await Promise.all([
+            Order.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate('businessId', 'name slug')
+                .populate('customerId', 'name phone')
+                .lean(),
+            Order.countDocuments(filter)
+        ]);
+
+        // KPIs — misma lógica que getAllBusinesses para consistencia
+        const allFiltered = await Order.find(filter).select('total commission subtotal tax').lean();
+        const totalRevenue = allFiltered.reduce((s, o) => s + (o.total || 0), 0);
+        let totalCommissions = 0;
+        allFiltered.forEach(o => {
+            if (o.commission && o.commission.amount > 0) {
+                const subtotal = o.subtotal || (o.total - (o.tax || 0));
+                if (o.commission.type === 'percent') totalCommissions += subtotal * (o.commission.amount / 100);
+                else totalCommissions += o.commission.amount;
+            }
+        });
+
+        res.json({
+            orders,
+            pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+            kpis: {
+                totalOrders: total,
+                totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+                totalCommissions: parseFloat(totalCommissions.toFixed(2))
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

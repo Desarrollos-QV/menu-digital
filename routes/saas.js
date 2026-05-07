@@ -20,4 +20,7 @@ router.post('/businesses/:id/commission-settle', saasController.settleCommission
 // Ventas de un negocio específico (SuperAdmin)
 router.get('/businesses/:id/orders', saasController.getBusinessOrders);
 
+// Ventas globales de toda la plataforma (SuperAdmin)
+router.get('/global-orders', saasController.getGlobalOrders);
+
 module.exports = router;
