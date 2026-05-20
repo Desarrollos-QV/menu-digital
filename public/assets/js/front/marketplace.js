@@ -582,21 +582,58 @@ createApp({
             // 2. Sin schedule configurado → confiamos en isOpen
             if (!schedule || schedule.length === 0) return biz.isOpen !== false;
 
-            const todayName = DAY_NAMES_MKT[new Date().getDay()];
-            const day = schedule.find(d => d.day === todayName);
-
-            // 3. Día no encontrado → abierto por defecto
-            if (!day) return true;
-
-            // 4. Día marcado como cerrado
-            if (!day.isOpen) return false;
-
-            // 5. Comparar hora actual
             const now = new Date();
-            const [openH, openM] = (day.open || '00:00').split(':').map(Number);
-            const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
-            const cur = now.getHours() * 60 + now.getMinutes();
-            return cur >= openH * 60 + openM && cur < closeH * 60 + closeM;
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const todayIndex = now.getDay();
+            const yesterdayIndex = (todayIndex + 6) % 7;
+
+            const todayName = DAY_NAMES_MKT[todayIndex];
+            const yesterdayName = DAY_NAMES_MKT[yesterdayIndex];
+
+            const todayDay = schedule.find(d => d.day === todayName);
+            const yesterdayDay = schedule.find(d => d.day === yesterdayName);
+
+            const checkDayActive = (day, isToday) => {
+                if (!day || !day.isOpen) return false;
+                
+                const [openH, openM] = (day.open || '00:00').split(':').map(Number);
+                const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
+                const openMinutes = openH * 60 + openM;
+                const closeMinutes = closeH * 60 + closeM;
+
+                if (openMinutes < closeMinutes) {
+                    // Horario normal (ej. 09:00 - 18:00)
+                    return isToday && currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+                } else if (openMinutes > closeMinutes) {
+                    // Horario nocturno que cruza medianoche (ej. 14:00 - 01:00)
+                    if (isToday) {
+                        return currentMinutes >= openMinutes;
+                    } else {
+                        return currentMinutes < closeMinutes;
+                    }
+                } else {
+                    // Abre y cierra al mismo tiempo (ej. 24h)
+                    return isToday;
+                }
+            };
+
+            const openToday = checkDayActive(todayDay, true);
+            const openYesterday = checkDayActive(yesterdayDay, false);
+
+            return openToday || openYesterday;
+        };
+
+        const formatTime = (timeStr) => {
+            if (!timeStr) return '';
+            const [hStr, mStr] = timeStr.split(':');
+            let hours = parseInt(hStr, 10);
+            const minutes = mStr || '00';
+            if (isNaN(hours)) return timeStr;
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const paddedHours = String(hours).padStart(2, '0');
+            return `${paddedHours}:${minutes} ${ampm}`;
         };
 
         const getTodayHours = (biz) => {
@@ -605,7 +642,7 @@ createApp({
             const todayName = DAY_NAMES_MKT[new Date().getDay()];
             const day = schedule.find(d => d.day === todayName);
             if (!day || !day.isOpen) return null;
-            return `${day.open} - ${day.close}`;
+            return `${formatTime(day.open)} - ${formatTime(day.close)}`;
         };
 
         const goToBusiness = (biz) => {
@@ -644,7 +681,7 @@ createApp({
             showUserModal, isLoginMode, openModal, customerForm, loginForm, registerCustomer, loginCustomer,
             currentUser, firstName, userInitial, logout,
             // Horario
-            isBusinessCurrentlyOpen, getTodayHours,
+            isBusinessCurrentlyOpen, getTodayHours, formatTime,
             // Modo Recolectar + Mapa
             deliveryMode, setDeliveryMode,
             pickupBusinesses, mapReady,

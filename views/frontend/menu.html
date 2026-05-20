@@ -74,7 +74,7 @@
                         <!-- Horario del día / Info -->
                         <p v-if="todaySchedule && !isLoading" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1">
                             <i class="fa-regular fa-clock text-[9px]"></i>
-                            <span v-if="todaySchedule.isOpen">{{ todaySchedule.open }} - {{ todaySchedule.close }}</span>
+                            <span v-if="todaySchedule.isOpen">{{ formatTime(todaySchedule.open) }} - {{ formatTime(todaySchedule.close) }}</span>
                             <span v-else>Cerrado hoy</span>
                             <span class="mx-1">&bull;</span>
                             <i class="fa-solid fa-motorcycle text-[9px]"></i> {{ config.time || '30-45' }} min
@@ -603,7 +603,7 @@
                             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 divide-y divide-slate-50 dark:divide-slate-700/50">
                                 <div v-for="day in config.schedule" :key="day.day" class="p-4 flex justify-between items-center text-sm">
                                     <span class="font-medium text-slate-700 dark:text-slate-200">{{ day.day }}</span>
-                                    <span v-if="day.isOpen" class="text-slate-500 font-medium">{{ day.open }} - {{ day.close }}</span>
+                                    <span v-if="day.isOpen" class="text-slate-500 font-medium">{{ formatTime(day.open) }} - {{ formatTime(day.close) }}</span>
                                     <span v-else class="text-red-400 font-medium bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">Cerrado</span>
                                 </div>
                             </div>

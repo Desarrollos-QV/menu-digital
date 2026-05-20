@@ -198,6 +198,19 @@ createApp({
         };
 
         // ----- LÓGICA DE HORARIO -----
+        const formatTime = (timeStr) => {
+            if (!timeStr) return '';
+            const [hStr, mStr] = timeStr.split(':');
+            let hours = parseInt(hStr, 10);
+            const minutes = mStr || '00';
+            if (isNaN(hours)) return timeStr;
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const paddedHours = String(hours).padStart(2, '0');
+            return `${paddedHours}:${minutes} ${ampm}`;
+        };
+
         const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
         // Horario del día actual (puede ser null si no hay schedule configurado)
@@ -213,22 +226,49 @@ createApp({
             // 1. Si el admin lo cerró manualmente, siempre cerrado
             if (config.value.isOpen === false) return false;
 
+            const schedule = config.value.schedule;
             // 2. Si no hay schedule, confiamos en el campo isOpen del config
-            const day = todaySchedule.value;
-            if (!day) return config.value.isOpen !== false;
+            if (!schedule || schedule.length === 0) return config.value.isOpen !== false;
 
-            // 3. Si el día está marcado como cerrado en el schedule
-            if (!day.isOpen) return false;
-
-            // 4. Comparar hora actual con apertura/cierre
             const now = new Date();
-            const [openH, openM] = (day.open || '00:00').split(':').map(Number);
-            const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
-            const openMinutes = openH * 60 + openM;
-            const closeMinutes = closeH * 60 + closeM;
+            const todayIndex = now.getDay();
+            const yesterdayIndex = (todayIndex + 6) % 7;
 
-            return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+            const todayName = DAY_NAMES[todayIndex];
+            const yesterdayName = DAY_NAMES[yesterdayIndex];
+
+            const todayDay = schedule.find(d => d.day === todayName);
+            const yesterdayDay = schedule.find(d => d.day === yesterdayName);
+
+            const checkDayActive = (day, isToday) => {
+                if (!day || !day.isOpen) return false;
+                
+                const [openH, openM] = (day.open || '00:00').split(':').map(Number);
+                const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
+                const openMinutes = openH * 60 + openM;
+                const closeMinutes = closeH * 60 + closeM;
+
+                if (openMinutes < closeMinutes) {
+                    // Horario normal (ej. 09:00 - 18:00)
+                    return isToday && currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+                } else if (openMinutes > closeMinutes) {
+                    // Horario nocturno que cruza medianoche (ej. 14:00 - 01:00)
+                    if (isToday) {
+                        return currentMinutes >= openMinutes;
+                    } else {
+                        return currentMinutes < closeMinutes;
+                    }
+                } else {
+                    // Abre y cierra al mismo tiempo (ej. 24h)
+                    return isToday;
+                }
+            };
+
+            const openToday = checkDayActive(todayDay, true);
+            const openYesterday = checkDayActive(yesterdayDay, false);
+
+            return openToday || openYesterday;
         });
 
         // --- Logic Helpers for Cart ---
@@ -571,7 +611,8 @@ createApp({
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
             isBusinessOpen, todaySchedule,
-            alertBussinesClose
+            alertBussinesClose,
+            formatTime
         };
     }
 }).mount('#app');
