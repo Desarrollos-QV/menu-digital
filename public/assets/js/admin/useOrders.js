@@ -37,7 +37,7 @@ export function useOrders() {
      // --- CAMBIAR ESTADO MANUALMENTE ---
     const updateOrderStatus = async (id, newStatus) => {
         try {
-            const res = await fetch(`/api/orders/${id}`, {
+            const res = await authFetch(`/api/orders/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
@@ -75,7 +75,7 @@ export function useOrders() {
             try {
                 // Opción A: Borrar físico (DELETE) -> No recomendado para auditoría
                 // Opción B: Update status 'cancelled' (Recomendado)
-                const res = await fetch(`/api/orders/${id}`, {
+                const res = await authFetch(`/api/orders/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'cancelled' })
@@ -117,11 +117,57 @@ export function useOrders() {
         XLSX.writeFile(wb, `Ventas_${new Date().toISOString().slice(0,10)}.xlsx`);
     };
 
+    // --- ELIMINAR PEDIDO DEFINITIVAMENTE ---
+    const deleteOrder = async (id) => {
+        const result = await Swal.fire({
+            title: '¿Eliminar Pedido?',
+            text: "Esta acción es irreversible y eliminará de forma permanente el registro del pedido.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar permanentemente',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await authFetch(`/api/orders/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    // Actualizar lista local
+                    ordersList.value = ordersList.value.filter(o => o._id !== id);
+                    if (selectedOrder.value && selectedOrder.value._id === id) {
+                        selectedOrder.value = null;
+                    }
+                    await Swal.fire(
+                        'Eliminado',
+                        'El pedido ha sido eliminado permanentemente.',
+                        'success'
+                    );
+                    return true;
+                } else {
+                    const data = await res.json();
+                    Swal.fire('Error', data.message || 'No se pudo eliminar el pedido', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'Hubo un problema al eliminar el pedido', 'error');
+                return false;
+            }
+        }
+        return false;
+    };
+
     return {
         ordersList, selectedOrder, isLoading,
         fetchOrders, fetchOrderDetails,
         updateOrderStatus,
         cancelOrder,
+        deleteOrder,
         downloadSalesExcel
     };
 }

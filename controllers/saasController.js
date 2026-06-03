@@ -610,3 +610,162 @@ exports.getGlobalOrders = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ─── USUARIOS FRECUENTES (SuperAdmin) ─────────────────────────────────────────
+exports.getFrequentCustomers = async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 15);
+        const skip = (page - 1) * limit;
+        const { search, minOrders, maxOrders } = req.query;
+
+        // 1. Obtener IDs de negocios válidos
+        const validBusinessIds = await Business.find().distinct('_id');
+
+        // 2. Filtro inicial para las órdenes
+        const matchStage = {
+            businessId: { $in: validBusinessIds },
+            customerPhone: { $exists: true, $ne: "" }
+        };
+
+        // 3. Filtros sobre los resultados agrupados
+        const matchQuery = {};
+        if (search) {
+            matchQuery.$or = [
+                { phone: { $regex: search, $options: 'i' } },
+                { name: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        if (minOrders) {
+            matchQuery.orderCount = { ...matchQuery.orderCount, $gte: parseInt(minOrders) };
+        }
+        if (maxOrders) {
+            matchQuery.orderCount = { ...matchQuery.orderCount, $lte: parseInt(maxOrders) };
+        }
+
+        // Pipeline para estadísticas globales de recompra
+        const statsPipeline = [
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: "$customerPhone",
+                    orderCount: { $sum: 1 }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    newCount: { $sum: { $cond: [{ $eq: ["$orderCount", 1] }, 1, 0] } },
+                    twoOrdersCount: { $sum: { $cond: [{ $eq: ["$orderCount", 2] }, 1, 0] } },
+                    frequentCount: { $sum: { $cond: [{ $gte: ["$orderCount", 3] }, 1, 0] } }
+                }
+            }
+        ];
+
+        const [statsResult] = await Order.aggregate(statsPipeline);
+        const stats = statsResult || { total: 0, newCount: 0, twoOrdersCount: 0, frequentCount: 0 };
+
+        // Pipeline principal de clientes frecuentes
+        const pipeline = [
+            { $match: matchStage },
+            { $sort: { createdAt: -1 } },
+            {
+                $group: {
+                    _id: "$customerPhone",
+                    name: { $first: "$customerName" },
+                    orderCount: { $sum: 1 },
+                    totalSpent: { $sum: "$total" },
+                    lastOrderDate: { $max: "$createdAt" },
+                    businessIds: { $addToSet: "$businessId" }
+                }
+            },
+            {
+                $project: {
+                    phone: "$_id",
+                    name: 1,
+                    orderCount: 1,
+                    totalSpent: 1,
+                    lastOrderDate: 1,
+                    businessIds: 1
+                }
+            },
+            { $match: matchQuery },
+            { $sort: { orderCount: -1, lastOrderDate: -1 } },
+            {
+                $facet: {
+                    metadata: [ { $count: "total" } ],
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $lookup: {
+                                from: "businesses",
+                                localField: "businessIds",
+                                foreignField: "_id",
+                                as: "businesses"
+                            }
+                        },
+                        {
+                            $project: {
+                                phone: 1,
+                                name: 1,
+                                orderCount: 1,
+                                totalSpent: 1,
+                                lastOrderDate: 1,
+                                businesses: {
+                                    $map: {
+                                        input: "$businesses",
+                                        as: "b",
+                                        in: {
+                                            _id: "$$b._id",
+                                            name: "$$b.name",
+                                            avatar: "$$b.avatar"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ];
+
+        const [result] = await Order.aggregate(pipeline);
+        const total = (result.metadata && result.metadata[0]) ? result.metadata[0].total : 0;
+        const customers = result.data || [];
+
+        res.json({
+            customers,
+            stats,
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        });
+
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+};
+
+exports.getFrequentCustomerOrders = async (req, res) => {
+    try {
+        const { phone } = req.params;
+        const validBusinessIds = await Business.find().distinct('_id');
+        const orders = await Order.find({
+            customerPhone: phone,
+            businessId: { $in: validBusinessIds }
+        })
+        .sort({ createdAt: -1 })
+        .populate('businessId', 'name slug avatar')
+        .lean();
+        
+        res.json(orders);
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+};

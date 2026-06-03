@@ -23,4 +23,8 @@ router.get('/businesses/:id/orders', saasController.getBusinessOrders);
 // Ventas globales de toda la plataforma (SuperAdmin)
 router.get('/global-orders', saasController.getGlobalOrders);
 
+// Clientes frecuentes e historial de recompra (SuperAdmin)
+router.get('/frequent-customers', saasController.getFrequentCustomers);
+router.get('/frequent-customers/:phone/orders', saasController.getFrequentCustomerOrders);
+
 module.exports = router;

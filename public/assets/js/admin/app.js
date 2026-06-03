@@ -83,6 +83,7 @@ createApp({
         const saasMenu = ref([
             { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
+            { id: 106, label: 'Usuarios Frecuentes', icon: 'fa-solid fa-users', view: 'saas_frequent_customers' },
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
             { id: 103, label: 'Categorias', icon: 'fa-solid fa-burger', view: 'categoriesStore' },
@@ -354,16 +355,31 @@ createApp({
                                 return `<span class="px-2 py-1 rounded text-xs font-bold ${colors[data] || 'bg-slate-100'}">${data}</span>`;
                             }
                         },
-                        { data: null, render: () => `<button class="btn-view-order text-primary hover:text-primaryDark"><i class="fa-solid fa-eye"></i></button>` }
+                        { data: null, render: (data, type, row) => {
+                            const cancelBtn = row.status === 'pending'
+                                ? `<button class="btn-cancel-order ml-2 px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-600 hover:bg-orange-200 transition" title="Cancelar pedido"><i class="fa-solid fa-ban mr-1"></i>Cancelar</button>`
+                                : '';
+                            return `<button class="btn-view-order text-primary hover:text-primaryDark" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>${cancelBtn}`;
+                        }}
                     ]
                 });
 
-                // Click evento
+                // Click: Ver detalle
                 $('#ordersTable tbody').off('click', '.btn-view-order').on('click', '.btn-view-order', function () {
                     const rowData = ordersTable.row($(this).parents('tr')).data();
                     if (rowData) {
                         orders.fetchOrderDetails(rowData._id);
                         currentView.value = 'order_details';
+                    }
+                });
+
+                // Click: Cancelar pedido
+                $('#ordersTable tbody').off('click', '.btn-cancel-order').on('click', '.btn-cancel-order', function () {
+                    const rowData = ordersTable.row($(this).parents('tr')).data();
+                    if (rowData) {
+                        orders.cancelOrder(rowData._id);
+                        viewListOrders();
+                        currentView.value = 'orders';
                     }
                 });
             });
@@ -375,8 +391,15 @@ createApp({
         const viewListOrders = () => {
             orders.fetchOrders();
             initOrdersTable(); //<-- Inicializamos de nuevo
-            currentView.value = 'orders';
         }
+
+        const confirmDeleteOrder = async (id) => {
+            const success = await orders.deleteOrder(id);
+            if (success) {
+                viewListOrders();
+                currentView.value = 'saas_dashboard';
+            }
+        };
 
         // DataTable Quotes
         let QuotesTable = null;
@@ -476,6 +499,7 @@ createApp({
 
             // 1. CAMBIAR LA URL VISUALMENTE
             const slug = item.view === 'dashboard' ? '' : item.view; // /admin/dashboard -> /admin/
+            
             // Nota: Asumimos base /admin/
             if (!item.locked) {
                 const newUrl = `/admin/${slug}`;
@@ -519,6 +543,8 @@ createApp({
             }
 
             if (!item.children) {
+                console.log("Visualizando pagina : " , currentView.value)
+
                 // Vistas Comunes (Admin y Negocio)
                 if (item.view === 'media') media.fetchMedia();
                 if (item.view === 'ads') banners.fetchBanners();
@@ -532,6 +558,7 @@ createApp({
 
                 // Vistas Específicas
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
+                if (item.view === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
                 if (item.view === 'saas_dashboard') {
                     saas.fetchDashboardStats();
                     saas.fetchGlobalOrders();
@@ -1285,6 +1312,7 @@ createApp({
                         nextTick(() => renderDashboardCharts(saas.dashboardStats));
                     }
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
+                    if (currentView.value === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
                     if (currentView.value === 'ads') banners.fetchBanners();
                     if (currentView.value === 'media') media.fetchMedia();
                     if (currentView.value === 'settings') settings.fetchSettings();
@@ -1432,6 +1460,7 @@ createApp({
             saveQuote,
             viewListQuotes,
             viewListOrders,
+            confirmDeleteOrder,
             downloadSalesExcel, generatePDF,
             startNewQuote, editQuote, convertQuoteToSale, openQuoteShare,
             showShareModal, sharePhone, sharePrefix, openShareModal, confirmShare,

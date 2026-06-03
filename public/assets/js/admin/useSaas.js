@@ -447,6 +447,72 @@ export function useSaas() {
     };
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ─── USUARIOS FRECUENTES (SuperAdmin) ────────────────────────────────────
+    const frequentCustomers = ref([]);
+    const frequentCustomersLoading = ref(false);
+    const frequentCustomersPagination = ref({ total: 0, page: 1, limit: 15, pages: 1 });
+    const frequentCustomersSearch = ref('');
+    const frequentCustomersMinOrders = ref('');
+    const frequentCustomersMaxOrders = ref('');
+    const frequentCustomersStats = ref({ total: 0, newCount: 0, twoOrdersCount: 0, frequentCount: 0 });
+
+    // Historial
+    const showCustomerHistoryModal = ref(false);
+    const selectedCustomerPhone = ref('');
+    const selectedCustomerName = ref('');
+    const customerOrders = ref([]);
+    const customerOrdersLoading = ref(false);
+
+    const fetchFrequentCustomers = async (page = 1) => {
+        frequentCustomersLoading.value = true;
+        try {
+            const params = new URLSearchParams({ page, limit: 15 });
+            if (frequentCustomersSearch.value) params.set('search', frequentCustomersSearch.value);
+            if (frequentCustomersMinOrders.value) params.set('minOrders', frequentCustomersMinOrders.value);
+            if (frequentCustomersMaxOrders.value) params.set('maxOrders', frequentCustomersMaxOrders.value);
+
+            const res = await authFetch(`/api/saas/frequent-customers?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                frequentCustomers.value = data.customers;
+                frequentCustomersStats.value = data.stats;
+                frequentCustomersPagination.value = data.pagination;
+            } else {
+                toastr.error('Error al cargar usuarios frecuentes');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            frequentCustomersLoading.value = false;
+        }
+    };
+
+    const fetchCustomerOrders = async (phone, name) => {
+        selectedCustomerPhone.value = phone;
+        selectedCustomerName.value = name || 'Cliente sin nombre';
+        customerOrdersLoading.value = true;
+        showCustomerHistoryModal.value = true;
+        try {
+            const res = await authFetch(`/api/saas/frequent-customers/${phone}/orders`);
+            if (res.ok) {
+                customerOrders.value = await res.json();
+            } else {
+                toastr.error('Error al cargar historial de pedidos');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            customerOrdersLoading.value = false;
+        }
+    };
+
+    const clearFrequentCustomersFilters = () => {
+        frequentCustomersSearch.value = '';
+        frequentCustomersMinOrders.value = '';
+        frequentCustomersMaxOrders.value = '';
+        fetchFrequentCustomers(1);
+    };
+
     return {
         businesses,
         showSaasModal,
@@ -502,6 +568,22 @@ export function useSaas() {
         globalOrdersDateTo,
         globalOrdersBizFilter,
         fetchGlobalOrders,
-        clearGlobalOrdersFilters
+        clearGlobalOrdersFilters,
+        // Usuarios frecuentes
+        frequentCustomers,
+        frequentCustomersLoading,
+        frequentCustomersPagination,
+        frequentCustomersSearch,
+        frequentCustomersMinOrders,
+        frequentCustomersMaxOrders,
+        frequentCustomersStats,
+        showCustomerHistoryModal,
+        selectedCustomerPhone,
+        selectedCustomerName,
+        customerOrders,
+        customerOrdersLoading,
+        fetchFrequentCustomers,
+        fetchCustomerOrders,
+        clearFrequentCustomersFilters
     };
 }

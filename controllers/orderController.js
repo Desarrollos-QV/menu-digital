@@ -100,10 +100,24 @@ exports.updateOrder = async (req, res) => {
 // DELETE: Eliminar orden
 exports.deleteOrder = async (req, res) => {
     try {
-        const deletedOrder = await Order.findByIdAndDelete(req.params.id);
-        if (!deletedOrder) {
+        // 1. Verificación de roles administrativos (solo superadmin puede eliminar físicamente)
+        if (req.user.role !== 'superadmin') {
+            return res.status(403).json({ message: 'Solo el superadministrador puede eliminar pedidos' });
+        }
+
+        // 2. Buscar la orden
+        const order = await Order.findById(req.params.id);
+        if (!order) {
             return res.status(404).json({ message: 'Orden no encontrada' });
         }
+
+        // 3. Validar estado de la orden (solo cancelados)
+        if (order.status !== 'cancelled') {
+            return res.status(400).json({ message: 'Solo se pueden eliminar pedidos con estado "cancelado"' });
+        }
+
+        // 4. Eliminar la orden
+        await Order.findByIdAndDelete(req.params.id);
         res.json({ message: 'Orden eliminada correctamente' });
     } catch (err) {
         res.status(500).json({ message: err.message });
