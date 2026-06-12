@@ -1760,6 +1760,14 @@
                                             </span>
                                             <span class="font-bold">+${{ orders.selectedOrder.value.deliveryCost?.toFixed(2) }}</span>
                                         </div>
+                                        <!-- Comisión de Tarjeta -->
+                                        <div v-if="(orders.selectedOrder.value.paymentFee || 0) > 0" class="flex justify-between text-purple-500 dark:text-purple-400">
+                                            <span class="flex items-center gap-1.5">
+                                                <i class="fa-brands fa-stripe text-xs"></i>
+                                                Comisión Tarjeta
+                                            </span>
+                                            <span class="font-bold">+${{ orders.selectedOrder.value.paymentFee?.toFixed(2) }}</span>
+                                        </div>
                                         <div class="flex justify-between text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 pb-3">
                                             <span>IVA (16%)</span>
                                             <span>${{ orders.selectedOrder.value.tax?.toFixed(2) || '0.00' }}</span>
@@ -3806,7 +3814,6 @@
                             <span v-else>Comisión POS inactiva (valor = 0)</span>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- TRENDING -->

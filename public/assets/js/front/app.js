@@ -76,6 +76,19 @@ createApp({
         const deliveryType = ref('delivery');
         const selectedColonia = ref(null);   // Colonia específica (tiene el deliveryCost)
 
+        // Stripe Logic
+        const stripeEnabled = ref(false);
+        const stripePublishableKey = ref('');
+        const stripeFeePercent = ref(0);
+        const stripeFeeFixed = ref(0);
+        const showStripeModal = ref(false);
+        const stripeInstance = ref(null);
+        const stripeCardElement = ref(null);
+        const stripeClientSecret = ref('');
+        const stripePaymentIntentId = ref('');
+        const isProcessingPayment = ref(false);
+        const stripePaymentError = ref('');
+
         // Product Logic
         const showProductModal = ref(false);
         const activeProduct = ref({});
@@ -160,6 +173,18 @@ createApp({
                     const favicon = document.getElementById('favicon');
                     if (favicon) favicon.href = configData.avatar;
                 }
+
+                // Fetch Stripe config
+                try {
+                    const stripeRes = await fetch('/api/stripe/config');
+                    if (stripeRes.ok) {
+                        const stripeConfig = await stripeRes.json();
+                        stripeEnabled.value = stripeConfig.stripeEnabled;
+                        stripePublishableKey.value = stripeConfig.publishableKey;
+                        stripeFeePercent.value = stripeConfig.feePercent;
+                        stripeFeeFixed.value = stripeConfig.feeFixed;
+                    }
+                } catch(e) { console.error("Stripe config error", e); }
 
                 nextTick(() => { if (banners.value.length > 0) new Swiper('.banner-swiper', { slidesPerView: 1.1, spaceBetween: 10, loop: true, autoplay: { delay: 4000 } }); });
 
@@ -345,6 +370,99 @@ createApp({
                 return toastr.warning('Por favor ingresa con cuánto vas a pagar');
             }
 
+            if (paymentMethod.value === 'stripe') {
+                initStripePayment();
+            } else {
+                finalizeCheckout(paymentMethod.value);
+            }
+        };
+
+        const initStripePayment = async () => {
+            if (!stripePublishableKey.value) return toastr.error("Stripe no está configurado.");
+            
+            isProcessingPayment.value = true;
+            showStripeModal.value = true;
+            stripePaymentError.value = '';
+
+            try {
+                const res = await fetch('/api/stripe/create-intent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: cartTotalPrice.value, currency: config.value.currency || 'MXN' })
+                });
+
+                if (!res.ok) throw new Error("Error creando intent");
+                const data = await res.json();
+                stripeClientSecret.value = data.clientSecret;
+                stripePaymentIntentId.value = data.paymentIntentId;
+
+                if (!stripeInstance.value) {
+                    stripeInstance.value = Stripe(stripePublishableKey.value);
+                }
+                
+                nextTick(() => {
+                    if (!stripeCardElement.value) {
+                        const elements = stripeInstance.value.elements();
+                        const style = {
+                            base: {
+                                color: isDark.value ? '#ffffff' : '#333333',
+                                fontFamily: '"Outfit", sans-serif',
+                                fontSmoothing: 'antialiased',
+                                fontSize: '16px',
+                                '::placeholder': { color: isDark.value ? '#9ca3af' : '#aab7c4' }
+                            },
+                            invalid: {
+                                color: '#fa755a',
+                                iconColor: '#fa755a'
+                            }
+                        };
+                        stripeCardElement.value = elements.create('card', { style });
+                        stripeCardElement.value.mount('#card-element');
+                        stripeCardElement.value.on('change', (event) => {
+                            stripePaymentError.value = event.error ? event.error.message : '';
+                        });
+                    }
+                });
+            } catch (err) {
+                showStripeModal.value = false;
+                toastr.error("Error al inicializar el pago en línea.");
+            } finally {
+                isProcessingPayment.value = false;
+            }
+        };
+
+        const processStripePayment = async () => {
+            isProcessingPayment.value = true;
+            stripePaymentError.value = '';
+
+            try {
+                const result = await stripeInstance.value.confirmCardPayment(stripeClientSecret.value, {
+                    payment_method: {
+                        card: stripeCardElement.value,
+                        billing_details: {
+                            name: customerName.value,
+                            phone: customerPhone.value,
+                        }
+                    }
+                });
+
+                if (result.error) {
+                    stripePaymentError.value = result.error.message;
+                } else {
+                    if (result.paymentIntent.status === 'succeeded') {
+                        // Pago exitoso, procesar la orden
+                        await finalizeCheckout('stripe');
+                        showStripeModal.value = false;
+                    }
+                }
+            } catch (err) {
+                stripePaymentError.value = "Error inesperado procesando el pago.";
+            } finally {
+                isProcessingPayment.value = false;
+            }
+        };
+
+        const finalizeCheckout = async (finalPaymentMethod) => {
             const phone = config.value.phone;
             if (!phone) return toastr.error('Este negocio no tiene WhatsApp configurado');
 
@@ -366,6 +484,10 @@ createApp({
                 msg += `🛵 *Costo de Envío (${selectedColonia.value?.name || 'Zona'}): +${config.value.currency || '$'}${deliveryCostCmp.value.toFixed(2)}*\n`;
             }
 
+            if (paymentFeeCmp.value > 0 && finalPaymentMethod === 'stripe') {
+                msg += `💳 *Comisión por pago con tarjeta: +${config.value.currency || '$'}${paymentFeeCmp.value.toFixed(2)}*\n`;
+            }
+
             msg += `💰 *TOTAL A PAGAR: ${config.value.currency || '$'}${cartTotalPrice.value.toFixed(2)}*\n\n`;
 
             if (deliveryType.value === 'pickup') {
@@ -379,8 +501,8 @@ createApp({
                 msg += `Ref: ${customerReference.value}\n\n`;
             }
 
-            msg += `💳 *_Método de Pago_*: ${paymentMethod.value === 'cash' ? 'Efectivo' : 'Tarjeta'}\n`;
-            if (paymentMethod.value === 'cash' && customerHowToPay.value) {
+            msg += `💳 *_Método de Pago_*: ${finalPaymentMethod === 'cash' ? 'Efectivo' : (finalPaymentMethod === 'stripe' ? 'Pago en Línea (Aprobado)' : 'Tarjeta')}\n`;
+            if (finalPaymentMethod === 'cash' && customerHowToPay.value) {
                 msg += `💵 *¿Con cuanto paga?*: $${customerHowToPay.value}\n`;
             }
             msg += `\n`;
@@ -398,13 +520,15 @@ createApp({
                 customerNumber: deliveryType.value === 'delivery' ? customerNumber.value : '',
                 customerZipCode: deliveryType.value === 'delivery' ? customerZipCode.value : '',
                 customerReference: deliveryType.value === 'delivery' ? customerReference.value : '',
-                paymentMethod: paymentMethod.value,
+                paymentMethod: finalPaymentMethod,
                 customerHowToPay: customerHowToPay.value,
                 cart: cart.value,
                 total: cartTotalPrice.value,
                 subtotal: cartSubTotal.value,
                 deliveryCost: deliveryCostCmp.value,
                 deliveryZone: selectedColonia.value?.name || '',
+                paymentFee: paymentFeeCmp.value,
+                stripePaymentIntentId: finalPaymentMethod === 'stripe' ? stripePaymentIntentId.value : undefined,
                 commission: {
                     type: config.value.commissionWebType || 'percent',
                     amount: parseFloat(config.value.commissionWebAmount) || 0,
@@ -443,7 +567,14 @@ createApp({
             return parseFloat(selectedColonia.value.deliveryCost) || 0;
         });
 
-        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value);
+        const paymentFeeCmp = computed(() => {
+            if (paymentMethod.value !== 'stripe') return 0;
+            const baseTotal = cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value;
+            if (baseTotal <= 0) return 0;
+            return (baseTotal * (stripeFeePercent.value / 100)) + stripeFeeFixed.value;
+        });
+
+        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value + paymentFeeCmp.value);
 
         // Filters & UI
         const filteredProducts = computed(() => {
@@ -606,8 +737,8 @@ createApp({
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             showBusinessModal, reviews, newReview, submittingReview, submitReview,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, deliveryCostCmp, cartTotalPrice, checkout, deliveryType,
-            selectedColonia,
+            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, deliveryCostCmp, paymentFeeCmp, cartTotalPrice, checkout, deliveryType,
+            selectedColonia, stripeEnabled, showStripeModal, stripePaymentError, isProcessingPayment, processStripePayment,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
             isBusinessOpen, todaySchedule,

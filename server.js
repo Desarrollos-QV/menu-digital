@@ -6,6 +6,11 @@ require('dotenv').config();
 
 const app = express();
 
+// --- STRIPE WEBHOOK (DEBE IR ANTES DE express.json()) ---
+// Necesita raw body para validar la firma
+const stripeController = require('./controllers/stripeController');
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeController.handleWebhook);
+
 // --- MIDDLEWARES GLOBALES (ESTO DEBE IR PRIMERO) ---
 app.use(cors());
 app.use(express.json());
@@ -34,6 +39,7 @@ app.use('/api/customers', require('./routes/customers')); // <-- Listado de usua
 app.use('/api/finance', require('./routes/finance')); // <-- Gestion de cajas
 app.use('/api/orders', require('./routes/orders')); // <-- Gestion de ventas
 app.use('/api/quotes', require('./routes/quotes')); // <-- Gestion de Cotizaciones
+app.use('/api/stripe', require('./routes/stripe')); // <-- Stripe Payments
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
 app.use('/api/loyalty', require('./routes/loyalty'));

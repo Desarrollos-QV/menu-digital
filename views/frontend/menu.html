@@ -12,6 +12,9 @@
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -305,7 +308,8 @@
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
                                         <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                             <option value="cash">Efectivo</option>
-                                            <option value="card">Tarjeta</option>
+                                            <option value="card">Terminal / Tarjeta contra entrega</option>
+                                            <option v-if="stripeEnabled" value="stripe">💳 Pagar en línea (Stripe)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -322,7 +326,8 @@
                                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
                                     <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                         <option value="cash">Efectivo</option>
-                                        <option value="card">Tarjeta</option>
+                                        <option value="card">Terminal / Tarjeta contra entrega</option>
+                                        <option v-if="stripeEnabled" value="stripe">💳 Pagar en línea (Stripe)</option>
                                     </select>
                                 </div>
 
@@ -356,6 +361,13 @@
                                     </span>
                                     <span class="text-sm font-bold">¡Gratis!</span>
                                 </div>
+                                <div v-if="paymentMethod === 'stripe' && paymentFeeCmp > 0" class="flex justify-between items-center text-purple-600 dark:text-purple-400 animate-fade-in">
+                                    <span class="text-sm font-medium flex items-center gap-1.5">
+                                        <i class="fa-brands fa-stripe text-xs"></i>
+                                        Comisión por pago con tarjeta
+                                    </span>
+                                    <span class="text-sm font-bold">+${{ paymentFeeCmp?.toFixed(2) }}</span>
+                                </div>
                                 <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
                                     <span class="text-slate-500 dark:text-slate-400 font-bold">Total a pagar</span>
                                     <span class="text-2xl font-black text-slate-900 dark:text-white">${{ cartTotalPrice?.toFixed(2) }}</span>
@@ -388,7 +400,7 @@
         </div>
 
         <!-- BOTÓN LEALTAD (Regalo Flotante) -->
-        <button @click="openLoyaltyModal && !showCartModal" class="fixed bottom-24 right-6 z-40 w-14 h-14 bg-white dark:bg-slate-800 rounded-full shadow-xl flex items-center justify-center text-2xl border-2 border-yellow-400 animate-pulse-fast hover:scale-110 transition">
+        <button @click="openLoyaltyModal" class="fixed bottom-24 right-6 z-40 w-14 h-14 bg-white dark:bg-slate-800 rounded-full shadow-xl flex items-center justify-center text-2xl border-2 border-yellow-400 animate-pulse-fast hover:scale-110 transition">
             🎁
         </button>
 
@@ -453,11 +465,6 @@
             </div>
         </div>
 
-        <!-- CART MODAL 
-        <div v-if="showCartModal" class="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center">
-            <div @click="showCartModal = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>    
-        </div>
-        -->
         <!-- MODAL LEALTAD -->
         <div v-if="showLoyaltyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
             <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative">
@@ -663,6 +670,30 @@
         </div>
 
     </template>
+
+    <!-- STRIPE PAYMENT MODAL -->
+    <div v-if="showStripeModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-950">
+                <h3 class="font-bold text-lg flex items-center gap-2 dark:text-white"><i class="fa-solid fa-lock text-slate-400"></i> Pago Seguro</h3>
+                <button @click="showStripeModal = false" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-2">Ingresa los datos de tu tarjeta:</p>
+                    <div id="card-element" class="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800"></div>
+                    <p id="card-errors" role="alert" class="text-red-500 text-xs mt-2 font-medium" v-if="stripePaymentError">{{ stripePaymentError }}</p>
+                </div>
+                <div class="flex items-center gap-2 justify-center mt-6 mb-4">
+                    <i class="fa-brands fa-stripe text-4xl text-indigo-500"></i>
+                </div>
+                <button @click="processStripePayment" :disabled="isProcessingPayment" class="w-full bg-slate-900 dark:bg-primary text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i v-if="isProcessingPayment" class="fa-solid fa-circle-notch fa-spin"></i>
+                    <span v-else>Pagar ${{ cartTotalPrice?.toFixed(2) }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="./assets/js/front/app.js"></script>

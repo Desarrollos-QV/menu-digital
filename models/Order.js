@@ -34,13 +34,14 @@ const orderSchema = new mongoose.Schema({
     tax: Number,
     deliveryCost: { type: Number, default: 0 }, // Costo de envío por colonia/zona
     deliveryZone: { type: String, default: '' }, // Nombre de la colonia/zona
+    paymentFee: { type: Number, default: 0 }, // Comisión cobrada al cliente por usar pago en línea
     total: { type: Number, required: true },
     source: { type: String, enum: ['whatsapp', 'pos'], default: 'whatsapp' },
     
     // IMPORTANTE PARA CAJA:
     paymentMethod: { 
         type: String, 
-        enum: ['cash', 'card', 'credit_card', 'debit_card', 'transfer', 'online'], 
+        enum: ['cash', 'card', 'credit_card', 'debit_card', 'transfer', 'online', 'stripe'], 
         default: 'cash' 
     },
     paymentReference: String, // Para vouchers o # transferencia
@@ -50,6 +51,8 @@ const orderSchema = new mongoose.Schema({
         enum: ['pending', 'preparing', 'ready', 'completed', 'cancelled'], 
         default: 'pending' 
     },
+    stripePaymentIntentId: { type: String }, // ID del intent de pago
+    stripePaymentStatus: { type: String }, // 'succeeded', 'pending', etc.
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now }
 
