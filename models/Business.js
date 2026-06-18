@@ -27,6 +27,9 @@ const businessSchema = new mongoose.Schema({
     // Tipos de servicio
     allowDelivery: { type: Boolean, default: true },
     allowPickup: { type: Boolean, default: false },
+    // Métodos de pago aceptados
+    acceptCash: { type: Boolean, default: true },
+    acceptCard: { type: Boolean, default: true },
     schedule: [{
         day: String,
         open: String,

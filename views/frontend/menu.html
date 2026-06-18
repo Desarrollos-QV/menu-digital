@@ -307,9 +307,8 @@
                                     <div>
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
                                         <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                                            <option value="cash">Efectivo</option>
-                                            <option value="card">Terminal / Tarjeta contra entrega</option>
-                                            <option v-if="stripeEnabled" value="stripe">💳 Pagar en línea (Stripe)</option>
+                                            <option v-if="config.acceptCash" value="cash">Efectivo</option>
+                                            <option v-if="config.acceptCard && stripeEnabled" value="stripe">💳 Pagar en línea (Stripe)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -325,9 +324,8 @@
                                 <div class="mb-4">
                                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
                                     <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                                        <option value="cash">Efectivo</option>
-                                        <option value="card">Terminal / Tarjeta contra entrega</option>
-                                        <option v-if="stripeEnabled" value="stripe">💳 Pagar en línea (Stripe)</option>
+                                        <option v-if="config.acceptCash" value="cash">Efectivo</option>
+                                        <option v-if="config.acceptCard && stripeEnabled" value="stripe">💳 Pagar en línea (Stripe)</option>
                                     </select>
                                 </div>
 

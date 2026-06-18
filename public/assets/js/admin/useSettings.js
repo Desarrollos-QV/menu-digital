@@ -26,6 +26,9 @@ export function useSettings(auth) {
         // Tipos de servicio
         allowDelivery: true,
         allowPickup: false,
+        // Métodos de pago aceptados
+        acceptCash: true,
+        acceptCard: true,
         // Categorías seleccionadas por el negocio - INICIALIZADO COMO ARRAY VACÍO
         categories: [],
         // Configuraciones de horario y entrega
@@ -223,6 +226,11 @@ export function useSettings(auth) {
     };
 
     const saveSettings = async () => {
+        // Validar métodos de pago localmente
+        if (!settings.value.acceptCash && !settings.value.acceptCard) {
+            toastr.warning('Debes habilitar al menos un método de pago (Efectivo o Tarjeta).');
+            return;
+        }
         try {
             const res = await authFetch('/api/config/admin', {
                 method: 'POST',

@@ -186,6 +186,16 @@ createApp({
                     }
                 } catch(e) { console.error("Stripe config error", e); }
 
+                // Auto-seleccionar método de pago inicial válido según los métodos habilitados
+                const cashOk = configData.acceptCash !== false;
+                const cardOk = configData.acceptCard !== false && stripeEnabled.value;
+                if (!cashOk && cardOk) {
+                    paymentMethod.value = 'stripe';
+                } else if (cashOk) {
+                    paymentMethod.value = 'cash';
+                }
+                // Si ninguno está disponible se deja el default 'cash' (caso imposible con validación backend)
+
                 nextTick(() => { if (banners.value.length > 0) new Swiper('.banner-swiper', { slidesPerView: 1.1, spaceBetween: 10, loop: true, autoplay: { delay: 4000 } }); });
 
             } catch (e) { businessError.value = true; }

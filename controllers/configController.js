@@ -83,6 +83,9 @@ exports.getAdminConfig = async (req, res) => {
                 // Tipos de servicio
                 allowDelivery: business.allowDelivery !== false,
                 allowPickup: business.allowPickup === true,
+                // Métodos de pago
+                acceptCash: business.acceptCash !== false,
+                acceptCard: business.acceptCard !== false,
                 // Campos extra de negocio
                 avatar: business.avatar || '',
                 phone: business.phone || '',
@@ -145,6 +148,17 @@ exports.updateAdminConfig = async (req, res) => {
             // Tipos de servicio
             if (req.body.allowDelivery !== undefined) business.allowDelivery = req.body.allowDelivery;
             if (req.body.allowPickup  !== undefined) business.allowPickup  = req.body.allowPickup;
+
+            // Métodos de pago (validar que al menos uno quede activo)
+            if (req.body.acceptCash !== undefined || req.body.acceptCard !== undefined) {
+                const newCash = req.body.acceptCash !== undefined ? req.body.acceptCash : business.acceptCash;
+                const newCard = req.body.acceptCard !== undefined ? req.body.acceptCard : business.acceptCard;
+                if (!newCash && !newCard) {
+                    return res.status(400).json({ message: 'Debe aceptar al menos un método de pago (Efectivo o Tarjeta).' });
+                }
+                business.acceptCash = newCash;
+                business.acceptCard = newCard;
+            }
 
             // Settings anidados
             if (!business.settings) business.settings = {};

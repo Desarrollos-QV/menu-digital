@@ -72,6 +72,9 @@ export function useSaas() {
         isOpen: true,
         active: true,
         isTrending: false,
+        // Métodos de pago
+        acceptCash: true,
+        acceptCard: true,
         // Comisiones
         commissionWebType:   'percent',
         commissionWebAmount: 0,
@@ -99,6 +102,9 @@ export function useSaas() {
                 isOpen: business.isOpen !== false,
                 active: business.active !== false,
                 isTrending: business.isTrending === true,
+                // Métodos de pago
+                acceptCash: business.acceptCash !== false,
+                acceptCard: business.acceptCard !== false,
                 // Comisiones
                 commissionWebType:   business.commissionWebType   || 'percent',
                 commissionWebAmount: business.commissionWebAmount  ?? 0,
@@ -128,6 +134,11 @@ export function useSaas() {
         if (!editingBusiness.value && (!saasForm.value.username || !saasForm.value.password)) {
             toastr.warning('Usuario y contraseña son requeridos para nuevos negocios'); return;
         }
+        // Validar métodos de pago
+        if (!saasForm.value.acceptCash && !saasForm.value.acceptCard) {
+            toastr.warning('Debe habilitar al menos un método de pago (Efectivo o Tarjeta).');
+            return;
+        }
 
         try {
             let url    = '/api/saas/businesses';
@@ -151,6 +162,9 @@ export function useSaas() {
                     isOpen:              saasForm.value.isOpen,
                     active:              saasForm.value.active,
                     isTrending:          saasForm.value.isTrending,
+                    // Métodos de pago
+                    acceptCash:          saasForm.value.acceptCash,
+                    acceptCard:          saasForm.value.acceptCard,
                     // Comisiones
                     commissionWebType:   saasForm.value.commissionWebType,
                     commissionWebAmount: saasForm.value.commissionWebAmount,
@@ -164,12 +178,18 @@ export function useSaas() {
                     ownerEmail:   saasForm.value.ownerEmail,
                     password:     saasForm.value.password,
                     plan:         saasForm.value.plan,
-                    slug:         saasForm.value.slug
+                    slug:         saasForm.value.slug,
+                    // Métodos de pago
+                    acceptCash:   saasForm.value.acceptCash,
+                    acceptCard:   saasForm.value.acceptCard
                 };
             }
 
             const res = await authFetch(url, { method, body: JSON.stringify(payload) });
-            if (!res.ok) throw new Error('Error en la operación');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || 'Error en la operación');
+            }
 
             toastr.success(editingBusiness.value ? 'Negocio actualizado' : 'Negocio creado');
             showSaasModal.value = false;

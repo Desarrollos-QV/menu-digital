@@ -2491,6 +2491,50 @@
                                 </p>
                             </div>
 
+                            <!-- MÉTODOS DE PAGO -->
+                            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 mt-6">
+                                <h3 class="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white">
+                                    <i class="fa-solid fa-credit-card text-violet-500"></i> Métodos de Pago
+                                </h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <!-- Efectivo -->
+                                    <label class="flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition select-none"
+                                        :class="settings.acceptCash ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                                        <input type="checkbox" v-model="settings.acceptCash" class="sr-only">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                            :class="settings.acceptCash ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                            <i class="fa-solid fa-money-bill-wave text-base"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-slate-800 dark:text-white">Efectivo</p>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">El cliente paga en efectivo al recibir su pedido</p>
+                                        </div>
+                                        <i class="text-lg flex-shrink-0"
+                                            :class="settings.acceptCash ? 'fa-solid fa-square-check text-violet-500' : 'fa-regular fa-square text-slate-400'"></i>
+                                    </label>
+
+                                    <!-- Pago en línea (Stripe) -->
+                                    <label class="flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition select-none"
+                                        :class="settings.acceptCard ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                                        <input type="checkbox" v-model="settings.acceptCard" class="sr-only">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                            :class="settings.acceptCard ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                            <i class="fa-brands fa-stripe-s text-base"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-bold text-slate-800 dark:text-white">Pago en línea (Stripe)</p>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">El cliente paga con tarjeta de crédito / débito</p>
+                                        </div>
+                                        <i class="text-lg flex-shrink-0"
+                                            :class="settings.acceptCard ? 'fa-solid fa-square-check text-indigo-500' : 'fa-regular fa-square text-slate-400'"></i>
+                                    </label>
+                                </div>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-3 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-circle-info text-[10px]"></i>
+                                    Debes mantener al menos un método de pago habilitado.
+                                </p>
+                            </div>
+
                             <!-- IMPRESORA TÉRMICA -->
                             <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl mt-4 border border-slate-200 dark:border-slate-700">
                                 <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
@@ -3651,7 +3695,7 @@
 
                     <!-- Tipos de Servicio -->
                     <div class="mt-4">
-                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">Tipos de Servicio</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Tipos de Servicio</p>
                         <div class="grid grid-cols-2 gap-3">
                             <!-- Envíos a domicilio -->
                             <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
@@ -3681,6 +3725,42 @@
                                     <p class="text-[10px] text-slate-500">El cliente recoge en sucursal</p>
                                 </div>
                                 <i class="ml-auto text-sm" :class="saasForm.allowPickup ? 'fa-solid fa-square-check text-emerald-500' : 'fa-regular fa-square text-slate-400'"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Métodos de Pago -->
+                    <div class="mt-4">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Métodos de Pago</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Efectivo -->
+                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                                :class="saasForm.acceptCash ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                                <input type="checkbox" v-model="saasForm.acceptCash" class="sr-only">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                    :class="saasForm.acceptCash ? 'bg-violet-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                    <i class="fa-solid fa-money-bill-wave text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Efectivo</p>
+                                    <p class="text-[10px] text-slate-500">Pago en efectivo</p>
+                                </div>
+                                <i class="ml-auto text-sm" :class="saasForm.acceptCash ? 'fa-solid fa-square-check text-violet-500' : 'fa-regular fa-square text-slate-400'"></i>
+                            </label>
+
+                            <!-- Stripe -->
+                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                                :class="saasForm.acceptCard ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                                <input type="checkbox" v-model="saasForm.acceptCard" class="sr-only">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                    :class="saasForm.acceptCard ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                    <i class="fa-brands fa-stripe-s text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Stripe (Línea)</p>
+                                    <p class="text-[10px] text-slate-500">Tarjeta crédito/débito</p>
+                                </div>
+                                <i class="ml-auto text-sm" :class="saasForm.acceptCard ? 'fa-solid fa-square-check text-indigo-500' : 'fa-regular fa-square text-slate-400'"></i>
                             </label>
                         </div>
                     </div>
@@ -3723,98 +3803,102 @@
                 </div>
 
                 <!-- COMISIONES -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                    <!-- #1 Comisión WebApp -->
-                    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700/50 rounded-2xl p-4">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-300 flex-shrink-0">
-                                <i class="fa-solid fa-globe text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión WebApp</p>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Ventas realizadas desde el marketplace</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
-                                <select v-model="saasForm.commissionWebType"
-                                    class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none transition">
-                                    <option value="percent">% Porcentaje</option>
-                                    <option value="fixed">$ Monto Fijo</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                                    {{ saasForm.commissionWebType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
-                                        {{ saasForm.commissionWebType === 'percent' ? '%' : '$' }}
-                                    </span>
-                                    <input v-model.number="saasForm.commissionWebAmount" type="number" min="0" step="0.01"
-                                        placeholder="0"
-                                        class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none transition">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Comisiones</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- #1 Comisión WebApp -->
+                        <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700/50 rounded-2xl p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-300 flex-shrink-0">
+                                    <i class="fa-solid fa-globe text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión WebApp</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400">Ventas realizadas desde el marketplace</p>
                                 </div>
                             </div>
-                        </div>
-                        <div class="mt-2 flex items-center gap-1.5 text-[10px] text-indigo-600 dark:text-indigo-300 font-medium bg-indigo-100 dark:bg-indigo-800/40 px-2.5 py-1.5 rounded-lg">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <span v-if="saasForm.commissionWebAmount > 0">
-                                Se cobra {{ saasForm.commissionWebType === 'percent' ? saasForm.commissionWebAmount + '%' : '$' + saasForm.commissionWebAmount }} por venta
-                            </span>
-                            <span v-else>Sin comisión configurada</span>
-                        </div>
-                    </div>
-
-                    <!-- #2 Comisión POS Interno -->
-                    <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-2xl p-4"
-                        :class="saasForm.commissionPosAmount == 0 ? 'opacity-70' : ''">
-                        <div class="flex items-center gap-2 mb-3">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-300 flex-shrink-0">
-                                <i class="fa-solid fa-cash-register text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión POS Interno</p>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Ventas desde el punto de venta. 0 = Inactivo</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
-                                <select v-model="saasForm.commissionPosType"
-                                    class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-emerald-400 outline-none transition">
-                                    <option value="percent">% Porcentaje</option>
-                                    <option value="fixed">$ Monto Fijo</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
-                                    {{ saasForm.commissionPosType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
-                                        {{ saasForm.commissionPosType === 'percent' ? '%' : '$' }}
-                                    </span>
-                                    <input v-model.number="saasForm.commissionPosAmount" type="number" min="0" step="0.01"
-                                        placeholder="0"
-                                        class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-emerald-400 outline-none transition">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                    <select v-model="saasForm.commissionWebType"
+                                        class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none transition">
+                                        <option value="percent">% Porcentaje</option>
+                                        <option value="fixed">$ Monto Fijo</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                        {{ saasForm.commissionWebType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
+                                            {{ saasForm.commissionWebType === 'percent' ? '%' : '$' }}
+                                        </span>
+                                        <input v-model.number="saasForm.commissionWebAmount" type="number" min="0" step="0.01"
+                                            placeholder="0"
+                                            class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none transition">
+                                    </div>
                                 </div>
                             </div>
+                            <div class="mt-2 flex items-center gap-1.5 text-[10px] text-indigo-600 dark:text-indigo-300 font-medium bg-indigo-100 dark:bg-indigo-800/40 px-2.5 py-1.5 rounded-lg">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span v-if="saasForm.commissionWebAmount > 0">
+                                    Se cobra {{ saasForm.commissionWebType === 'percent' ? saasForm.commissionWebAmount + '%' : '$' + saasForm.commissionWebAmount }} por venta
+                                </span>
+                                <span v-else>Sin comisión configurada</span>
+                            </div>
                         </div>
-                        <div class="mt-2 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg"
-                            :class="saasForm.commissionPosAmount > 0 
-                                ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-800/40' 
-                                : 'text-slate-500 bg-slate-100 dark:bg-slate-700'">
-                            <i :class="saasForm.commissionPosAmount > 0 ? 'fa-solid fa-circle-check' : 'fa-solid fa-ban'"></i>
-                            <span v-if="saasForm.commissionPosAmount > 0">
-                                Se cobra {{ saasForm.commissionPosType === 'percent' ? saasForm.commissionPosAmount + '%' : '$' + saasForm.commissionPosAmount }} por venta POS
-                            </span>
-                            <span v-else>Comisión POS inactiva (valor = 0)</span>
+
+                        <!-- #2 Comisión POS Interno -->
+                        <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-2xl p-4"
+                            :class="saasForm.commissionPosAmount == 0 ? 'opacity-70' : ''">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-300 flex-shrink-0">
+                                    <i class="fa-solid fa-cash-register text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión POS Interno</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400">Ventas desde el punto de venta. 0 = Inactivo</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                    <select v-model="saasForm.commissionPosType"
+                                        class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-emerald-400 outline-none transition">
+                                        <option value="percent">% Porcentaje</option>
+                                        <option value="fixed">$ Monto Fijo</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                        {{ saasForm.commissionPosType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
+                                            {{ saasForm.commissionPosType === 'percent' ? '%' : '$' }}
+                                        </span>
+                                        <input v-model.number="saasForm.commissionPosAmount" type="number" min="0" step="0.01"
+                                            placeholder="0"
+                                            class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-emerald-400 outline-none transition">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg"
+                                :class="saasForm.commissionPosAmount > 0 
+                                    ? 'text-emerald-600 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-800/40' 
+                                    : 'text-slate-500 bg-slate-100 dark:bg-slate-700'">
+                                <i :class="saasForm.commissionPosAmount > 0 ? 'fa-solid fa-circle-check' : 'fa-solid fa-ban'"></i>
+                                <span v-if="saasForm.commissionPosAmount > 0">
+                                    Se cobra {{ saasForm.commissionPosType === 'percent' ? saasForm.commissionPosAmount + '%' : '$' + saasForm.commissionPosAmount }} por venta POS
+                                </span>
+                                <span v-else>Comisión POS inactiva (valor = 0)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- OPCIONES DE METODOS DE PAGO -->
 
                 <!-- TRENDING -->
                 <div v-if="editingBusiness">

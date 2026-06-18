@@ -202,9 +202,17 @@ exports.getAllBusinesses = async (req, res) => {
 exports.createBusiness = async (req, res) => {
     const { businessName, ownerEmail, username, password, plan,
             commissionWebType, commissionWebAmount,
-            commissionPosType, commissionPosAmount } = req.body;
+            commissionPosType, commissionPosAmount,
+            acceptCash, acceptCard } = req.body;
     
     try {
+        // Validar métodos de pago
+        const cashEnabled = acceptCash !== false;
+        const cardEnabled = acceptCard !== false;
+        if (!cashEnabled && !cardEnabled) {
+            return res.status(400).json({ message: 'Debe aceptar al menos un método de pago (Efectivo o Tarjeta).' });
+        }
+
         // 1. Crear el Negocio
         const newBusiness = new Business({
             name: businessName,
@@ -214,7 +222,9 @@ exports.createBusiness = async (req, res) => {
             commissionWebType:   commissionWebType   || 'percent',
             commissionWebAmount: commissionWebAmount  ?? 0,
             commissionPosType:   commissionPosType   || 'percent',
-            commissionPosAmount: commissionPosAmount  ?? 0
+            commissionPosAmount: commissionPosAmount  ?? 0,
+            acceptCash: cashEnabled,
+            acceptCard: cardEnabled
         });
         const savedBusiness = await newBusiness.save();
 
@@ -246,7 +256,19 @@ exports.updateBusiness = async (req, res) => {
         const { name, ownerEmail, slug, plan, phone, address, isOpen, active, isTrending,
                 lat, lng, allowDelivery, allowPickup,
                 commissionWebType, commissionWebAmount,
-                commissionPosType, commissionPosAmount } = req.body;
+                commissionPosType, commissionPosAmount,
+                acceptCash, acceptCard } = req.body;
+
+        // Validar métodos de pago (solo si se envían)
+        const cashSent = acceptCash !== undefined;
+        const cardSent = acceptCard !== undefined;
+        if (cashSent || cardSent) {
+            const cashVal = cashSent ? acceptCash : true;
+            const cardVal = cardSent ? acceptCard : true;
+            if (!cashVal && !cardVal) {
+                return res.status(400).json({ message: 'Debe aceptar al menos un método de pago (Efectivo o Tarjeta).' });
+            }
+        }
 
         const updateData = { name, ownerEmail, slug, plan };
 
@@ -264,6 +286,9 @@ exports.updateBusiness = async (req, res) => {
         if (commissionWebAmount !== undefined) updateData.commissionWebAmount = commissionWebAmount;
         if (commissionPosType   !== undefined) updateData.commissionPosType   = commissionPosType;
         if (commissionPosAmount !== undefined) updateData.commissionPosAmount = commissionPosAmount;
+        // Métodos de pago
+        if (acceptCash !== undefined) updateData.acceptCash = acceptCash;
+        if (acceptCard !== undefined) updateData.acceptCard = acceptCard;
 
         const updatedBusiness = await Business.findByIdAndUpdate(
             req.params.id,

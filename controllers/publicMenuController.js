@@ -126,6 +126,9 @@ exports.getPublicData = async (req, res) => {
                     tags: business.tags || [],
                     calculatedRating: parseFloat(calculatedRating),
                     reviewsCount: reviewsCount,
+                    // MÉTODOS DE PAGO
+                    acceptCash: business.acceptCash !== false,
+                    acceptCard: business.acceptCard !== false,
                     // COMISION WEB
                     commissionWebType: business.commissionWebType || 'percent',
                     commissionWebAmount: business.commissionWebAmount || 0,
