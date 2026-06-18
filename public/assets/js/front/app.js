@@ -577,14 +577,45 @@ createApp({
             return parseFloat(selectedColonia.value.deliveryCost) || 0;
         });
 
+        // const paymentFeeCmp = computed(() => {
+        //     if (paymentMethod.value !== 'stripe') return 0;
+        //     const baseTotal = cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value; // $99.00 + $2.97 + $35 = $136.97
+        //     if (baseTotal <= 0) return 0;
+        //     return (baseTotal * (stripeFeePercent.value / 100)) + stripeFeeFixed.value; // $136.97 * 0.036 + 3 = $7.93
+        // });
+
         const paymentFeeCmp = computed(() => {
             if (paymentMethod.value !== 'stripe') return 0;
-            const baseTotal = cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value;
+
+            const baseTotal =
+                cartSubTotal.value +
+                commissionWebAmountCmp.value +
+                deliveryCostCmp.value;
+
             if (baseTotal <= 0) return 0;
-            return (baseTotal * (stripeFeePercent.value / 100)) + stripeFeeFixed.value;
+
+            const iva = 0.16;
+
+            // Stripe México
+            // Nacional: 3.6
+            // Internacional: 4.1
+            const percent = stripeFeePercent.value / 100;
+
+            const fixed = stripeFeeFixed.value;
+
+            // Fórmula inversa:
+            // total = (base + fijo con IVA) / (1 - porcentaje con IVA)
+            const totalWithStripeFee =
+                (baseTotal + (fixed * (1 + iva))) /
+                (1 - (percent * (1 + iva)));
+
+            const stripeFeeToCharge = totalWithStripeFee - baseTotal;
+
+            // Redondear hacia arriba para no perder centavos
+            return Math.ceil(stripeFeeToCharge * 100) / 100;
         });
 
-        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value + paymentFeeCmp.value);
+        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value + paymentFeeCmp.value); // $136.97 + $7.93 = $144.90
 
         // Filters & UI
         const filteredProducts = computed(() => {
