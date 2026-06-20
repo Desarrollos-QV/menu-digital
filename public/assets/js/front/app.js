@@ -1,5 +1,6 @@
 
 const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
 // Configuracion de Tailwind
 tailwind.config = {
     darkMode: 'class',
@@ -66,6 +67,7 @@ createApp({
         const showCartModal = ref(false);
         const customerName = ref('');
         const customerPhone = ref('');
+        const customerEmail = ref('');
         const customerStreet = ref('');
         const customerColony = ref('');
         const customerNumber = ref('');
@@ -376,6 +378,11 @@ createApp({
                 return toastr.warning('Nombre y Telefono requeridos');
             }
 
+            // Validamos Email
+            if (!customerEmail.value.trim()) {
+                return toastr.warning('Email requerido');
+            }
+
             if (paymentMethod.value === 'cash' && (!customerHowToPay.value || !customerHowToPay.value.toString().trim())) {
                 return toastr.warning('Por favor ingresa con cuánto vas a pagar');
             }
@@ -452,6 +459,7 @@ createApp({
                         billing_details: {
                             name: customerName.value,
                             phone: customerPhone.value,
+                            email: customerEmail.value,
                         }
                     }
                 });
@@ -524,6 +532,7 @@ createApp({
                 customerName: customerName.value,
                 customerId: (cs._value) ? cs._value._id : null,
                 customerPhone: customerPhone.value,
+                customerEmail: customerEmail.value,
                 deliveryType: deliveryType.value,
                 customerStreet: deliveryType.value === 'delivery' ? customerStreet.value : '',
                 customerColony: deliveryType.value === 'delivery' ? (selectedColonia.value?.name || customerColony.value) : '',
@@ -546,7 +555,24 @@ createApp({
                 }
             };
 
-            fetch('/api/analytics/order', {
+            // Enviar email de notificación al restaurante
+            console.log({
+                    msg,
+                    orderDetails: dataReq,
+                    business: config.value
+                });
+            await fetch('/api/analytics/send-notification-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    msg,
+                    orderDetails: dataReq,
+                    business: config.value
+                })
+            });
+
+            // // 2. Guardar Analytics el pedido
+            await fetch('/api/analytics/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataReq)
@@ -576,13 +602,6 @@ createApp({
             if (!selectedColonia.value) return 0;
             return parseFloat(selectedColonia.value.deliveryCost) || 0;
         });
-
-        // const paymentFeeCmp = computed(() => {
-        //     if (paymentMethod.value !== 'stripe') return 0;
-        //     const baseTotal = cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value; // $99.00 + $2.97 + $35 = $136.97
-        //     if (baseTotal <= 0) return 0;
-        //     return (baseTotal * (stripeFeePercent.value / 100)) + stripeFeeFixed.value; // $136.97 * 0.036 + 3 = $7.93
-        // });
 
         const paymentFeeCmp = computed(() => {
             if (paymentMethod.value !== 'stripe') return 0;
@@ -778,7 +797,7 @@ createApp({
             searchQuery, selectedCategory, selectedCategoryName, filteredProducts, toggleTheme,
             showBusinessModal, reviews, newReview, submittingReview, submitReview,
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
-            cart, showCartModal, customerName, customerPhone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, deliveryCostCmp, paymentFeeCmp, cartTotalPrice, checkout, deliveryType,
+            cart, showCartModal, customerName, customerPhone, customerEmail, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, deliveryCostCmp, paymentFeeCmp, cartTotalPrice, checkout, deliveryType,
             selectedColonia, stripeEnabled, showStripeModal, stripePaymentError, isProcessingPayment, processStripePayment,
             showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,

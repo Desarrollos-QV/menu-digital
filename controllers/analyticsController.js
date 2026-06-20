@@ -1,9 +1,12 @@
+const nodemailer = require('nodemailer');
+
 const Order = require('../models/Order');
 const Visit = require('../models/Visit');
 const Product = require('../models/Product');
 const Business = require('../models/Business');
 const mongoose = require('mongoose');
 const tzHelper = require('../helper/timezone');
+
 // 1. Registrar Visita (Público)
 exports.registerVisit = async (req, res) => {
     try {
@@ -278,4 +281,89 @@ exports.createPosOrder = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 };
+
+// 4. Enviar notificaciones por Email
+exports.sendNotificationEmail = async (req, res) => {
+    try {
+        const { msg, orderDetails, business } = req.body;
+        const order = orderDetails; // Renombramos para claridad
+
+        // Configuración del transporter (Ejemplo con un servicio como SendGrid, Resend, etc.)
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.resend.com', // El servidor de la "oficina de correos"
+            port: 465,               // Puerto seguro
+            secure: true,            // Usa encriptación SSL/TLS
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+
+        const subject = `Nuevo Pedido Online - ${business.appName}`;
+        // Construimos el contenido HTML para enviar al usuario que acaba de realizar el pedido
+        const htmlContent = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <h2 style="background: ${business.color || '#000000'}; color: #fff; padding: 20px; text-align: center; margin: 0;">
+                    🔔 Gracias por tu pedido, ${order.customerName}
+                </h2>
+                <div style="padding: 20px; border: 1px solid #eee;">
+                    <p style="color: #666; margin-top: 0;">
+                        <strong>Teléfono:</strong> ${order.customerPhone} | 
+                        <strong>Email:</strong> ${order.customerEmail || 'N/A'}
+                    </p>
+                    <p style="color: #666; margin-top: 0;">
+                        <strong>Entrega:</strong> ${order.deliveryType === 'pickup' ? 'Recolección' : 'En Domicilio'} (${order.deliveryZone || 'N/A'})
+                    </p>
+                    
+                    <h3 style="margin-top: 30px; border-bottom: 2px solid #eee; padding-bottom: 5px;">
+                        Detalle de tu pedido
+                    </h3>
+                    <ul style="list-style: none; padding: 0;">
+                        ${
+                            order.cart.map(i => {
+                                let itemHtml = `<li style="margin-bottom: 8px;">
+                                    <strong>▪️ ${i.quantity}x ${i.product.name}</strong> ($${(i.unitPrice * i.quantity).toFixed(2)})`;
+                                if (i.selectedOptions && i.selectedOptions.length > 0) {
+                                    const extras = i.selectedOptions.map(o => o.name).join(', ');
+                                    itemHtml += `<br><span style="color: #666; font-size: 13px; padding-left: 20px; display: inline-block;">
+                                        <em>Extras: ${extras}</em>
+                                    </span>`;
+                                }
+                                itemHtml += `</li>`;
+                                return itemHtml;
+                            }).join('')
+                        }
+                    </ul>
+                    
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: right;">
+                        <p style="margin: 5px 0;">Subtotal: $${order.subtotal.toFixed(2)}</p>
+                        <p style="margin: 5px 0;">Envío: $${order.deliveryCost.toFixed(2)}</p>
+                        <p style="margin: 5px 0; font-weight: bold; color: ${business.color || '#000000'}; font-size: 20px;">
+                            Total: $${order.total.toFixed(2)}
+                        </p>
+                        ${order.paymentMethod ? `<p style="font-size: 12px; color: #999;">Método de pago: ${order.paymentMethod}</p>` : ''}
+                    </div>
+
+                    <div style="margin-top: 30px; text-align: center; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                        <a href="https://wa.me/${business.phone}?text=${encodeURIComponent(msg)}" style="background: ${business.color || '#000000'}; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                           Enviar nuevamente por Whatsapp
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        await transporter.sendMail({ 
+            from: '"Sistema de Pedidos" <pedidos@tengo-hambre.com>',
+            to: order.customerEmail, 
+            subject: subject, 
+            html: htmlContent 
+        });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error enviando email de notificación:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 

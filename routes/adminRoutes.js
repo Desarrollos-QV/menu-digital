@@ -40,4 +40,6 @@ router.get('/products', (req, res) => {
     res.sendFile(views('products.html'));
 });
 
+
+
 module.exports = router;

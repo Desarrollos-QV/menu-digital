@@ -11,4 +11,7 @@ router.post('/order', analyticsController.registerOrder);
 router.get('/dashboard', auth, analyticsController.getDashboardStats);
 router.post('/pos/sale', auth, analyticsController.createPosOrder);
 
+// Rutas para enviar notificaciones por Email
+router.post('/send-notification-email', analyticsController.sendNotificationEmail);
+
 module.exports = router;
