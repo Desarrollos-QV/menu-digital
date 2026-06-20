@@ -101,7 +101,7 @@ exports.registerOrder = async (req, res) => {
             if (product && product.stock !== null && product.stock !== undefined) {
                 
                 // Validamos si el producto tiene variantes
-                if (item.selectedOptions && item.selectedOptions.length > 0) {
+                if (product.variants && product.variants.length > 0 && item.selectedOptions && item.selectedOptions.length > 0) {
                     // Lógica de Variantes
                     for (const option of item.selectedOptions) {
                         const variant = product.variants.find(v => v.name === option.name);
@@ -110,7 +110,7 @@ exports.registerOrder = async (req, res) => {
                         }
                     }
                 } else {
-                    // Lógica de Producto Simple
+                    // Lógica de Producto Simple (o fallback si no hay variantes definidas en el modelo)
                     product.stock -= item.quantity;
                 }
                 
@@ -119,7 +119,7 @@ exports.registerOrder = async (req, res) => {
         }
 
 
-        res.json({ status: 'ok' });
+        res.json({ status: 'ok', orderId: newOrder._id });
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
@@ -241,7 +241,7 @@ exports.createPosOrder = async (req, res) => {
             if (product && product.stock !== null && product.stock !== undefined) {
                 
                 // Validamos si el producto tiene variantes
-                if (item.selectedOptions && item.selectedOptions.length > 0) {
+                if (product.variants && product.variants.length > 0 && item.selectedOptions && item.selectedOptions.length > 0) {
                     // Lógica de Variantes
                     for (const option of item.selectedOptions) {
                         const variant = product.variants.find(v => v.name === option.name);
@@ -250,7 +250,7 @@ exports.createPosOrder = async (req, res) => {
                         }
                     }
                 } else {
-                    // Lógica de Producto Simple
+                    // Lógica de Producto Simple (o fallback si no hay variantes definidas en el modelo)
                     product.stock -= item.qty;
                 }
                 

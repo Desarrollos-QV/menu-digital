@@ -105,6 +105,11 @@ createApp({
         const isRecovering = ref(false); // Modo manual de poner teléfono
         const customer = ref([]);
         
+        // Success Screen Logic
+        const showSuccessScreen = ref(false);
+        const lastOrderNumber = ref('');
+        const lastWhatsAppUrl = ref('');
+        
         // --- LÓGICA DE SLUG ACTUALIZADA ---
         const getSlug = () => {
             // 1. Intentar obtener de ?slug=nombre
@@ -378,10 +383,7 @@ createApp({
                 return toastr.warning('Nombre y Telefono requeridos');
             }
 
-            // Validamos Email
-            if (!customerEmail.value.trim()) {
-                return toastr.warning('Email requerido');
-            }
+            // Validamos Email (Se valida solo para Stripe en processStripePayment)
 
             if (paymentMethod.value === 'cash' && (!customerHowToPay.value || !customerHowToPay.value.toString().trim())) {
                 return toastr.warning('Por favor ingresa con cuánto vas a pagar');
@@ -449,6 +451,16 @@ createApp({
         };
 
         const processStripePayment = async () => {
+            if (!customerEmail.value || !customerEmail.value.trim()) {
+                stripePaymentError.value = 'El correo electrónico es obligatorio para recibir tu comprobante.';
+                return;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(customerEmail.value.trim())) {
+                stripePaymentError.value = 'Por favor ingresa un correo electrónico válido.';
+                return;
+            }
+
             isProcessingPayment.value = true;
             stripePaymentError.value = '';
 
@@ -532,7 +544,7 @@ createApp({
                 customerName: customerName.value,
                 customerId: (cs._value) ? cs._value._id : null,
                 customerPhone: customerPhone.value,
-                customerEmail: customerEmail.value,
+                customerEmail: customerEmail.value || '',
                 deliveryType: deliveryType.value,
                 customerStreet: deliveryType.value === 'delivery' ? customerStreet.value : '',
                 customerColony: deliveryType.value === 'delivery' ? (selectedColonia.value?.name || customerColony.value) : '',
@@ -555,34 +567,51 @@ createApp({
                 }
             };
 
-            // Enviar email de notificación al restaurante
-            console.log({
-                    msg,
-                    orderDetails: dataReq,
-                    business: config.value
+            // Enviar email de notificación al restaurante si es pago por Stripe
+            if(finalPaymentMethod === 'stripe') {
+                await fetch('/api/analytics/send-notification-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        msg,
+                        orderDetails: dataReq,
+                        business: config.value
+                    })
                 });
-            await fetch('/api/analytics/send-notification-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    msg,
-                    orderDetails: dataReq,
-                    business: config.value
-                })
-            });
+            }
 
             // // 2. Guardar Analytics el pedido
-            await fetch('/api/analytics/order', {
+            const orderRes = await fetch('/api/analytics/order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataReq)
             });
 
-            // 2. Abrir Whatsapp
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            let orderId = '';
+            if (orderRes.ok) {
+                const resData = await orderRes.json();
+                orderId = resData.orderId || '';
+            }
+
+            if (orderId) {
+                lastOrderNumber.value = orderId.slice(-6).toUpperCase();
+            } else {
+                lastOrderNumber.value = Math.floor(100000 + Math.random() * 900000).toString();
+            }
+
+            const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+            lastWhatsAppUrl.value = whatsappUrl;
+
+            // Intentar abrir Whatsapp automáticamente (puede bloquearse en iOS pero se compensa con el botón de éxito)
+            try {
+                window.open(whatsappUrl, '_blank');
+            } catch (e) {
+                console.error("Error al abrir WhatsApp automáticamente:", e);
+            }
 
             cart.value = [];          // Vaciamos el arreglo
             showCartModal.value = false; // Cerramos el modal
+            showSuccessScreen.value = true; // Mostramos la pantalla de éxito
             toastr.success('¡Pedido enviado! Gracias por tu compra.');
         };
 
@@ -768,6 +797,20 @@ createApp({
             });
         };
 
+        const sendWhatsAppOrderManual = () => {
+            if (lastWhatsAppUrl.value) {
+                window.open(lastWhatsAppUrl.value, '_blank');
+            } else {
+                toastr.error('No se encontró la URL de WhatsApp del pedido.');
+            }
+        };
+
+        const goToMenu = () => {
+            showSuccessScreen.value = false;
+            lastOrderNumber.value = '';
+            lastWhatsAppUrl.value = '';
+        };
+
         const toggleTheme = () => { isDark.value = !isDark.value; updateHtmlClass(); localStorage.setItem('theme', isDark.value ? 'dark' : 'light'); };
         const updateHtmlClass = () => document.documentElement.classList.toggle('dark', isDark.value);
         const initTheme = () => { if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) isDark.value = true; updateHtmlClass(); };
@@ -803,7 +846,9 @@ createApp({
             openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
             isBusinessOpen, todaySchedule,
             alertBussinesClose,
-            formatTime
+            formatTime,
+            showSuccessScreen, lastOrderNumber, lastWhatsAppUrl,
+            sendWhatsAppOrderManual, goToMenu
         };
     }
 }).mount('#app');

@@ -47,7 +47,48 @@
     </div>
 
     <template v-else>
-        <!-- HEADER -->
+        <!-- PANTALLA DE ÉXITO DE COMPRA -->
+        <div v-if="showSuccessScreen" class="min-h-[85vh] flex items-center justify-center p-4">
+            <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800/50 p-6 md:p-8 text-center animate-fade-in">
+                <!-- Icono de éxito -->
+                <div class="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center text-white text-5xl shadow-lg shadow-emerald-500/30 mb-6 mx-auto animate-pulse">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                
+                <h3 class="text-slate-500 dark:text-slate-400 text-base font-semibold">Gracias por tu compra,</h3>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white mt-1">ha sido realizada con éxito</h2>
+                <p class="text-sm font-medium text-slate-400 mt-2">Número de pedido #{{ lastOrderNumber }}</p>
+                
+                <!-- Tarjeta informativa de Pago Seguro -->
+                <div class="bg-slate-50 dark:bg-slate-950 rounded-2xl p-5 border border-slate-100 dark:border-slate-800/80 my-6">
+                    <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-500 text-xl mx-auto mb-3">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Tu pago es 100% seguro y respaldado por <strong class="text-slate-700 dark:text-slate-350">{{ config.appName }}</strong>, en dado caso que no te llegue tu pedido comunícate al
+                    </p>
+                    <a :href="'tel:' + config.phone" class="text-emerald-500 hover:text-emerald-600 font-extrabold text-2xl block mt-2 mb-1 tracking-wide">
+                        {{ config.phone }}
+                    </a>
+                    <span class="text-xs text-slate-400">Y te resolveremos en seguida</span>
+                </div>
+                
+                <!-- Botones de Acción -->
+                <div class="space-y-3">
+                    <button @click="sendWhatsAppOrderManual" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition active:scale-95 text-base cursor-pointer">
+                        <i class="fa-brands fa-whatsapp text-xl"></i>
+                        <span>Enviar pedido por WhatsApp</span>
+                    </button>
+                    
+                    <button @click="goToMenu" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex items-center justify-center transition active:scale-95 text-base cursor-pointer">
+                        <span>Volver al menú</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <template v-else>
+            <!-- HEADER -->
         <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm px-4 pt-4 pb-3 transition-all duration-300 border-b border-transparent dark:border-slate-800" 
                 :class="{'shadow-md dark:shadow-slate-900/50': scrollY > 10}">
             <div class="max-w-7xl mx-auto">
@@ -247,15 +288,9 @@
                                 <input v-model="customerName" type="text" placeholder="Ej: Juan Pérez" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4 mb-4 ">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Telefono</label>
-                                    <input v-model="customerPhone" type="tel" placeholder="Ej: 1234567890" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Email</label>
-                                    <input v-model="customerEmail" type="email" placeholder="Ej: [EMAIL_ADDRESS]" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
-                                </div>
+                            <div class="mb-4">
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Telefono</label>
+                                <input v-model="customerPhone" type="tel" placeholder="Ej: 1234567890" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                             </div>
 
                             <template v-if="deliveryType === 'delivery'">
@@ -674,6 +709,7 @@
             </div>
         </div>
 
+        </template>
     </template>
 
     <!-- STRIPE PAYMENT MODAL -->
@@ -696,6 +732,35 @@
                     <i v-if="isProcessingPayment" class="fa-solid fa-circle-notch fa-spin"></i>
                     <span v-else>Pagar ${{ cartTotalPrice?.toFixed(2) }}</span>
                 </button>
+
+                <!-- Separador con Icono de Correo -->
+                <div class="relative flex py-5 items-center">
+                    <div class="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
+                    <span class="flex-shrink mx-4 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-full w-8 h-8 flex items-center justify-center border border-slate-200 dark:border-slate-700 text-xs">
+                        <i class="fa-regular fa-envelope"></i>
+                    </span>
+                    <div class="flex-grow border-t border-slate-100 dark:border-slate-800"></div>
+                </div>
+
+                <!-- Campo de Entrada de Correo Obligatorio -->
+                <div class="mb-4 text-left">
+                    <h4 class="text-sm font-bold text-slate-800 dark:text-white mb-1">Para enviarte tu recibo de pago</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Ingresa tu correo electrónico. Es obligatorio para que recibas tu comprobante.</p>
+                    
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+                            <i class="fa-regular fa-envelope"></i>
+                        </div>
+                        <input type="email" v-model="customerEmail" placeholder="Correo electrónico *" required
+                               class="block w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent text-sm">
+                    </div>
+                </div>
+
+                <!-- Leyenda de Seguridad -->
+                <div class="flex items-center gap-1.5 justify-center text-slate-400 dark:text-slate-500 text-xs mt-5">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span>Tu información está segura y protegida.</span>
+                </div>
             </div>
         </div>
     </div>
