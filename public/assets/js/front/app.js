@@ -602,11 +602,21 @@ createApp({
             const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
             lastWhatsAppUrl.value = whatsappUrl;
 
-            // Intentar abrir Whatsapp automáticamente (puede bloquearse en iOS pero se compensa con el botón de éxito)
+            // Intentar abrir Whatsapp automáticamente (evitamos bloqueo en iOS/móviles usando redirección de pestaña)
             try {
-                window.open(whatsappUrl, '_blank');
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    window.location.href = whatsappUrl;
+                } else {
+                    const newWindow = window.open(whatsappUrl, '_blank');
+                    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                        // Fallback si el navegador bloquea la ventana emergente en escritorio
+                        window.location.href = whatsappUrl;
+                    }
+                }
             } catch (e) {
                 console.error("Error al abrir WhatsApp automáticamente:", e);
+                window.location.href = whatsappUrl;
             }
 
             cart.value = [];          // Vaciamos el arreglo
@@ -799,7 +809,20 @@ createApp({
 
         const sendWhatsAppOrderManual = () => {
             if (lastWhatsAppUrl.value) {
-                window.open(lastWhatsAppUrl.value, '_blank');
+                try {
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        window.location.href = lastWhatsAppUrl.value;
+                    } else {
+                        const newWindow = window.open(lastWhatsAppUrl.value, '_blank');
+                        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                            window.location.href = lastWhatsAppUrl.value;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error al abrir WhatsApp manualmente:", e);
+                    window.location.href = lastWhatsAppUrl.value;
+                }
             } else {
                 toastr.error('No se encontró la URL de WhatsApp del pedido.');
             }
