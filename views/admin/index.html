@@ -3036,20 +3036,24 @@
             </div>
 
             <!-- KPIs -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 shrink-0">
-                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 p-5 bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 shrink-0">
+                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-slate-400 uppercase font-bold mb-1">Total Pedidos</p>
                     <p class="text-3xl font-black text-slate-800 dark:text-white">{{ saas.bizOrdersKpis.value.totalOrders }}</p>
                 </div>
-                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm">
+                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-emerald-400 uppercase font-bold mb-1">Ingresos Totales</p>
                     <p class="text-3xl font-black text-emerald-600">${{ saas.bizOrdersKpis.value.totalRevenue?.toFixed(2) }}</p>
                 </div>
-                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm">
+                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-blue-400 uppercase font-bold mb-1">Pedidos Delivery</p>
                     <p class="text-3xl font-black text-blue-500">{{ saas.bizOrdersKpis.value.totalDelivery }}</p>
                 </div>
-                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm">
+                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
+                    <p class="text-xs text-indigo-400 uppercase font-bold mb-1">Generado por Stripe</p>
+                    <p class="text-3xl font-black text-indigo-500">${{ saas.bizOrdersKpis.value.totalStripe?.toFixed(2) || '0.00' }}</p>
+                </div>
+                <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-orange-400 uppercase font-bold mb-1">
                         <span v-if="!saas.bizOrdersRangeApplied.value">Deuda Total Pendiente</span>
                         <span v-else>Deuda Generada</span>

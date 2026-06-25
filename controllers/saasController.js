@@ -525,6 +525,9 @@ exports.getBusinessOrders = async (req, res) => {
         const allOrders   = await Order.find(filter).lean();
         const totalRevenue = allOrders.reduce((s, o) => s + (o.total || 0), 0);
         const totalDelivery = allOrders.filter(o => o.deliveryType === 'delivery' || o.customerStreet).length;
+        const totalStripe = allOrders
+            .filter(o => o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded' && o.status !== 'cancelled')
+            .reduce((s, o) => s + (o.total || 0), 0);
 
         let totalDebt = 0;
         
@@ -567,7 +570,8 @@ exports.getBusinessOrders = async (req, res) => {
                 totalOrders: total,
                 totalRevenue: parseFloat(totalRevenue.toFixed(2)),
                 totalDelivery,
-                totalDebt: parseFloat(totalDebt.toFixed(2))
+                totalDebt: parseFloat(totalDebt.toFixed(2)),
+                totalStripe: parseFloat(totalStripe.toFixed(2))
             }
         });
     } catch (error) {

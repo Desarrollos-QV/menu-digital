@@ -366,7 +366,7 @@ export function useSaas() {
     const bizOrdersBusiness  = ref(null);       // { _id, name, slug }
     const bizOrders          = ref([]);
     const bizOrdersLoading   = ref(false);
-    const bizOrdersKpis      = ref({ totalOrders: 0, totalRevenue: 0, totalDelivery: 0 });
+    const bizOrdersKpis      = ref({ totalOrders: 0, totalRevenue: 0, totalDelivery: 0, totalDebt: 0, totalStripe: 0 });
     const bizOrdersPagination = ref({ total: 0, page: 1, limit: 25, pages: 1 });
 
     // Filtros de fecha para Ventas de Negocio
