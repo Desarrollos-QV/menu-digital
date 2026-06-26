@@ -3043,7 +3043,7 @@
                 </div>
                 <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-emerald-400 uppercase font-bold mb-1">Ingresos Totales</p>
-                    <p class="text-3xl font-black text-emerald-600">${{ saas.bizOrdersKpis.value.totalRevenue?.toFixed(2) }}</p>
+                    <p class="text-3xl font-black text-emerald-600">${{ saas.bizOrdersKpis.value.totalRevenue?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) }}</p>
                 </div>
                 <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-blue-400 uppercase font-bold mb-1">Pedidos Delivery</p>
@@ -3051,14 +3051,14 @@
                 </div>
                 <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-indigo-400 uppercase font-bold mb-1">Generado por Stripe</p>
-                    <p class="text-3xl font-black text-indigo-500">${{ saas.bizOrdersKpis.value.totalStripe?.toFixed(2) || '0.00' }}</p>
+                    <p class="text-3xl font-black text-indigo-500">${{ saas.bizOrdersKpis.value.totalStripe?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00' }}</p>
                 </div>
                 <div class="bg-white dark:bg-slate-700 rounded-2xl p-4 text-center shadow-sm border-slate-700">
                     <p class="text-xs text-orange-400 uppercase font-bold mb-1">
                         <span v-if="!saas.bizOrdersRangeApplied.value">Deuda Total Pendiente</span>
                         <span v-else>Deuda Generada</span>
                     </p>
-                    <p class="text-3xl font-black text-orange-500">${{ saas.bizOrdersKpis.value.totalDebt?.toFixed(2) || '0.00' }}</p>
+                    <p class="text-3xl font-black text-orange-500">${{ saas.bizOrdersKpis.value.totalDebt?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00' }}</p>
                 </div>
             </div>
 
