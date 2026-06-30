@@ -527,7 +527,7 @@ exports.getBusinessOrders = async (req, res) => {
         const totalDelivery = allOrders.filter(o => o.deliveryType === 'delivery' || o.customerStreet).length;
         const totalStripe = allOrders
             .filter(o => o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded' && o.status !== 'cancelled')
-            .reduce((s, o) => s + ((o.total || 0) - (o.paymentFee || 0) - (o.deliveryCost || 0)), 0);
+            .reduce((s, o) => s + ((o.total || 0) - (o.paymentFee || 0)), 0);
 
         let totalDebt = 0;
         

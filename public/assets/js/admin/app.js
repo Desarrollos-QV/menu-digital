@@ -543,7 +543,6 @@ createApp({
             }
 
             if (!item.children) {
-                console.log("Visualizando pagina : " , currentView.value)
 
                 // Vistas Comunes (Admin y Negocio)
                 if (item.view === 'media') media.fetchMedia();
