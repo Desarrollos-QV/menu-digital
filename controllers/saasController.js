@@ -498,7 +498,7 @@ exports.getBusinessOrders = async (req, res) => {
         const skip  = (page - 1) * limit;
         const { from, to } = req.query;
 
-        const business = await Business.findById(bizId).select('name slug commissionPayments');
+        const business = await Business.findById(bizId).select('name slug commissionPayments commissionWebType commissionWebAmount');
         if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
 
         const filter = { businessId: bizId };
@@ -527,7 +527,19 @@ exports.getBusinessOrders = async (req, res) => {
         const totalDelivery = allOrders.filter(o => o.deliveryType === 'delivery' || o.customerStreet).length;
         const totalStripe = allOrders
             .filter(o => o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded' && o.status !== 'cancelled')
-            .reduce((s, o) => s + ((o.total || 0) - (o.paymentFee || 0)), 0);
+            .reduce((s, o) => {
+                let amount = (o.total || 0) - (o.paymentFee || 0);
+                const subtotal = o.subtotal || (o.total - (o.tax || 0));
+                let platformCommission = 0;
+                
+                if (business.commissionWebType === 'percent') {
+                    platformCommission = subtotal * ((business.commissionWebAmount || 0) / 100);
+                } else if (business.commissionWebType === 'fixed') {
+                    platformCommission = business.commissionWebAmount || 0;
+                }
+                
+                return s + (amount - platformCommission);
+            }, 0);
 
         let totalDebt = 0;
         
