@@ -5,9 +5,14 @@ const marketplaceController = require('../controllers/marketplaceController');
 const categoryStoreController = require('../controllers/categoryStoreController'); // <-- Importar
 
 
+// GET /api/public/maps-key
+router.get('/maps-key', (req, res) => {
+    res.json({ apiKey: process.env.GOOGLE_MAPS_APIKEY });
+});
 // API: Obtener listado de negocios (JSON)
 // GET /explore/api/list
 router.get('/list', marketplaceController.getAllBusinesses);
+router.get('/promos', marketplaceController.getPromos);
 router.post('/customers', marketplaceController.registerCustomer);
 router.post('/customers/login', marketplaceController.getCustomerStatus);
 // Ruta pública para obtener Categorías Globales (Para registro)
@@ -21,5 +26,6 @@ router.post('/register', publicMenuController.registerBusiness);
 
 // Ruta para guardar review
 router.post('/reviews', publicMenuController.submitReview);
+
 
 module.exports = router;

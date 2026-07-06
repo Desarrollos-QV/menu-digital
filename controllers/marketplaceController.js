@@ -1,6 +1,7 @@
 const Business = require('../models/Business');
 const Banner = require('../models/Banner');
 const Customer = require('../models/Customer');
+const Product = require('../models/Product');
 
 // Obtener todos los negocios para el directorio
 exports.getAllBusinesses = async (req, res) => {
@@ -87,4 +88,17 @@ exports.getCustomerStatus = async (req, res) => {
         });
 
     } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+// Obtener todos los productos marcados como promoción
+exports.getPromos = async (req, res) => {
+    try {
+        const promos = await Product.find({ isPromo: true, active: true })
+            .populate('businessId')
+            .sort({ updatedAt: -1 });
+        res.json(promos);
+    } catch (error) {
+        console.error('Error al obtener promociones:', error);
+        res.status(500).json({ message: 'Error al obtener promociones' });
+    }
 };

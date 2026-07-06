@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
     <!-- Fuentes & Iconos -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- JQUERY (Requerido para Toastr) -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -20,175 +20,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- SWEETALERT2 (Alertas Modales) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <link rel="stylesheet" href="../assets/css/front.css">
-    <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-        .dark .glass-nav {
-            background: rgba(15, 23, 42, 0.85);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .hero-pattern {
-            background-color: #ffffff;
-            background-image: radial-gradient(#6366f1 0.5px, transparent 0.5px), radial-gradient(#6366f1 0.5px, #ffffff 0.5px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            opacity: 0.1;
-        }
-        .dark .hero-pattern { opacity: 0.05; background-color: #0f172a; background-image: radial-gradient(#fff 0.5px, transparent 0.5px), radial-gradient(#fff 0.5px, #0f172a 0.5px); }
-
-        [v-cloak] { display: none; }
-        
-        /* Transiciones suaves para tarjetas */
-        .biz-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .biz-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        
-        .thin-scroll::-webkit-scrollbar { width: 4px; }
-        .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-        /* Map view */
-        #pickup-map { width: 100%; height: 100%; min-height: 400px; }
-
-        /* Mode toggle pill */
-        .mode-toggle-pill {
-            display: inline-flex;
-            background: #f1f5f9;
-            border-radius: 9999px;
-            padding: 3px;
-            gap: 2px;
-        }
-        .dark .mode-toggle-pill { background: #1e293b; }
-        .mode-btn {
-            padding: 6px 18px;
-            border-radius: 9999px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            border: none;
-            transition: all .25s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .mode-btn.active {
-            background: #fff;
-            color: #6366f1;
-            box-shadow: 0 2px 8px rgba(0,0,0,.12);
-        }
-        .dark .mode-btn.active { background: #334155; color: #818cf8; }
-        .mode-btn:not(.active) { color: #64748b; background: transparent; }
-        .mode-btn:not(.active):hover { color: #6366f1; }
-
-        /* pickup list card */
-        .pickup-card { transition: transform .2s, box-shadow .2s; border-left: 3px solid transparent; }
-        .pickup-card:hover { transform: translateX(3px); box-shadow: 0 4px 12px rgba(99,102,241,.15); border-left-color: #6366f1; }
-        .pickup-card.highlighted { border-left-color: #6366f1; background: #eef2ff; }
-        .dark .pickup-card.highlighted { background: #1e1b4b; }
-
-        /* Google info window reset */
-        .gm-style .gm-style-iw-c { border-radius: 14px !important; padding: 0 !important; box-shadow: 0 10px 30px rgba(0,0,0,.18) !important; }
-        .gm-style .gm-style-iw-d { overflow: hidden !important; padding: 0 !important; }
-        .gm-style .gm-style-iw-tc::after { display: none; }
-
-        /* ===== MOBILE DRAWER ===== */
-        .mobile-drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(4px); z-index: 200;
-            transition: opacity .3s ease;
-        }
-        .mobile-drawer {
-            position: fixed; top: 0; left: 0; height: 100dvh;
-            width: 82vw; max-width: 320px;
-            background: #fff;
-            z-index: 201;
-            display: flex; flex-direction: column;
-            box-shadow: 8px 0 40px rgba(0,0,0,0.18);
-            transform: translateX(-100%);
-            transition: transform .32s cubic-bezier(.4,0,.2,1);
-            border-radius: 0 24px 24px 0;
-            overflow: hidden;
-        }
-        .dark .mobile-drawer { background: #0f172a; }
-        .mobile-drawer.open { transform: translateX(0); }
-        .mobile-drawer-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 20px 20px 14px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            flex-shrink: 0;
-        }
-        .dark .mobile-drawer-header { border-bottom-color: rgba(255,255,255,0.06); }
-        .mobile-drawer-section {
-            padding: 16px 20px 8px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-        .dark .mobile-drawer-section { border-bottom-color: rgba(255,255,255,0.05); }
-        .mobile-drawer-label {
-            font-size: 10px; font-weight: 800; letter-spacing: .08em;
-            text-transform: uppercase; color: #94a3b8; margin-bottom: 10px;
-        }
-        .mobile-drawer-item {
-            display: flex; align-items: center; gap: 12px;
-            padding: 11px 14px; border-radius: 14px;
-            font-weight: 600; font-size: 14px;
-            color: #334155; cursor: pointer;
-            transition: background .2s, color .2s;
-            text-decoration: none; width: 100%;
-            background: none; border: none; text-align: left;
-        }
-        .dark .mobile-drawer-item { color: #cbd5e1; }
-        .mobile-drawer-item:hover { background: #f1f5f9; color: #6366f1; }
-        .dark .mobile-drawer-item:hover { background: #1e293b; color: #818cf8; }
-        .mobile-drawer-item .icon-wrap {
-            width: 36px; height: 36px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 15px; flex-shrink: 0;
-            background: #f1f5f9;
-        }
-        .dark .mobile-drawer-item .icon-wrap { background: #1e293b; }
-        .mobile-drawer-item.danger { color: #ef4444; }
-        .mobile-drawer-item.danger .icon-wrap { background: #fff1f2; color: #ef4444; }
-        .dark .mobile-drawer-item.danger .icon-wrap { background: #450a0a;  }
-        .mobile-drawer-item.danger:hover { background: #fff1f2; color: #dc2626; }
-        .dark .mobile-drawer-item.danger:hover { background: #450a0a; }
-        /* Location pill inside drawer */
-        .drawer-location-btn {
-            display: flex; align-items: center; gap: 10px;
-            background: #f8fafc; border: 1.5px solid #e2e8f0;
-            border-radius: 14px; padding: 12px 16px;
-            cursor: pointer; transition: border-color .2s, box-shadow .2s;
-            width: 100%;
-        }
-        .dark .drawer-location-btn { background: #1e293b; border-color: #334155; }
-        .drawer-location-btn:hover { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
-    </style>
-    <!-- Google Maps API -->
-    <script>
-        function initMarketplaceMap() {
-            window._mapsReady = true;
-            document.dispatchEvent(new CustomEvent('maps-ready'));
-        }
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqYcfefGddEiqR-OlfaLMSWP5m2RdMk18&callback=initMarketplaceMap" async defer></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-primary selection:text-white">
-
     <div id="app" v-cloak class="min-h-screen flex flex-col">
 
         <!-- ===== MOBILE DRAWER OVERLAY ===== -->
-        <div v-if="mobileDrawerOpen" class="mobile-drawer-overlay md:hidden" @click="mobileDrawerOpen = false"></div>
+        <div v-if="mobileDrawerOpen" class="mobile-drawer-overlay" @click="mobileDrawerOpen = false"></div>
 
         <!-- ===== MOBILE SIDE DRAWER ===== -->
-        <aside class="mobile-drawer md:hidden" :class="{ open: mobileDrawerOpen }" id="mobile-drawer">
+        <aside class="mobile-drawer" :class="{ open: mobileDrawerOpen }" id="mobile-drawer">
             <!-- Drawer Header -->
             <div class="mobile-drawer-header">
                 <div class="flex items-center gap-2">
@@ -261,63 +102,57 @@
         </aside>
 
         <!-- NAVBAR RESPONSIVE -->
-        <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300" :class="{'py-3': !scrolled, 'py-2 shadow-sm': scrolled}">
-            <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-12 md:h-14">
-
-                    <!-- Lado Izquierdo: Hamburger (mobile) + Logo -->
+        <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300 py-3 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-14 md:h-16">
+                    
+                    <!-- Lado Izquierdo: Menu Hamburger + Logo -->
                     <div class="flex items-center gap-3">
-
-                        <!-- Botón Hamburger (solo mobile) -->
+                        <!-- Botón Hamburger -->
                         <button @click="mobileDrawerOpen = true"
-                            class="md:hidden w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition flex-shrink-0"
+                            class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition flex-shrink-0"
                             id="hamburger-btn" aria-label="Abrir menú">
                             <i class="fa-solid fa-bars text-base"></i>
                         </button>
-
+                        
                         <!-- Logo -->
                         <a href="/" class="flex items-center gap-2 group cursor-pointer">
-                            <div class="w-8 h-8 md:w-10 md:h-10 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition">
-                                <img src="/assets/images/logo.jpg" alt="">
+                            <div class="w-8 h-8 md:w-9 md:h-9 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition flex-shrink-0">
+                                <img src="/assets/images/logo.jpg" alt="" class="rounded-xl">
                             </div>
-                            <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
                         </a>
-
-                        <!-- Selector Ubicación (solo Desktop) -->
-                        <div class="hidden md:flex flex-col border-l border-slate-200 dark:border-slate-700 pl-6 cursor-pointer group" @click="showLocationModal = true">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Municipio Seleccionado</span>
-                            <div class="flex items-center gap-1 hover:opacity-80 transition">
-                                <span class="text-brand font-bold text-sm truncate max-w-[200px]">
-                                    {{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}
-                                </span>
-                                <i class="fa-solid fa-chevron-down text-xs text-brand"></i>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- Acciones Derecha -->
-                    <div class="flex items-center gap-3 md:gap-4">
+                    <!-- Lado Medio: Selector Ubicación (Pin Rojo + Nombre Colonia + Caret ∨) -->
+                    <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition py-1.5 px-3 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700" @click="showLocationModal = true">
+                        <i class="fa-solid fa-location-dot text-brand text-sm md:text-base animate-bounce-slow"></i>
+                        <span class="text-slate-800 dark:text-white font-bold text-xs md:text-sm truncate max-w-[150px] md:max-w-[400px]">
+                            {{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}
+                        </span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                    </div>
 
-                        <!-- Blog link (solo Desktop) -->
+                    <!-- Lado Derecho: Acciones de Cuenta -->
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <!-- Blog link (Desktop) -->
                         <a href="/blog.html" class="hidden md:flex text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition items-center gap-1.5 mr-2">
                             <i class="fa-solid fa-newspaper text-brand"></i> Blog
                         </a>
 
                         <!-- ESTADO: LOGUEADO -->
                         <div v-if="currentUser" class="relative group z-50">
-                            <button class="flex items-center gap-2 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
-                                <span class="text-sm font-bold text-slate-700 dark:text-slate-200 hidden sm:block ml-2">{{ firstName }}</span>
-                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+                            <button class="flex items-center gap-1.5 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-200 hidden sm:block ml-1">{{ firstName }}</span>
+                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm">
                                     {{ userInitial }}
                                 </div>
                             </button>
 
-                            <!-- Dropdown User (solo Desktop hover) -->
+                            <!-- Dropdown User (Desktop hover) -->
                             <div class="hidden md:block absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 animate-fade-in">
                                 <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
                                     <p class="text-xs text-slate-400 font-bold">Hola, {{ currentUser.customer.name }}</p>
                                 </div>
-                                <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                                 <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold">
                                     <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
                                 </button>
@@ -325,109 +160,30 @@
                         </div>
 
                         <!-- ESTADO: NO LOGUEADO (INVITADO) -->
-                        <button v-else @click="showUserModal = true" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition group" title="Iniciar Sesión / Registro">
-                            <i class="fa-regular fa-user group-hover:scale-110 transition-transform"></i>
+                        <button v-else @click="showUserModal = true" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition shadow-sm" title="Iniciar Sesión / Registro">
+                            <i class="fa-regular fa-user"></i>
                         </button>
-
                     </div>
+
                 </div>
 
-                <!-- Mobile: Toggle visible debajo del header en móvil 
-                <div class="md:hidden mt-2 flex justify-center">
-                    <div class="mode-toggle-pill">
-                        <button class="mode-btn" :class="{ active: deliveryMode === 'delivery' }" @click="setDeliveryMode('delivery')">
-                            <i class="fa-solid fa-motorcycle"></i><span>Entrega</span>
-                        </button>
-                        <button class="mode-btn" :class="{ active: deliveryMode === 'pickup' }" @click="setDeliveryMode('pickup')">
-                            <i class="fa-solid fa-store"></i><span>Recolectar</span>
-                        </button>
-                    </div>
-                </div>-->
-                
-                <!-- Mobile Search (solo en modo entrega en móvil) -->
-                <div v-show="deliveryMode === 'delivery'" class="md:hidden mt-2 pb-1">
-                    <div class="relative group">
+                <!-- Buscador de comida debajo del header en móvil y desktop -->
+                <div v-show="deliveryMode === 'delivery'" class="pb-2 pt-1">
+                    <div class="relative max-w-2xl mx-auto">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fa-solid fa-search text-slate-400"></i>
+                            <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
                         </div>
-                        <input v-model="searchQuery" type="text" class="block w-full pl-11 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-brand outline-none transition-all placeholder:text-slate-400" placeholder="¿Qué se te antoja hoy?">
+                        <input v-model="searchQuery" type="text" 
+                            class="block w-full pl-11 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 rounded-full text-sm font-semibold focus:ring-2 focus:ring-brand focus:bg-white outline-none transition-all placeholder:text-slate-400/90 shadow-inner-sm" 
+                            placeholder="Buscar en Tengo Hambre...">
                     </div>
                 </div>
+
             </div>
         </nav>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 pt-32 md:pt-24 pb-12">
-            
-            <!-- HERO SLIDER SECTION (oculto en modo Recolectar) -->
-            <div v-show="deliveryMode === 'delivery'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
-                <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-48 md:h-72 bg-slate-100 dark:bg-slate-800 group">
-                    
-                    <!-- Slides Container -->
-                    <div v-for="(banner, index) in banners" :key="banner._id" 
-                         class="absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center"
-                         :class="{'opacity-100 z-10': activeBanner === index, 'opacity-0 z-0': activeBanner !== index}">
-                        
-                        <!-- Background Image (visible a full, con object-cover) -->
-                        <img :src="'https://tengo-hambre.com/'+banner.imageUrl || 'https://via.placeholder.com/800x400'" 
-                             class="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-[2000ms] ease-out" 
-                             :class="{'scale-110': activeBanner === index, 'scale-100': activeBanner !== index}">
-                        
-                        <!-- Overlay degradado: oscuro en la izquierda (texto) → transparente a la derecha (imagen visible) -->
-                        <div class="absolute inset-0 z-10 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-                        <!-- Degradado inferior sutil para los dots -->
-                        <div class="absolute inset-0 z-10 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                        
-                        <!-- Content -->
-                        <div class="relative z-20 px-6 md:px-12 max-w-2xl text-white">
-                            
-                            <h1 class="text-2xl md:text-5xl font-black mb-2 md:mb-4 leading-tight" style="text-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);">
-                                <span v-html="banner.title"></span>
-                            </h1>
-                            <p class="text-white/95 text-sm md:text-lg mb-6 max-w-md hidden md:block font-medium" style="text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
-                                {{ banner.description }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Slider Controls (Dots) -->
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-                        <button v-for="(banner, index) in banners" :key="index" 
-                                @click="setActiveBanner(index)" 
-                                class="h-2 rounded-full transition-all duration-300 shadow-sm"
-                                :class="activeBanner === index ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'">
-                        </button>
-                    </div>
-
-                    <!-- Arrows -->
-                    <button @click="prevBanner" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100 hidden md:flex">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <button @click="nextBanner" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100 hidden md:flex">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-                
-                <!-- Skeleton Loader para Banners -->
-                <div v-else class="relative rounded-3xl overflow-hidden h-48 md:h-64 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
-            </div>
-
-            <!-- CATEGORÍAS (Sticky Wrapper) -->
-            <div v-show="deliveryMode === 'delivery'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar snap-x items-center">
-                        <button @click="selectedCategory = 'all'" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2"
-                            :class="selectedCategory === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-lg dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
-                            <i class="fa-solid fa-utensils"></i> Todo
-                        </button>
-                        <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2 group"
-                            :class="selectedCategory === cat.id ? 'bg-brand text-white border-brand shadow-lg shadow-brand/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
-                            <span class="group-hover:scale-110 transition-transform duration-200">{{ cat.emoji }}</span> {{ cat.name }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
+        <main class="flex-1 pt-36 md:pt-32 pb-12">
             <!-- Pickup: barra de búsqueda sticky (solo en modo recolectar) -->
             <div v-show="deliveryMode === 'pickup'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-0 transition-all" :class="{'shadow-sm': scrolled}">
                 <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-3">
@@ -464,135 +220,305 @@
 
                 <!-- ========================= MODO ENTREGA (default) ========================= -->
                 <div v-else-if="deliveryMode === 'delivery'">
-                    <!-- TRENDING TOP (Carousel en móvil, Grid destacado en Desktop) -->
-                    <div v-if="!searchQuery && selectedCategory === 'all' && trendingBusinesses.length > 0" class="mb-12">
-                        <div class="flex justify-between items-end mb-6">
+                    
+                    <!-- PROMOS DE HOY (Carrusel Horizontal) -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && promos.length > 0" class="lg:mt-5 mb-5">
+                        <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h2 class="text-2xl md:text-3xl font-black dark:text-white flex items-center gap-2">
-                                    Tendencias <span class="hidden md:inline">de la semana</span> 🔥
-                                </h2>
-                                <p class="text-slate-500 text-sm md:text-base hidden md:block">Los lugares más populares en Tengo Hambre ahora mismo.</p>
+                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
+                                    🔥 PROMOS DE HOY
+                                </h5>
                             </div>
-                            <button class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
-                                Ver todo <i class="fa-solid fa-arrow-right"></i>
-                            </button>
+                            <!-- <button class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
+                                Ver todas <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button> -->
                         </div>
 
-                        <!-- Grid/Carousel -->
-                        <div class="flex overflow-x-auto no-scrollbar -mx-4 px-4 pb-8 md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-6 md:mx-0 md:px-0 md:pb-0 snap-x">
-                            <div v-for="biz in trendingBusinesses" :key="biz._id" @click="goToBusiness(biz)" class="snap-center flex-shrink-0 w-72 md:w-auto biz-card bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700/50 cursor-pointer overflow-hidden group relative mx-2 md:mx-0">
-                                <!-- Imagen -->
-                                <div class="relative h-44 md:h-48 overflow-hidden">
-                                    <img :src="'https://tengo-hambre.com'+biz.avatar || 'https://via.placeholder.com/400x300?text=TengoHambre'" class="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-in-out">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                                    
-                                    <!-- Badges -->
-                                    <div class="absolute top-3 left-3 flex flex-col gap-2">
-                                        <span v-if="biz.promo" class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
-                                            <i class="fa-solid fa-tag"></i> OFERTA
-                                        </span>
-                                        <span class="text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm backdrop-blur-md flex items-center gap-1.5"
-                                            :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500/90 text-white' : 'bg-slate-800/90 text-white'">
-                                            <span class="w-1.5 h-1.5 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-white animate-pulse' : 'bg-slate-400'"></span>
-                                            {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
-                                        </span>
-                                        <span v-if="isBusinessCurrentlyOpen(biz) && getTodayHours(biz)" class="bg-black/50 text-white text-[9px] font-medium px-2 py-0.5 rounded-md backdrop-blur-sm flex items-center gap-1">
-                                            <i class="fa-regular fa-clock text-[8px]"></i> {{ getTodayHours(biz) }}
-                                        </span>
-                                    </div>
-                                    <div class="absolute bottom-3 right-3 bg-white/95 dark:bg-black/80 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
-                                        <i class="fa-solid fa-star text-yellow-400"></i> {{ biz.rating }}
-                                    </div>
-                                </div>
+                        <!-- Horizontal Scroll list -->
+                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 px-4 snap-x">
+                            <div v-for="promo in promos" :key="promo.id" @click="goToBusiness(promo.business)" 
+                                class="snap-start flex-shrink-0 w-[calc((100%-32px)/2.2)] md:w-[calc((100%-32px)/3.2)] lg:w-[calc((100%-32px)/4)] bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700/50 cursor-pointer hover:shadow-lg transition-all duration-300">
                                 
-                                <!-- Info -->
-                                <div class="p-5">
-                                    <div class="flex justify-between items-start mb-1">
-                                        <h3 class="font-bold text-lg leading-tight dark:text-white group-hover:text-brand transition truncate">{{ biz.name }}</h3>
+                                <!-- Promo Image + Tag -->
+                                <div class="relative h-20 md:h-36 w-full bg-slate-100 dark:bg-slate-700">
+                                    <img :src="promo.image" class="w-full h-full object-cover rounded-xl" alt="">
+                                    <span :class="promo.tagClass" class="absolute top-1.5 left-1.5 text-[7px] md:text-[9px] font-black px-1.5 py-0.5 rounded shadow uppercase tracking-wider">
+                                        {{ promo.tag }}
+                                    </span>
+                                </div>
+
+                                <!-- Promo Details -->
+                                <div class="p-2 md:p-4 flex flex-col gap-1.5 md:gap-3">
+                                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center  md:gap-2">
+                                        <h3 class="font-extrabold text-[10px] w-full lg:max-w-[60%] md:text-sm text-slate-800 dark:text-white ">
+                                            {{ promo.title }}
+                                        </h3>
+                                        <h2 class="text-brand font-black text-[27px] text-red-500 shrink-0 leading-none">
+                                            ${{ promo.price }}
+                                        </h2>
                                     </div>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-1">
-                                        {{ biz.tags ? biz.tags.join(' • ') : 'Restaurante' }}
-                                    </p>
-                                    
-                                    <div class="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300">
-                                        <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">
-                                            <i class="fa-regular fa-clock text-brand"></i> {{ biz.time }} min
+
+                                    <!-- Business Info Row -->
+                                    <div class="flex items-center gap-1 md:gap-2 border-t border-slate-50 dark:border-slate-700/50 pt-1.5 md:pt-3">
+                                        <div class="w-5 h-5 md:w-8 md:h-8 rounded-full border border-slate-100 dark:border-slate-700 overflow-hidden flex-shrink-0 bg-slate-50">
+                                            <img :src="promo.business.avatar ? 'https://tengo-hambre.com' + promo.business.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
                                         </div>
-                                        <div class="flex items-center gap-1.5">
-                                            <i class="fa-solid fa-motorcycle text-brand"></i> 
-                                            {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
+                                        <div class="min-w-0 flex-1">
+                                            <p class="font-bold text-[9px] md:text-xs text-slate-700 dark:text-slate-300 truncate">
+                                                {{ promo.business.name }}
+                                            </p>
+                                            <p class="text-[7px] md:text-[10px] text-slate-400 font-semibold flex items-center gap-0.5">
+                                                <i class="fa-regular fa-clock text-[8px] md:text-[9px]"></i> {{ promo.business.time }} min
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
 
-                    <!-- ALL BUSINESSES GRID -->
-                    <div class="animate-fade-in">
-                        <h2 class="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2 dark:text-white">
-                            <span v-if="searchQuery">Resultados de "{{ searchQuery }}"</span>
-                            <span v-else>Todos los restaurantes</span>
-                            <span class="text-sm font-normal text-slate-400 ml-2">({{ filteredBusinesses.length }})</span>
-                        </h2>
-
-                        <div v-if="filteredBusinesses.length === 0" class="text-center py-20 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
-                            <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                                <img src="/assets/images/logo.jpg" alt="">
+                    <!-- FROODS, DESCUBRE TU ANTOJO (Reels de comida) -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && froods.length > 0" class="mb-5"
+                        :class="promos.length === 0 ? 'mt-5' : ''">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
+                                    🎬 FROODS, DESCUBRE TU ANTOJO 🔥
+                                </h5>
                             </div>
-                            <h3 class="font-bold text-xl dark:text-white">Sin resultados</h3>
-                            <p class="text-slate-500">Intenta cambiar los filtros o busca otra cosa.</p>
-                            <button @click="selectedCategory = 'all'; searchQuery = ''" class="mt-4 px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">Ver todo</button>
+                            <!-- <button class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
+                                Ver más <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button> -->
                         </div>
 
-                        <!-- Grid Responsive -->
-                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            <div v-for="biz in filteredBusinesses" :key="biz._id" @click="goToBusiness(biz)" class="biz-card bg-white dark:bg-slate-800 rounded-3xl p-3 shadow-sm hover:shadow-lg border border-slate-100 dark:border-slate-700/50 cursor-pointer group flex flex-row sm:flex-col gap-4 sm:gap-0">
+                        <!-- Horizontal Scroll list -->
+                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 px-4 snap-x">
+                            <div v-for="reel in froods" :key="reel.id" 
+                                class="snap-start flex-shrink-0 w-[calc((100%-36px)/2.2)] md:w-44 flex flex-col gap-2 group">
                                 
-                                <!-- Imagen (Cuadrada en móvil, Rectangular en desktop) -->
-                                <div class="relative w-28 h-28 sm:w-full sm:h-48 shrink-0 overflow-hidden rounded-2xl sm:rounded-2xl sm:mb-4">
-                                    <img :src="(biz.avatar) ? 'https://tengo-hambre.com'+biz.avatar : 'https://www.falmouthinn.com/integration/tc-theme/public/img/placeholder_4_3.png'" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                <!-- Video Thumbnail Card -->
+                                <div class="relative w-full h-56 md:h-64 rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700/50 cursor-pointer">
+                                    <img :src="reel.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="">
+                                    <!-- Dark Overlays -->
+                                    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
                                     
-                                    <!-- Badges -->
-                                    <div v-if="biz.promo" class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                                        %
+                                    <!-- Play Icon in center -->
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div class="w-10 h-10 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center text-white text-sm shadow-md transition-transform group-hover:scale-110">
+                                            <i class="fa-solid fa-play ml-0.5"></i>
+                                        </div>
                                     </div>
-                                    <!-- Open/Closed badge en grid general -->
-                                    <div class="absolute top-2 right-2">
-                                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm"
-                                            :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500/90 text-white' : 'bg-slate-800/80 text-white'">
-                                            <span class="w-1 h-1 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-white animate-pulse' : 'bg-slate-400'"></span>
-                                            {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
+
+                                    <!-- Top Overlay: Title -->
+                                    <div class="absolute top-3 left-2 right-2 text-center">
+                                        <span class="inline-block text-[9px] md:text-[10px] font-black text-white bg-black/45 backdrop-blur-sm px-2 py-0.5 rounded-lg leading-tight tracking-wide uppercase max-w-full truncate">
+                                            {{ reel.title }}
                                         </span>
+                                    </div>
+
+                                    <!-- Bottom Overlay: View Count -->
+                                    <div class="absolute bottom-3 left-3 text-white text-[9px] md:text-[10px] font-bold flex items-center gap-1">
+                                        <i class="fa-regular fa-eye"></i> {{ reel.views }}
                                     </div>
                                 </div>
+
+                                <!-- Reel Restaurant details & button below card -->
+                                <div class="flex flex-col gap-1.5 px-1">
+                                    <div class="flex items-center gap-1 min-w-0">
+                                        <div class="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-slate-100 dark:border-slate-800">
+                                            <img :src="reel.business.avatar ? 'https://tengo-hambre.com' + reel.business.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
+                                        </div>
+                                        <p class="font-bold text-[10px] text-slate-800 dark:text-slate-200 truncate flex items-center gap-0.5">
+                                            {{ reel.business.name }}
+                                            <i class="fa-solid fa-circle-check text-blue-500 text-[8px]" title="Verificado"></i>
+                                        </p>
+                                    </div>
+                                    <!-- Outlined Red Button "Pedir ahora" -->
+                                    <button @click="goToBusiness(reel.business)" 
+                                        class="w-full border border-brand/50 hover:border-brand text-brand hover:bg-brand hover:text-white rounded-xl font-bold py-1 px-2 text-[10px] text-center transition-all duration-300">
+                                        Pedir ahora
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HERO SLIDER SECTION (oculto en modo Recolectar) -->
+                    <div v-show="deliveryMode === 'delivery'" class="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 mb-8 md:mb-12">
+                        <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-36 md:h-52 bg-slate-100 dark:bg-slate-800 group">
+                            
+                            <!-- Slides Container -->
+                            <div v-for="(banner, index) in banners" :key="banner._id" 
+                                class="absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center"
+                                :class="{'opacity-100 z-10': activeBanner === index, 'opacity-0 z-0': activeBanner !== index}">
+                                
+                                <!-- Background Image (visible a full, con object-cover) -->
+                                <img :src="'https://tengo-hambre.com/'+banner.imageUrl || 'https://via.placeholder.com/800x400'" 
+                                    class="absolute inset-0 w-full h-full object-contain z-0 transition-transform duration-[2000ms] ease-out" 
+                                    :class="{'scale-110': activeBanner === index, 'scale-100': activeBanner !== index}">
+                                
+                                <!-- Degradado inferior sutil para los dots -->
+                                <div class="absolute inset-0 z-10 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                                 
                                 <!-- Content -->
-                                <div class="flex-1 flex flex-col justify-center sm:block">
-                                    <div class="flex justify-between items-start mb-1">
-                                        <h3 class="font-bold text-base sm:text-lg leading-tight dark:text-white group-hover:text-brand transition line-clamp-1">{{ biz.name }}</h3>
-                                        <span class="hidden sm:flex bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs font-bold items-center gap-1">
-                                            {{ biz.rating }} <i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>
-                                        </span>
+                                <div class="relative z-20 px-6 md:px-12 max-w-2xl text-white">
+                                    
+                                    <h1 class="text-2xl md:text-5xl font-black mb-2 md:mb-4 leading-tight" style="text-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);">
+                                        <span v-html="banner.title"></span>
+                                    </h1>
+                                    <p class="text-white/95 text-sm md:text-lg mb-6 max-w-md hidden md:block font-medium" style="text-shadow: 0 1px 4px rgba(0,0,0,0.5);">
+                                        {{ banner.description }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Slider Controls (Dots) -->
+                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+                                <button v-for="(banner, index) in banners" :key="index" 
+                                        @click="setActiveBanner(index)" 
+                                        class="h-2 rounded-full transition-all duration-300 shadow-sm"
+                                        :class="activeBanner === index ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'">
+                                </button>
+                            </div>
+
+                            <!-- Arrows -->
+                            <button @click="prevBanner" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100 hidden md:flex">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <button @click="nextBanner" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 hover:bg-white/30 backdrop-blur rounded-full flex items-center justify-center text-white transition opacity-0 group-hover:opacity-100 hidden md:flex">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Skeleton Loader para Banners -->
+                        <div v-else class="relative rounded-3xl overflow-hidden h-48 md:h-64 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+                    </div>
+
+
+                    <!-- CATEGORÍAS (Sticky Wrapper) -->
+                    <div v-show="deliveryMode === 'delivery'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar snap-x items-center">
+                                <button @click="selectedCategory = 'all'" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2"
+                                    :class="selectedCategory === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-lg dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
+                                    <i class="fa-solid fa-utensils"></i> Todo
+                                </button>
+                                <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2 group"
+                                    :class="selectedCategory === cat.id ? 'bg-brand text-white border-brand shadow-lg shadow-brand/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
+                                    <span class="group-hover:scale-110 transition-transform duration-200">{{ cat.emoji }}</span> {{ cat.name }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ALL BUSINESSES GRID (Restaurantes cerca de ti) -->
+                    <div class="animate-fade-in">
+                        <div class="flex justify-between items-center mt-5 mb-6">
+                            <div>
+                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
+                                    <span v-if="searchQuery">🔍 RESULTADOS DE "{{ searchQuery.toUpperCase() }}"</span>
+                                    <span v-else>📍 RESTAURANTES CERCA DE TI</span>
+                                    <span class="text-sm font-bold text-slate-400 ml-2">({{ filteredBusinesses.length }})</span>
+                                </h5>
+                            </div>
+                            <!--<button v-if="!searchQuery" class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
+                                Ver más <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button>-->
+                        </div>
+
+                        <!-- Empty state -->
+                        <div v-if="filteredBusinesses.length === 0" class="text-center py-20 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+                            <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl overflow-hidden shadow-md">
+                                <img src="/assets/images/logo.jpg" alt="" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="font-bold text-xl dark:text-white">Sin resultados</h3>
+                            <p class="text-slate-500 text-sm mt-1">Intenta cambiar los filtros o busca otra cosa.</p>
+                            <button @click="selectedCategory = 'all'; searchQuery = ''" class="mt-4 px-6 py-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-bold hover:opacity-95 transition">Ver todo</button>
+                        </div>
+
+                        <!-- Grid Premium -->
+                        <div v-else class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                            <div v-for="biz in filteredBusinesses" :key="biz._id" @click="goToBusiness(biz)" 
+                                class="biz-card bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-100 dark:border-slate-700/50 cursor-pointer group flex flex-col relative transition-all duration-300">
+                                
+                                <!-- Portada (Large banner - uses Avatar as background, or cover, or fallback) -->
+                                <div class="relative w-full h-24 md:h-36 overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 border-t-3 border-t-primary">
+                                    <img :src="biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80'" 
+                                        class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80"></div>
+                                    
+                                    <!-- Badge de Oferta sobre la Portada (Ej: "PIZZA FAMILIAR DESDE $199" or custom based on tags) -->
+                                    <div v-if="biz.promo || biz.deliveryCost === 0" class="absolute top-0 left-4 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md flex items-center gap-1 uppercase tracking-wider">
+                                        <i class="fa-solid fa-tag"></i> 
+                                        {{ biz.promo ? 'OFERTA ACTIVA' : 'ENVÍO GRATIS' }}
                                     </div>
                                     
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-2 line-clamp-1">
-                                        {{ biz.tags ? biz.tags.join(' • ') : 'Comida deliciosa' }}
-                                    </p>
+                                    <!-- Heart Icon Overlay on top-right (Favorito) -->
+                                    <button class="absolute top-0 right-4 w-9 h-9 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-500 hover:bg-white transition-all duration-300" @click.stop="">
+                                        <i class="fa-regular fa-heart text-sm"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Content Box -->
+                                <div class="flex items-start mt-2 ml-1 gap-2">
+                                    <!-- Circular avatar/logo -->
+                                    <div class="w-14 h-14 rounded-full border border-slate-100 dark:border-slate-700 overflow-hidden flex-shrink-0 bg-white shadow-sm">
+                                        <img :src="biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
+                                    </div>
                                     
-                                    <div class="flex items-center justify-between ">
-                                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-3">
-                                            <span v-if="isBusinessCurrentlyOpen(biz)" class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand-300"></i> {{ biz.time }} min</span>
-                                            <span v-if="isBusinessCurrentlyOpen(biz)" class="flex items-center gap-1"><i class="fa-solid fa-motorcycle text-brand-300"></i> ${{ biz.deliveryCost }}</span>
-                                            <span class="flex items-center gap-1" :class="isBusinessCurrentlyOpen(biz) ? 'text-white animate-pulse' : 'text-red-400'">
-                                                <span class="w-1 h-1 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-white animate-pulse' : 'bg-red-400'"></span>
-                                                {{ isBusinessCurrentlyOpen(biz) ? '' : 'Cerrado' }}
+                                    <!-- Business Info Details -->
+                                    <div class="min-w-0 flex-1 flex flex-col gap-1">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h3 class="font-extrabold text-base md:text-lg text-slate-800 dark:text-white group-hover:text-brand transition truncate flex items-center gap-1">
+                                                {{ biz.name }}
+                                                <i class="fa-solid fa-circle-check text-blue-500 text-xs shrink-0" title="Verificado"></i>
+                                            </h3>
+                                            <!-- Rating badge -->
+                                            <span class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300">
+                                                {{ biz.rating }} <i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- Details: Tags, delivery, time -->
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold line-clamp-1 leading-normal">
+                                            {{ biz.tags ? biz.tags.join(' • ') : 'Restaurante' }} 
+                                            • {{ biz.time }} min 
+                                            • Envío: {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
+                                        </p>
+                                        
+                                        <!-- Red Promo Tag/Alert inside info card -->
+                                        <div class="flex items-center gap-1.5 text-xs text-brand font-bold mt-1">
+                                            <i class="fa-solid fa-tags text-[11px] animate-pulse"></i>
+                                            <span class="line-clamp-1">
+                                                {{ biz.promo ? '¡Encuentra promociones especiales en nuestro menú!' : 'Comida deliciosa al mejor precio' }}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Bottom Status & Action Bar -->
+                                <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-slate-50 dark:border-slate-700/30">
+                                    <!-- Status Badge (Open / Closed) -->
+                                    <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm"
+                                        :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'">
+                                        <span class="w-1.5 h-1.5 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+                                        {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
+                                    </span>
+                                    
+                                    <!-- Filled Action Button -->
+                                    <button class="bg-brand hover:bg-brandDark text-red-500 
+                                        border-2 border-red-500
+                                        text-xs font-extrabold px-4 py-2 rounded-xl transition-all duration-300 
+                                        shadow-md shadow-brand/20 hover:shadow-lg flex items-center gap-1">
+                                        Ver menú <i class="fa-solid fa-chevron-right text-[8px]"></i>
+                                    </button>
+                                </div>
+                                
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -695,11 +621,6 @@
 
             </div>
         </main>
-
-        <style>
-        .slide-up-enter-active, .slide-up-leave-active { transition: all .3s cubic-bezier(.4,0,.2,1); }
-        .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(12px); }
-        </style>
 
         <!-- FOOTER WEB COMPLETO -->
         <footer class="bg-white dark:bg-slate-950 pt-16 pb-8 border-t border-slate-100 dark:border-slate-800">

@@ -20,7 +20,9 @@ export function useProducts(isDark, fetchMedia) {
         categories: [], 
         addons: [], 
         active: true,
-        isTrending: false 
+        isTrending: false,
+        isPromo: false,
+        promoTag: ''
     };
     const productForm = ref({ ...defaultForm });
 
@@ -75,7 +77,9 @@ export function useProducts(isDark, fetchMedia) {
             productForm.value = { 
                 ...prod, 
                 categories: prod.categories || [],
-                addons: prod.addons || []
+                addons: prod.addons || [],
+                isPromo: prod.isPromo !== undefined ? prod.isPromo : false,
+                promoTag: prod.promoTag || ''
             };
         } else {
             productForm.value = { ...defaultForm, categories: [], addons: [] };
