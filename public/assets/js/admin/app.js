@@ -48,6 +48,28 @@ toastr.options = {
     "timeOut": "3000",
 }
 
+// Callback global que dispara Places cuando el SDK carga
+window.initGooglePlaces = function() {
+    window._googlePlacesReady = true;
+    document.dispatchEvent(new CustomEvent('google-places-ready'));
+};
+// Carga dinámica del SDK de Google Maps con soporte para Places Autocomplete
+fetch('/api/public/maps-key')
+    .then(response => response.json())
+    .then(data => {
+        if (data.apiKey) {
+            window.GOOGLE_MAPS_KEY = data.apiKey;
+            const script = document.createElement('script');
+            script.id = 'google-maps-script';
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&libraries=places&loading=async&callback=initGooglePlaces`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        } else {
+            console.error('Google Maps API Key no configurada en el servidor.');
+        }
+    })
+    .catch(error => console.error('Error al obtener la Google Maps API Key:', error));
 createApp({
     setup() {
         // STATE
@@ -209,7 +231,10 @@ createApp({
                             data: 'name',
                             render: (data, type, row) => `
                                 <div class="min-w-0">
-                                    <div class="font-bold text-slate-800 text-sm">${data}</div>
+                                    <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                        <span>${data}</span>
+                                        ${row.isPromo ? `<span class="bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0">${row.promoTag || 'PROMO'}</span>` : ''}
+                                    </div>
                                     <div class="text-xs text-slate-400 truncate max-w-[180px]">${row.description || ''}</div>
                                 </div>`
                         },

@@ -7,10 +7,11 @@ tailwind.config = {
     darkMode: 'class',
     theme: {
         extend: {
-            fontFamily: { sans: ['Outfit', 'sans-serif'] },
+            fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
             colors: {
                 // USAMOS UNA VARIABLE CSS PARA EL COLOR DINÁMICO
                 primary: 'var(--theme-color)',
+               
                 dark: '#0f172a',
                 light: '#f8fafc'
             },
@@ -40,6 +41,28 @@ toastr.options = {
     "hideMethod": "fadeOut"
 };
 
+
+// Callback global que dispara Places cuando el SDK carga
+window.initMarketplaceMap = function() {
+    window._googlePlacesReady = true;
+    document.dispatchEvent(new CustomEvent('maps-ready'));
+};
+// Carga dinámica del SDK de Google Maps
+fetch('/api/public/maps-key')
+    .then(response => response.json())
+    .then(data => {
+        if (data.apiKey) {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&callback=initMarketplaceMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        } else {
+            console.error('Google Maps API Key no configurada en el servidor.');
+        }
+    })
+    .catch(error => console.error('Error al obtener la Google Maps API Key:', error));
+
 createApp({
     setup() {
         const searchQuery = ref('');
@@ -49,6 +72,9 @@ createApp({
         const scrolled = ref(false);
         const mobileDrawerOpen = ref(false);
         const businesses = ref([]);
+        const froods = ref([]);
+        const promos = ref([]);
+        const cheapProducts = ref([]);
 
         // --- MODO ENTREGA vs RECOLECTAR ---
         const deliveryMode = ref('delivery'); // 'delivery' | 'pickup'
@@ -507,6 +533,130 @@ createApp({
                     ...b, // Conservamos _id, title, description, etc.
                     bgClass: getGradient(index) // Asignamos un color visual
                 })); 
+
+                // Obtener categorías dinámicas de categoriesStore
+                try {
+                    const catRes = await fetch('api/categoriesStore');
+                    if (catRes.ok) {
+                        const dbCats = await catRes.json();
+                        const activeCats = dbCats.filter(c => c.active);
+                        if (activeCats.length > 0) {
+                            categories.value = activeCats.map(c => ({
+                                id: c._id,
+                                name: c.name,
+                                emoji: c.emoji || '🍔'
+                            }));
+                        }
+                    }
+                } catch (catErr) {
+                    console.error('Error fetching global categories:', catErr);
+                }
+
+                // Inicializar Promociones y Froods dinámicamente según los negocios en base de datos
+                if (businesses.value && businesses.value.length > 0) {
+                    const list = businesses.value;
+                    const findBiz = (keywords, fallbackIndex = 0) => {
+                        const found = list.find(b => {
+                            const nameLower = (b.name || '').toLowerCase();
+                            const tagsLower = (b.tags || []).map(t => t.toLowerCase());
+                            return keywords.some(k => nameLower.includes(k) || tagsLower.includes(k));
+                        });
+                        return found || list[fallbackIndex % list.length];
+                    };
+
+                    // Fetch de promos reales desde la base de datos de manera funcional
+                    try {
+                        const promosRes = await fetch('api/public/promos');
+                        if (promosRes.ok) {
+                            const dbPromos = await promosRes.json();
+                            promos.value = dbPromos.map(p => {
+                                // Resolver el tagClass basado en el tag
+                                let tagClass = "bg-secondary text-white"; // default emerald
+                                const tagLower = (p.promoTag || '').toLowerCase();
+                                if (tagLower.includes('2x1')) {
+                                    tagClass = "bg-yellow-500 text-slate-900";
+                                } else if (tagLower.includes('hoy') || tagLower.includes('exclusiv') || tagLower.includes('sol')) {
+                                    tagClass = "bg-red-600 text-white";
+                                }
+                                
+                                return {
+                                    id: p._id,
+                                    title: p.name,
+                                    price: p.price,
+                                    tag: p.promoTag || "PROMO",
+                                    tagClass: tagClass,
+                                    image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
+                                    business: p.businessId
+                                };
+                            }).filter(p => p.business); // Solo si el producto tiene negocio válido
+                        } else {
+                            promos.value = [];
+                        }
+                    } catch (e) {
+                        console.error("Error fetching promos:", e);
+                        promos.value = [];
+                    }
+
+                    // Fetch de productos menores o iguales a $100
+                    try {
+                        const cheapRes = await fetch('api/public/cheap-products');
+                        if (cheapRes.ok) {
+                            const dbCheap = await cheapRes.json();
+                            cheapProducts.value = dbCheap.map(p => {
+                                return {
+                                    id: p._id,
+                                    title: p.name,
+                                    price: p.price,
+                                    image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
+                                    business: p.businessId
+                                };
+                            }).filter(p => p.business);
+                        } else {
+                            cheapProducts.value = [];
+                        }
+                    } catch (e) {
+                        console.error("Error fetching cheap products:", e);
+                        cheapProducts.value = [];
+                    }
+
+                    froods.value = [
+                        {
+                            id: 1,
+                            title: "NUEVA BURGER Doble Smash",
+                            views: "12.5K",
+                            thumbnail: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=400&auto=format&fit=crop&q=80",
+                            business: findBiz(["burger", "hamburguesa", "gorilla"], 1)
+                        },
+                        {
+                            id: 2,
+                            title: "MAC & CHEESE CON TOCINO",
+                            views: "8.7K",
+                            thumbnail: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=400&auto=format&fit=crop&q=80",
+                            business: findBiz(["pasta", "italian", "yamy"], 0)
+                        },
+                        {
+                            id: 3,
+                            title: "BONELESS EN 3 SABORES",
+                            views: "15.3K",
+                            thumbnail: "https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400&auto=format&fit=crop&q=80",
+                            business: findBiz(["boneless", "wings", "alitas", "papis"], 2)
+                        },
+                        {
+                            id: 4,
+                            title: "TACOS AL PASTOR",
+                            views: "15.3K",
+                            thumbnail: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&auto=format&fit=crop&q=80",
+                            business: findBiz(["tacos", "mexican", "bandidos"], 3)
+                        },
+                        {
+                            id: 5,
+                            title: "PIZZA PEPPERONI",
+                            views: "9.1K",
+                            thumbnail: "https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400&auto=format&fit=crop&q=80",
+                            business: findBiz(["pizza", "yamy"], 0)
+                        }
+                    ];
+                } 
             } catch (err) {
                 // const req = err.json();
                 console.log(err)
@@ -541,14 +691,20 @@ createApp({
                 });
             });
 
-            // Filtro Categoría (soporta `b.categories` como array o string)
+            // Filtro Categoría (soporta `b.categories` como array o string, buscando por ID o nombre para retrocompatibilidad)
             if (selectedCategory.value !== 'all') {
+                const activeCatObj = categories.value.find(c => c.id === selectedCategory.value);
+                const activeCatName = activeCatObj ? activeCatObj.name.toLowerCase() : '';
+                
                 filtered = filtered.filter(b => {
                     const cats = b.categories ?? b.category ?? [];
-                    if (Array.isArray(cats)) {
-                        return cats.includes(selectedCategory.value);
-                    }
-                    return String(cats) === String(selectedCategory.value);
+                    const catsArray = Array.isArray(cats) ? cats : [cats];
+                    
+                    return catsArray.some(cat => {
+                        const catStr = String(cat).toLowerCase();
+                        return catStr === String(selectedCategory.value).toLowerCase() || 
+                               (activeCatName && catStr === activeCatName);
+                    });
                 });
             }
             
@@ -671,6 +827,7 @@ createApp({
         return {
             searchQuery, selectedCategory, categories,
             trendingBusinesses, filteredBusinesses,
+            froods, promos, cheapProducts,
             loading, error, scrolled, goToBusiness, fetchBusinesses,
             // Loc
             showLocationModal, locationSearch, filteredItems, currentLag, selectLocation,

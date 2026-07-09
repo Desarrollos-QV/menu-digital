@@ -357,6 +357,7 @@ createApp({
             opts.forEach(o => unitPrice += o.priceExtra);
 
             cart.value.push({ product: activeProduct.value, selectedOptions: opts, quantity: modalQuantity.value, unitPrice });
+            if (window.clarity) window.clarity("set", "CartAction", "AddToCart");
             toastr.success('Agregado');
             showProductModal.value = false;
         };
@@ -365,6 +366,7 @@ createApp({
             const exist = cart.value.find(i => i.product._id === product._id && (!i.selectedOptions || !i.selectedOptions.length));
             if (exist) exist.quantity++;
             else cart.value.push({ product, selectedOptions: [], quantity: 1, unitPrice: product.price });
+            if (window.clarity) window.clarity("set", "CartAction", "AddToCart");
             toastr.success('Agregado');
         };
 
@@ -388,6 +390,8 @@ createApp({
             if (paymentMethod.value === 'cash' && (!customerHowToPay.value || !customerHowToPay.value.toString().trim())) {
                 return toastr.warning('Por favor ingresa con cuánto vas a pagar');
             }
+
+            if (window.clarity) window.clarity("set", "Checkout", "Started");
 
             if (paymentMethod.value === 'stripe') {
                 initStripePayment();
@@ -478,6 +482,7 @@ createApp({
 
                 if (result.error) {
                     stripePaymentError.value = result.error.message;
+                    if (window.clarity) window.clarity("set", "PurchaseError", result.error.code || "StripeError");
                 } else {
                     if (result.paymentIntent.status === 'succeeded') {
                         // Pago exitoso, procesar la orden
@@ -487,6 +492,7 @@ createApp({
                 }
             } catch (err) {
                 stripePaymentError.value = "Error inesperado procesando el pago.";
+                if (window.clarity) window.clarity("set", "PurchaseError", "UnexpectedError");
             } finally {
                 isProcessingPayment.value = false;
             }
@@ -622,6 +628,7 @@ createApp({
             cart.value = [];          // Vaciamos el arreglo
             showCartModal.value = false; // Cerramos el modal
             showSuccessScreen.value = true; // Mostramos la pantalla de éxito
+            if (window.clarity) window.clarity("set", "Purchase", "Success");
             toastr.success('¡Pedido enviado! Gracias por tu compra.');
         };
 

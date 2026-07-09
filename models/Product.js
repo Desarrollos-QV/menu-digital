@@ -15,7 +15,9 @@ const productSchema = new Schema({
     addons: [{ type: Schema.Types.ObjectId, ref: 'Addon' }],
     
     active: { type: Boolean, default: true },
-    salesCount: { type: Number, default: 0 } // Para KPI de más vendidos
+    salesCount: { type: Number, default: 0 }, // Para KPI de más vendidos
+    isPromo: { type: Boolean, default: false },
+    promoTag: { type: String, default: "" }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);
