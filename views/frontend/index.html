@@ -513,7 +513,7 @@
                                     <!-- Badge de Oferta sobre la Portada (Ej: "PIZZA FAMILIAR DESDE $199" or custom based on tags) -->
                                     <div v-if="biz.promo || biz.deliveryCost === 0" class="absolute top-0 left-4 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md flex items-center gap-1 uppercase tracking-wider">
                                         <i class="fa-solid fa-tag"></i> 
-                                        {{ biz.promo ? 'OFERTA ACTIVA' : 'ENVÍO GRATIS' }}
+                                        {{ biz.promo ? 'OFERTA ACTIVA' : '' }}
                                     </div>
                                     
                                     <!-- Heart Icon Overlay on top-right (Favorito) -->
