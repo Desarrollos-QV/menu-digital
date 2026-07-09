@@ -13,6 +13,7 @@ router.get('/maps-key', (req, res) => {
 // GET /explore/api/list
 router.get('/list', marketplaceController.getAllBusinesses);
 router.get('/promos', marketplaceController.getPromos);
+router.get('/cheap-products', marketplaceController.getCheapProducts);
 router.post('/customers', marketplaceController.registerCustomer);
 router.post('/customers/login', marketplaceController.getCustomerStatus);
 // Ruta pública para obtener Categorías Globales (Para registro)

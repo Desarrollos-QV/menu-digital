@@ -102,3 +102,17 @@ exports.getPromos = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener promociones' });
     }
 };
+
+// Obtener productos con precio menor o igual a $100
+exports.getCheapProducts = async (req, res) => {
+    try {
+        const products = await Product.find({ price: { $gt: 0, $lte: 100 }, active: true })
+            .populate('businessId')
+            .sort({ updatedAt: -1 })
+            .limit(20);
+        res.json(products);
+    } catch (error) {
+        console.error('Error al obtener productos de $100 o menos:', error);
+        res.status(500).json({ message: 'Error al obtener productos' });
+    }
+};

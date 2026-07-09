@@ -74,6 +74,7 @@ createApp({
         const businesses = ref([]);
         const froods = ref([]);
         const promos = ref([]);
+        const cheapProducts = ref([]);
 
         // --- MODO ENTREGA vs RECOLECTAR ---
         const deliveryMode = ref('delivery'); // 'delivery' | 'pickup'
@@ -596,6 +597,28 @@ createApp({
                         promos.value = [];
                     }
 
+                    // Fetch de productos menores o iguales a $100
+                    try {
+                        const cheapRes = await fetch('api/public/cheap-products');
+                        if (cheapRes.ok) {
+                            const dbCheap = await cheapRes.json();
+                            cheapProducts.value = dbCheap.map(p => {
+                                return {
+                                    id: p._id,
+                                    title: p.name,
+                                    price: p.price,
+                                    image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
+                                    business: p.businessId
+                                };
+                            }).filter(p => p.business);
+                        } else {
+                            cheapProducts.value = [];
+                        }
+                    } catch (e) {
+                        console.error("Error fetching cheap products:", e);
+                        cheapProducts.value = [];
+                    }
+
                     froods.value = [
                         {
                             id: 1,
@@ -804,7 +827,7 @@ createApp({
         return {
             searchQuery, selectedCategory, categories,
             trendingBusinesses, filteredBusinesses,
-            froods, promos,
+            froods, promos, cheapProducts,
             loading, error, scrolled, goToBusiness, fetchBusinesses,
             // Loc
             showLocationModal, locationSearch, filteredItems, currentLag, selectLocation,
