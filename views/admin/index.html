@@ -2687,7 +2687,7 @@
                                 
                                 <!-- Imagen -->
                                 <h3 class="font-bold text-sm mb-4 uppercase text-slate-400">Logo / Portada</h3>
-                                <div class="flex flex-col items-center space-y-3 w-full sm:w-auto mb-4">
+                                <div class="flex flex-row justify-center gap-4 w-full mb-4 flex-wrap">
                                     <div class="relative group cursor-pointer w-28 h-28 md:w-32 md:h-32 flex-shrink-0">
                                         <input type="file" ref="avatarInput" @change="uploadAvatar" class="hidden" accept="image/*">
                                         <div @click="$refs.avatarInput.click()" class="w-full h-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-slate-50 dark:hover:bg-slate-700 transition relative bg-slate-50 dark:bg-slate-800 shadow-sm">
@@ -2697,6 +2697,19 @@
                                                 <span class="text-[9px] md:text-[10px] font-medium uppercase">Subir Logo</span>
                                             </div>
                                             <div v-if="isUploadingAvatar" class="absolute inset-0 bg-white/80 dark:bg-black/60 flex items-center justify-center z-10">
+                                                <i class="fa-solid fa-circle-notch fa-spin text-primary text-lg md:text-xl"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="relative group cursor-pointer w-48 h-28 md:w-64 md:h-32 flex-shrink-0">
+                                        <input type="file" ref="coverInput" @change="uploadCover" class="hidden" accept="image/*">
+                                        <div @click="$refs.coverInput.click()" class="w-full h-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-slate-50 dark:hover:bg-slate-700 transition relative bg-slate-50 dark:bg-slate-800 shadow-sm">
+                                            <img v-if="settings.cover" :src="settings.cover" class="w-full h-full object-cover">
+                                            <div v-else class="text-slate-400 flex flex-col items-center text-center p-2">
+                                                <i class="fa-regular fa-image text-2xl md:text-3xl mb-1"></i>
+                                                <span class="text-[9px] md:text-[10px] font-medium uppercase">Subir Portada</span>
+                                            </div>
+                                            <div v-if="isUploadingCover" class="absolute inset-0 bg-white/80 dark:bg-black/60 flex items-center justify-center z-10">
                                                 <i class="fa-solid fa-circle-notch fa-spin text-primary text-lg md:text-xl"></i>
                                             </div>
                                         </div>

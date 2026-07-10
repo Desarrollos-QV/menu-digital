@@ -13,6 +13,7 @@ export function useSettings(auth) {
         plan: 'free',
         // Campos Negocio
         avatar: '',
+        cover: '',
         phone: '',
         ownerEmail: '',
         primaryColor: '#6366f1',
@@ -64,9 +65,11 @@ export function useSettings(auth) {
         newPassword: ''
     });
 
-    // Estado para el loader del avatar
+    // Estado para el loader del avatar y cover
     const isUploadingAvatar = ref(false);
     const avatarInput = ref(null);
+    const isUploadingCover = ref(false);
+    const coverInput = ref(null);
 
     const fetchSettings = async () => {
         // 1. Configuración General (Pública/Global)
@@ -225,6 +228,32 @@ export function useSettings(auth) {
         }
     };
 
+    // Función para subir la portada (cover)
+    const uploadCover = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        isUploadingCover.value = true;
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await authFetch('/api/media', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.message || 'Error al subir');
+
+            settings.value.cover = data.url;
+            toastr.success('Portada subida correctamente');
+            
+        } catch (error) {
+            toastr.error(error.message);
+        } finally {
+            isUploadingCover.value = false;
+            event.target.value = null; // Reset input
+        }
+    };
+
     const saveSettings = async () => {
         // Validar métodos de pago localmente
         if (!settings.value.acceptCash && !settings.value.acceptCard) {
@@ -292,9 +321,12 @@ export function useSettings(auth) {
         updateColoniaCost,
         profile,
         isUploadingAvatar, // Exportar estado
+        isUploadingCover,
         avatarInput,       // Exportar ref
+        coverInput,
         fetchSettings,
         uploadAvatar,      // Exportar función
+        uploadCover,
         printerName,
         availablePrinters,
         scanningPrinters,

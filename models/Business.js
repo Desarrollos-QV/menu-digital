@@ -39,6 +39,7 @@ const businessSchema = new mongoose.Schema({
 
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
     avatar: { type: String }, // Para la url: app.com/menu/hamburguesas-pepe
+    cover: { type: String }, // Portada del negocio
     active: { type: Boolean, default: true }, // Para bloquearlos por falta de pago
     ownerEmail: String,
     phone: String,

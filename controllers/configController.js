@@ -88,6 +88,7 @@ exports.getAdminConfig = async (req, res) => {
                 acceptCard: business.acceptCard !== false,
                 // Campos extra de negocio
                 avatar: business.avatar || '',
+                cover: business.cover || '',
                 phone: business.phone || '',
                 ownerEmail: business.ownerEmail || '',
                 currency: business.settings?.currency || 'MXN',
@@ -128,6 +129,7 @@ exports.updateAdminConfig = async (req, res) => {
             
 
             if (req.body.avatar) business.avatar = req.body.avatar;
+            if (req.body.cover !== undefined) business.cover = req.body.cover;
             if (req.body.appName) business.name = req.body.appName;
             if (req.body.address) business.address = req.body.address;
             if (req.body.phone) business.phone = req.body.phone;

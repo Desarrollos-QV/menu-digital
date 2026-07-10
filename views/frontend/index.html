@@ -408,7 +408,7 @@
 
                     <!-- HERO SLIDER SECTION (oculto en modo Recolectar) -->
                     <div v-show="deliveryMode === 'delivery'" class="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 mb-8 md:mb-12">
-                        <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft h-36 md:h-52 bg-slate-100 dark:bg-slate-800 group">
+                        <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft aspect-[2/1] md:aspect-[21/9] lg:aspect-[3/1] min-h-[160px] bg-slate-100 dark:bg-slate-800 group">
                             
                             <!-- Slides Container -->
                             <div v-for="(banner, index) in banners" :key="banner._id" 
@@ -416,8 +416,8 @@
                                 :class="{'opacity-100 z-10': activeBanner === index, 'opacity-0 z-0': activeBanner !== index}">
                                 
                                 <!-- Background Image (visible a full, con object-cover) -->
-                                <img :src="'https://tengo-hambre.com/'+banner.imageUrl || 'https://via.placeholder.com/800x400'" 
-                                    class="absolute inset-0 w-full h-full object-contain z-0 transition-transform duration-[2000ms] ease-out" 
+                                <img :src="banner.imageUrl ? 'https://tengo-hambre.com/'+banner.imageUrl : 'https://via.placeholder.com/1200x400'" 
+                                    class="absolute inset-0 w-full h-full object-cover object-center z-0 transition-transform duration-[2000ms] ease-out" 
                                     :class="{'scale-110': activeBanner === index, 'scale-100': activeBanner !== index}">
                                 
                                 <!-- Degradado inferior sutil para los dots -->
@@ -506,8 +506,8 @@
                                 
                                 <!-- Portada (Large banner - uses Avatar as background, or cover, or fallback) -->
                                 <div class="relative w-full h-24 md:h-36 overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 border-t-3 border-t-primary">
-                                    <img :src="biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80'" 
-                                        class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700">
+                                    <img :src="biz.cover ? 'https://tengo-hambre.com' + biz.cover : (biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80')" 
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80"></div>
                                     
                                     <!-- Badge de Oferta sobre la Portada (Ej: "PIZZA FAMILIAR DESDE $199" or custom based on tags) -->
