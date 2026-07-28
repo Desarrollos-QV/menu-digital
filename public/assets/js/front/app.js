@@ -834,6 +834,25 @@ createApp({
                 }
             }
 
+            // Auto-guardar dirección si es un usuario logueado pero no tiene ninguna dirección
+            if (sharedCust.customer.value && deliveryType.value === 'delivery' && sharedCust.addresses.value.length === 0) {
+                try {
+                    await sharedCust.saveAddress({
+                        alias: 'Hogar',
+                        street: customerStreet.value,
+                        number: customerNumber.value,
+                        interior: customerInterior.value,
+                        colonia: customerColony.value,
+                        coloniaId: selectedColonia.value,
+                        reference: customerReference.value,
+                        isDefault: true
+                    });
+                    toastr.success('Hemos guardado tu dirección para futuras compras.');
+                } catch (e) {
+                    console.error('Error auto-saving address for first time user', e);
+                }
+            }
+
             cart.value = [];          // Vaciamos el arreglo
             showCartModal.value = false; // Cerramos el modal
             showSuccessScreen.value = true; // Mostramos la pantalla de éxito
