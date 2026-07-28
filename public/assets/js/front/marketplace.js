@@ -13,6 +13,7 @@ tailwind.config = {
                 primary: 'var(--theme-color)',
                
                 brand: '#E30613',       // Rojo Tengo Hambre
+                brandDark: '#C20510',   // Rojo Tengo Hambre (Oscuro para hover)
                 brandYellow: '#FFC800', // Amarillo Tengo Hambre
                 
                 dark: '#0f172a',
