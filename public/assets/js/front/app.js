@@ -842,8 +842,9 @@ createApp({
                         street: customerStreet.value,
                         number: customerNumber.value,
                         interior: customerInterior.value,
-                        colonia: customerColony.value,
-                        coloniaId: selectedColonia.value,
+                        colony: selectedColonia.value ? selectedColonia.value.name : customerColony.value,
+                        zipCode: customerZipCode.value,
+                        coloniaId: selectedColonia.value ? selectedColonia.value.coloniaId : null,
                         reference: customerReference.value,
                         isDefault: true
                     });
@@ -1029,8 +1030,9 @@ createApp({
                                 street: customerStreet.value,
                                 number: customerNumber.value,
                                 interior: customerInterior.value,
-                                colonia: customerColony.value,
-                                coloniaId: selectedColonia.value,
+                                colony: selectedColonia.value ? selectedColonia.value.name : customerColony.value,
+                                zipCode: customerZipCode.value,
+                                coloniaId: selectedColonia.value ? selectedColonia.value.coloniaId : null,
                                 reference: customerReference.value,
                                 isDefault: true
                             });

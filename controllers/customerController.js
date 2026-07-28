@@ -165,7 +165,7 @@ exports.getAddresses = async (req, res) => {
 
 exports.createAddress = async (req, res) => {
     try {
-        const { alias, street, number, colony, zipCode, reference, isDefault } = req.body;
+        const { alias, street, number, colony, zipCode, reference, isDefault, coloniaId, municipioId, municipioName } = req.body;
         
         if (isDefault) {
             // Quitar el valor por defecto de las otras direcciones
@@ -179,6 +179,9 @@ exports.createAddress = async (req, res) => {
             number,
             colony,
             zipCode,
+            coloniaId: coloniaId || null,
+            municipioId: municipioId || null,
+            municipioName: municipioName || '',
             reference: reference || '',
             isDefault: !!isDefault
         });
@@ -192,7 +195,7 @@ exports.createAddress = async (req, res) => {
 
 exports.updateAddress = async (req, res) => {
     try {
-        const { alias, street, number, colony, zipCode, reference, isDefault } = req.body;
+        const { alias, street, number, colony, zipCode, reference, isDefault, coloniaId, municipioId, municipioName } = req.body;
         
         const address = await CustomerAddress.findOne({ _id: req.params.id, customerId: req.customer.id });
         if (!address) return res.status(404).json({ message: 'Dirección no encontrada' });
@@ -207,6 +210,9 @@ exports.updateAddress = async (req, res) => {
         address.number = number || address.number;
         address.colony = colony || address.colony;
         address.zipCode = zipCode || address.zipCode;
+        if (coloniaId !== undefined) address.coloniaId = coloniaId || null;
+        if (municipioId !== undefined) address.municipioId = municipioId || null;
+        if (municipioName !== undefined) address.municipioName = municipioName || '';
         address.reference = reference !== undefined ? reference : address.reference;
         address.isDefault = isDefault !== undefined ? !!isDefault : address.isDefault;
 
