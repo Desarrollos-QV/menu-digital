@@ -1312,12 +1312,6 @@ createApp({
         };
 
         // Exponer la funcion global para llamarla desde los selects en el HTML
-        watch(() => auth.isAuthenticated.value, (newVal, oldVal) => {
-            // Si pasamos de no autenticado a autenticado, recargamos para inicializar toda la app
-            if (newVal && !oldVal) {
-                window.location.reload();
-            }
-        });
 
         window.renderDashboardCharts = renderDashboardCharts;
 

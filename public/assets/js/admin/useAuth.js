@@ -37,6 +37,11 @@ export function useAuth() {
             username.value = data.username;
             isAuthenticated.value = true;
             toastr.success(`Bienvenido ${data.username}`, 'Login Exitoso');
+            
+            // Recargar para inicializar el Dashboard correctamente
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
         } catch (error) {
             toastr.error(error.message, 'Error');
         }
