@@ -1005,7 +1005,7 @@ createApp({
                 if (pendingCheckout.value) {
                     if (deliveryType.value === 'delivery') {
                         try {
-                            await sharedCust.addAddress({
+                            await sharedCust.saveAddress({
                                 alias: 'Hogar',
                                 street: customerStreet.value,
                                 number: customerNumber.value,
