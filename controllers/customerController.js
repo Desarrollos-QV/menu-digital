@@ -189,6 +189,7 @@ exports.createAddress = async (req, res) => {
         await newAddress.save();
         res.json(newAddress);
     } catch (e) {
+        console.error("Address error:", e);
         res.status(500).json({ error: e.message });
     }
 };
