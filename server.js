@@ -43,6 +43,7 @@ app.use('/api/stripe', require('./routes/stripe')); // <-- Stripe Payments
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
 app.use('/api/loyalty', require('./routes/loyalty'));
+app.use('/api/customer', require('./routes/customer')); // Rutas privadas de clientes
 app.use('/api/blog', require('./routes/blog'));
 
 // --- NUEVO: MANEJO DE RUTAS AMIGABLES (SPA) ---
@@ -57,6 +58,11 @@ app.get(/.*/, (req, res) => {
     // Si la URL es /register, servimos el archivo de registro explícitamente
     if (req.url === '/register' || req.url === '/register.html') {
        return res.sendFile(path.join(__dirname, 'views','frontend', 'register.html'));
+    }
+
+    // EXCEPCIÓN PARA PERFIL
+    if (req.url === '/profile' || req.url === '/profile.html') {
+       return res.sendFile(path.join(__dirname, 'views','frontend', 'profile.html'));
     }
     
     // 3. Rutas de Admin

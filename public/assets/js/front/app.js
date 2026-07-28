@@ -1,5 +1,5 @@
 
-const { createApp, ref, computed, onMounted, nextTick } = Vue;
+const { createApp, ref, computed, onMounted, nextTick, reactive, watch } = Vue;
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -98,16 +98,141 @@ createApp({
         const activeSelections = ref({});
         const modalQuantity = ref(1);
 
-        // Loyalty Logic
-        const showLoyaltyModal = ref(false);
-        const loyaltyForm = ref({ name: '', phone: '', pin: '' });
-        const loyaltyState = ref({ registered: false, authRequired: false, customer: {}, program: {} });
-        const isRecovering = ref(false); // Modo manual de poner teléfono
-        const customer = ref([]);
+        // --- COMPARTIDO DE CLIENTE ---
+        const sharedCust = window.createSharedCustomer();
+
+        const currentUser = computed(() => {
+            if (!sharedCust.token.value || !sharedCust.customer.value) return null;
+            return { customer: sharedCust.customer.value };
+        });
+
+        const firstName = computed(() => {
+            if (!sharedCust.customer.value) return '';
+            return sharedCust.customer.value.name.split(' ')[0];
+        });
+        
+        const userInitial = computed(() => {
+            if (!sharedCust.customer.value) return '?';
+            return sharedCust.customer.value.name.charAt(0).toUpperCase();
+        });
+
+        const userAvatarUrl = computed(() => {
+            if (!sharedCust.customer.value) return '';
+            return sharedCust.customer.value.avatar;
+        });
+
+
+        // Formulario Login
+        const loginForm = reactive({ phone: '', password: '' });
+        const customerForm = reactive({ name: '', phone: '', email: '', password: '' });
+        const setupPasswordForm = reactive({ email: '', password: '', confirmPassword: '' });
+        const isLoginMode = ref(true);
+        const isSetupPasswordMode = ref(false);
+        const showUserModal = ref(false); // Modal login/registro
+        const showAuthPromptModal = ref(false); // Modal de popup promocional
+        const authPromptContext = ref('marketplace'); // 'marketplace' o 'checkout'
+        const pendingCheckout = ref(false); // true si el usuario intentó pedir y se le pidió registro
+        const skipAuthPrompt = ref(false); // true si el usuario decidió continuar como invitado
+
+        const continueAsGuest = () => {
+            showAuthPromptModal.value = false;
+            if (authPromptContext.value === 'checkout') {
+                skipAuthPrompt.value = true;
+                checkout();
+            }
+        };
+
+        const currentView = ref('menu'); // 'menu' o 'profile'
+        const showUserDropdown = ref(false); // Dropdown de opciones de usuario
+        
+        let tempPhone = '';
+        let tempPin = '';
+
+        // Profile Tabs & Modal
+        const activeProfileTab = ref('profile'); // 'profile', 'addresses', 'cards', 'orders'
+        const addressForm = reactive({ _id: null, alias: 'Hogar', street: '', number: '', colony: '', zipCode: '', reference: '', isDefault: false });
+        const showAddressFormModal = ref(false);
+        const isEditingAddress = ref(false);
+        const profileForm = reactive({ name: '', phone: '', email: '', password: '' });
+
+        // Saved Cards (Stripe Account Panel)
+        const showAddCardModal = ref(false);
+        const stripeCardElementSave = ref(null);
+        const stripeInstanceSave = ref(null);
+        const stripeCardErrorSave = ref('');
+        const isSavingCard = ref(false);
+
+        // Checkout Variables
+        const selectedAddressId = ref('');
+        const selectedSavedCardId = ref('');
+
+        const openProfileEdit = () => {
+            if (sharedCust.customer.value) {
+                profileForm.name = sharedCust.customer.value.name;
+                profileForm.phone = sharedCust.customer.value.phone;
+                profileForm.email = sharedCust.customer.value.email;
+                profileForm.password = '';
+                
+                // Pre-llenar checkout
+                customerName.value = sharedCust.customer.value.name;
+                customerPhone.value = sharedCust.customer.value.phone;
+                customerEmail.value = sharedCust.customer.value.email;
+            }
+        };
+
+        const selectCheckoutAddress = (addr) => {
+            customerStreet.value = addr.street;
+            customerNumber.value = addr.number;
+            customerColony.value = addr.colony;
+            customerZipCode.value = addr.zipCode || '';
+            customerReference.value = addr.reference || '';
+            
+            if (config.value.deliveryZones && config.value.deliveryZones.length > 0) {
+                let matchedCol = null;
+                // Prioridad 1: Match por coloniaId (nuevo sistema)
+                if (addr.coloniaId) {
+                    matchedCol = config.value.deliveryZones.find(z =>
+                        String(z.coloniaId) === String(addr.coloniaId) ||
+                        String(z._id) === String(addr.coloniaId)
+                    );
+                }
+                // Prioridad 2: Fallback por nombre (compatibilidad con direcciones antiguas)
+                if (!matchedCol && addr.colony) {
+                    matchedCol = config.value.deliveryZones.find(z =>
+                        z.name.toLowerCase().trim() === addr.colony.toLowerCase().trim()
+                    );
+                }
+                selectedColonia.value = matchedCol || null;
+            }
+        };
+
+
+        // Sincronizadores automáticos
+        watch(sharedCust.customer, () => {
+            openProfileEdit();
+            if (sharedCust.addresses.value.length > 0) {
+                const defAddr = sharedCust.addresses.value.find(a => a.isDefault);
+                if (defAddr) {
+                    selectedAddressId.value = defAddr._id;
+                    selectCheckoutAddress(defAddr);
+                }
+            }
+            if (sharedCust.cards.value.length > 0) {
+                selectedSavedCardId.value = sharedCust.cards.value[0].id;
+            }
+        }, { immediate: true });
+
+        watch(selectedAddressId, (newVal) => {
+            const addr = sharedCust.addresses.value.find(a => a._id === newVal);
+            if (addr) {
+                selectCheckoutAddress(addr);
+            }
+        });
         
         // Success Screen Logic
         const showSuccessScreen = ref(false);
         const lastOrderNumber = ref('');
+        const lastOrderId = ref('');
         const lastWhatsAppUrl = ref('');
         
         // --- LÓGICA DE SLUG ACTUALIZADA ---
@@ -205,6 +330,8 @@ createApp({
 
                 nextTick(() => { if (banners.value.length > 0) new Swiper('.banner-swiper', { slidesPerView: 1.1, spaceBetween: 10, loop: true, autoplay: { delay: 4000 } }); });
 
+                // Revisar si viene de una reordenación
+                checkReorderCart();
             } catch (e) { businessError.value = true; }
             finally { isLoading.value = false; }
         };
@@ -381,24 +508,70 @@ createApp({
 
         // Checkout & Send Whatsapp
         const checkout = () => {
-            if (!customerName.value.trim() || !customerPhone.value.trim()) { // Validar Name and Phone
-                return toastr.warning('Nombre y Telefono requeridos');
+            // --- Validaciones Generales ---
+            if (!customerName.value.trim()) {
+                return toastr.warning('⚠️ Tu nombre es requerido');
+            }
+            if (!customerPhone.value.trim()) {
+                return toastr.warning('⚠️ Tu teléfono es requerido');
             }
 
-            // Validamos Email (Se valida solo para Stripe en processStripePayment)
+            // --- Bloqueo de Registro ---
+            if (!sharedCust.customer.value && !skipAuthPrompt.value) {
+                authPromptContext.value = 'checkout';
+                pendingCheckout.value = true;
+                
+                // Pre-llenar datos en el formulario de registro/login
+                customerForm.name = customerName.value;
+                customerForm.phone = customerPhone.value;
+                loginForm.phone = customerPhone.value;
+                
+                showAuthPromptModal.value = true;
+                return;
+            }
 
+            // --- Validaciones solo para Delivery ---
+            if (deliveryType.value === 'delivery') {
+                if (!customerStreet.value.trim()) {
+                    return toastr.warning('⚠️ Ingresa tu calle');
+                }
+                if (!customerNumber.value.trim()) {
+                    return toastr.warning('⚠️ Ingresa tu número de casa / exterior');
+                }
+
+                // Si el negocio tiene zonas de entrega configuradas, la colonia ES OBLIGATORIA
+                if (config.value.deliveryZones && config.value.deliveryZones.length > 0) {
+                    if (!selectedColonia.value) {
+                        return toastr.warning('⚠️ Debes seleccionar tu Colonia / Zona de entrega para calcular el costo de envío');
+                    }
+                } else {
+                    // Sin zonas configuradas: se requiere al menos el campo libre de colonia
+                    if (!customerColony.value.trim()) {
+                        return toastr.warning('⚠️ Ingresa tu colonia');
+                    }
+                }
+            }
+
+            // --- Efectivo: monto requerido ---
             if (paymentMethod.value === 'cash' && (!customerHowToPay.value || !customerHowToPay.value.toString().trim())) {
-                return toastr.warning('Por favor ingresa con cuánto vas a pagar');
+                return toastr.warning('⚠️ Indica con cuánto vas a pagar');
             }
 
             if (window.clarity) window.clarity("set", "Checkout", "Started");
 
             if (paymentMethod.value === 'stripe') {
-                initStripePayment();
+                if (selectedSavedCardId.value) {
+                    // Si ya seleccionó una tarjeta guardada, procesar directo sin modal
+                    processStripePayment();
+                } else {
+                    // Si es tarjeta nueva, inicializar intent y abrir modal
+                    initStripePayment();
+                }
             } else {
                 finalizeCheckout(paymentMethod.value);
             }
         };
+
 
         const initStripePayment = async () => {
             if (!stripePublishableKey.value) return toastr.error("Stripe no está configurado.");
@@ -469,29 +642,57 @@ createApp({
             stripePaymentError.value = '';
 
             try {
-                const result = await stripeInstance.value.confirmCardPayment(stripeClientSecret.value, {
-                    payment_method: {
-                        card: stripeCardElement.value,
-                        billing_details: {
-                            name: customerName.value,
-                            phone: customerPhone.value,
-                            email: customerEmail.value,
-                        }
-                    }
-                });
-
-                if (result.error) {
-                    stripePaymentError.value = result.error.message;
-                    if (window.clarity) window.clarity("set", "PurchaseError", result.error.code || "StripeError");
-                } else {
-                    if (result.paymentIntent.status === 'succeeded') {
-                        // Pago exitoso, procesar la orden
+                if (selectedSavedCardId.value) {
+                    // Pagar con Tarjeta Guardada
+                    const res = await fetch('/api/customer/cards/charge', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${sharedCust.token.value}`
+                        },
+                        body: JSON.stringify({
+                            amount: cartTotalPrice.value,
+                            currency: config.value.currency || 'MXN',
+                            paymentMethodId: selectedSavedCardId.value
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || data.message || 'Error al procesar el pago con la tarjeta guardada.');
+                    
+                    if (data.success && (data.status === 'succeeded' || data.status === 'requires_capture')) {
+                        stripePaymentIntentId.value = data.paymentIntentId;
                         await finalizeCheckout('stripe');
                         showStripeModal.value = false;
+                    } else {
+                        throw new Error('El pago falló o requiere autenticación adicional.');
+                    }
+                } else {
+                    // Pagar con Tarjeta Nueva
+                    const result = await stripeInstance.value.confirmCardPayment(stripeClientSecret.value, {
+                        payment_method: {
+                            card: stripeCardElement.value,
+                            billing_details: {
+                                name: customerName.value,
+                                phone: customerPhone.value,
+                                email: customerEmail.value,
+                            }
+                        }
+                    });
+
+                    if (result.error) {
+                        stripePaymentError.value = result.error.message;
+                        if (window.clarity) window.clarity("set", "PurchaseError", result.error.code || "StripeError");
+                    } else {
+                        if (result.paymentIntent.status === 'succeeded') {
+                            stripePaymentIntentId.value = result.paymentIntent.id;
+                            await finalizeCheckout('stripe');
+                            showStripeModal.value = false;
+                        }
                     }
                 }
             } catch (err) {
-                stripePaymentError.value = "Error inesperado procesando el pago.";
+                stripePaymentError.value = err.message || "Error inesperado procesando el pago.";
                 if (window.clarity) window.clarity("set", "PurchaseError", "UnexpectedError");
             } finally {
                 isProcessingPayment.value = false;
@@ -601,28 +802,36 @@ createApp({
 
             if (orderId) {
                 lastOrderNumber.value = orderId.slice(-6).toUpperCase();
+                lastOrderId.value = orderId;
             } else {
                 lastOrderNumber.value = Math.floor(100000 + Math.random() * 900000).toString();
             }
 
+            /**
+             * Esta funcion solo la obtendran los Negocios que esten INACTIVOS con PEDIDOS EN LINEA
+             * Y tengan activo el boton de Whatsapp
+             */
+            
             const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
             lastWhatsAppUrl.value = whatsappUrl;
 
-            // Intentar abrir Whatsapp automáticamente (evitamos bloqueo en iOS/móviles usando redirección de pestaña)
-            try {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) {
-                    window.location.href = whatsappUrl;
-                } else {
-                    const newWindow = window.open(whatsappUrl, '_blank');
-                    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                        // Fallback si el navegador bloquea la ventana emergente en escritorio
+            if (!config.value.allowOnlineOrders) {
+                // Intentar abrir Whatsapp automáticamente (evitamos bloqueo en iOS/móviles usando redirección de pestaña)
+                try {
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
                         window.location.href = whatsappUrl;
+                    } else {
+                        const newWindow = window.open(whatsappUrl, '_blank');
+                        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                            // Fallback si el navegador bloquea la ventana emergente en escritorio
+                            window.location.href = whatsappUrl;
+                        }
                     }
+                } catch (e) {
+                    console.error("Error al abrir WhatsApp automáticamente:", e);
+                    window.location.href = whatsappUrl;
                 }
-            } catch (e) {
-                console.error("Error al abrir WhatsApp automáticamente:", e);
-                window.location.href = whatsappUrl;
             }
 
             cart.value = [];          // Vaciamos el arreglo
@@ -698,112 +907,330 @@ createApp({
             return c ? c.name : 'Productos';
         });
 
-        const openLoyaltyModal = async () => {
-            showLoyaltyModal.value = true;
-            const savedPhone = localStorage.getItem('loyalty_phone');
-            const savedPin = localStorage.getItem('loyalty_pin');
-
-            if (savedPhone) {
-                loyaltyForm.value.phone = savedPhone;
-                if(savedPin){
-                    loyaltyForm.value.pin = savedPin;
-                }
-                await checkLoyaltyStatus(); 
+        const openLoyaltyModal = () => {
+            if (sharedCust.token.value) {
+                window.location.href = '/profile';
             } else {
-                loyaltyState.value = { registered: false, authRequired: false, customer: {}, program: {} };
+                isLoginMode.value = true;
+                showUserModal.value = true;
             }
         };
 
-        const toggleRecoverMode = () => {
-            loyaltyState.value.authRequired = true;
-            loyaltyState.value.registered = true;
-            // const phone = prompt("Ingresa tu número de celular registrado:");
-            // if(phone) {
-            //     loyaltyForm.value.phone = phone;
-            //     checkLoyaltyStatus(); // Esto detectará si existe y pedirá PIN
-            // }
+        const openModal = (mode = 'login') => {
+            isLoginMode.value = (mode === 'login');
+            isSetupPasswordMode.value = false;
+            setupPasswordForm.email = '';
+            setupPasswordForm.password = '';
+            setupPasswordForm.confirmPassword = '';
+            showUserModal.value = true;
         };
 
-        const checkLoyaltyStatus = async () => {
+        const loginCustomer = async () => {
             try {
-                const res = await fetch('/api/loyalty/public/status', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ slug, phone: loyaltyForm.value.phone, pin: loyaltyForm.value.pin})
+                const data = await sharedCust.login(loginForm.phone, loginForm.password, slug);
+                
+                if (data && data.requirePasswordSetup) {
+                    tempPhone = data.phone;
+                    tempPin = data.pin;
+                    setupPasswordForm.email = data.email || '';
+                    isSetupPasswordMode.value = true;
+                    return;
+                }
+
+                toastr.success('¡Hola de nuevo! Sesión iniciada.');
+                showUserModal.value = false;
+                loginForm.phone = '';
+                loginForm.password = '';
+                
+                if (pendingCheckout.value) {
+                    setTimeout(() => checkout(), 500);
+                    pendingCheckout.value = false;
+                }
+            } catch (err) {
+                toastr.error(err.message || 'Error al iniciar sesión');
+            }
+        };
+
+        const submitSetupPassword = async () => {
+            if (!setupPasswordForm.email || !setupPasswordForm.email.trim()) {
+                toastr.error('El correo electrónico es obligatorio.');
+                return;
+            }
+            if (setupPasswordForm.password !== setupPasswordForm.confirmPassword) {
+                toastr.error('Las contraseñas no coinciden.');
+                return;
+            }
+            if (setupPasswordForm.password.length < 4) {
+                toastr.error('La contraseña debe tener al menos 4 caracteres.');
+                return;
+            }
+
+            try {
+                await sharedCust.setupPassword(tempPhone, tempPin, setupPasswordForm.password, setupPasswordForm.email);
+                toastr.success('¡Contraseña configurada! Sesión iniciada.');
+                
+                showUserModal.value = false;
+                isSetupPasswordMode.value = false;
+                setupPasswordForm.email = '';
+                setupPasswordForm.password = '';
+                setupPasswordForm.confirmPassword = '';
+                loginForm.phone = '';
+                loginForm.password = '';
+
+                if (pendingCheckout.value) {
+                    setTimeout(() => checkout(), 500);
+                    pendingCheckout.value = false;
+                }
+            } catch (err) {
+                toastr.error(err.message || 'No se pudo guardar la contraseña.');
+            }
+        };
+
+        const registerCustomer = async () => {
+            try {
+                await sharedCust.register(
+                    customerForm.name,
+                    customerForm.phone,
+                    customerForm.email,
+                    customerForm.password,
+                    slug
+                );
+                toastr.success('Cuenta creada exitosamente');
+                showUserModal.value = false;
+                customerForm.name = '';
+                customerForm.phone = '';
+                customerForm.email = '';
+                customerForm.password = '';
+
+                if (pendingCheckout.value) {
+                    if (deliveryType.value === 'delivery') {
+                        try {
+                            await sharedCust.addAddress({
+                                alias: 'Hogar',
+                                street: customerStreet.value,
+                                number: customerNumber.value,
+                                interior: customerInterior.value,
+                                colonia: customerColony.value,
+                                coloniaId: selectedColonia.value,
+                                reference: customerReference.value,
+                                isDefault: true
+                            });
+                            toastr.success('¡Hemos guardado esta dirección como tu predeterminada! Puedes actualizarla desde tu perfil.');
+                        } catch (e) {
+                            console.error('Error auto-saving address', e);
+                        }
+                    }
+                    setTimeout(() => checkout(), 500);
+                    pendingCheckout.value = false;
+                }
+            } catch (err) {
+                toastr.error(err.message || 'Error al crear cuenta');
+            }
+        };
+
+        const logout = () => {
+            sharedCust.logout();
+            toastr.success('Sesión cerrada');
+            showUserDropdown.value = false;
+        };
+
+        // --- MÉTODOS DE PERFIL DESDE TIENDA ---
+        const saveProfile = async () => {
+            try {
+                await sharedCust.updateProfile({
+                    name: profileForm.name,
+                    phone: profileForm.phone,
+                    email: profileForm.email,
+                    password: profileForm.password || undefined
+                });
+                toastr.success('Perfil actualizado');
+            } catch (err) {
+                toastr.error(err.message || 'Error al guardar cambios');
+            }
+        };
+
+        const handleAvatarChange = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                await sharedCust.uploadAvatar(file);
+                toastr.success('Foto de perfil actualizada');
+            } catch (err) {
+                toastr.error(err.message || 'Error al subir foto');
+            }
+        };
+
+        // CRUD Direcciones
+        const openAddAddress = () => {
+            isEditingAddress.value = false;
+            addressForm._id = null;
+            addressForm.alias = 'Hogar';
+            addressForm.street = '';
+            addressForm.number = '';
+            addressForm.colony = '';
+            addressForm.zipCode = '';
+            addressForm.reference = '';
+            addressForm.isDefault = false;
+            showAddressFormModal.value = true;
+        };
+
+        const openEditAddress = (addr) => {
+            isEditingAddress.value = true;
+            addressForm._id = addr._id;
+            addressForm.alias = addr.alias;
+            addressForm.street = addr.street;
+            addressForm.number = addr.number;
+            addressForm.colony = addr.colony;
+            addressForm.zipCode = addr.zipCode;
+            addressForm.reference = addr.reference || '';
+            addressForm.isDefault = addr.isDefault;
+            showAddressFormModal.value = true;
+        };
+
+        const saveAddressForm = async () => {
+            try {
+                await sharedCust.saveAddress({ ...addressForm });
+                toastr.success(isEditingAddress.value ? 'Dirección actualizada' : 'Dirección guardada');
+                showAddressFormModal.value = false;
+            } catch (err) {
+                toastr.error(err.message || 'Error al guardar dirección');
+            }
+        };
+
+        const deleteAddressForm = async (addrId) => {
+            if (!confirm('¿Eliminar esta dirección?')) return;
+            try {
+                await sharedCust.deleteAddress(addrId);
+                toastr.success('Dirección eliminada');
+            } catch (err) {
+                toastr.error(err.message || 'Error al eliminar dirección');
+            }
+        };
+
+        // Stripe tarjetas guardadas
+        const initStripeCardElement = async () => {
+            try {
+                if (!stripeInstanceSave.value && stripePublishableKey.value) {
+                    stripeInstanceSave.value = Stripe(stripePublishableKey.value);
+                }
+                
+                if (stripeInstanceSave.value) {
+                    showAddCardModal.value = true;
+                    stripeCardErrorSave.value = '';
+                    
+                    nextTick(() => {
+                        const elements = stripeInstanceSave.value.elements();
+                        const style = {
+                            base: {
+                                color: isDark.value ? '#ffffff' : '#333333',
+                                fontFamily: '"Outfit", sans-serif',
+                                fontSize: '16px',
+                                '::placeholder': { color: isDark.value ? '#9ca3af' : '#aab7c4' }
+                            }
+                        };
+                        stripeCardElementSave.value = elements.create('card', { style });
+                        stripeCardElementSave.value.mount('#card-element-save');
+                        stripeCardElementSave.value.on('change', (event) => {
+                            stripeCardErrorSave.value = event.error ? event.error.message : '';
+                        });
+                    });
+                } else {
+                    toastr.error('No se pudo cargar la librería de Stripe.');
+                }
+            } catch (e) {
+                toastr.error('Error al inicializar formulario de tarjeta.');
+            }
+        };
+
+        const saveCardForm = async () => {
+            if (isSavingCard.value) return;
+            isSavingCard.value = true;
+            stripeCardErrorSave.value = '';
+            
+            try {
+                const clientSecret = await sharedCust.getSetupIntent();
+                
+                const result = await stripeInstanceSave.value.confirmCardSetup(clientSecret, {
+                    payment_method: {
+                        card: stripeCardElementSave.value,
+                        billing_details: {
+                            name: sharedCust.customer.value.name,
+                            email: sharedCust.customer.value.email,
+                            phone: sharedCust.customer.value.phone
+                        }
+                    }
                 });
                 
-                if (res.ok) {
-                    const data = await res.json();
-                    loyaltyState.value = data; // Actualiza la UI (Pide PIN o muestra tarjeta)
-                        
-                    // Si ya está autenticado (se envió PIN antes o sesión viva?), generar QR
-                    if (data.authSuccess) {
-                        customer.value = data.customer;
-                        customerName.value = customer.value.name;
-                        localStorage.setItem('customer_data', JSON.stringify(customer));
-                        localStorage.setItem('loyalty_name', customer.value.name);
-                        localStorage.setItem('loyalty_phone', loyaltyForm.value.phone);
-                        localStorage.setItem('loyalty_pin', loyaltyForm.value.pin);
-                        nextTick(() => generateQR(loyaltyForm.value.phone));
-                    }
-                }
-            } catch (e) { console.error(e); }
-        };
-
-        const loginLoyalty = async () => {
-            // Reusamos el endpoint de status pero enviando el PIN
-            try {
-                const res = await fetch('/api/loyalty/public/status', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        slug, 
-                        phone: loyaltyForm.value.phone,
-                        pin: loyaltyForm.value.pin 
-                    })
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.authSuccess) {
-                        await checkLoyaltyStatus(); 
-                        toastr.success('Sesión iniciada');
-                    } else {
-                        toastr.error('PIN incorrecto');
-                    }
+                if (result.error) {
+                    stripeCardErrorSave.value = result.error.message;
                 } else {
-                    toastr.error('Error de autenticación');
+                    if (result.setupIntent.status === 'succeeded') {
+                        toastr.success('Tarjeta guardada correctamente');
+                        showAddCardModal.value = false;
+                        await sharedCust.fetchCards();
+                    }
                 }
-            } catch (e) { toastr.error('Error de conexión'); }
-        };
-
-        const registerLoyalty = async () => {
-            if(loyaltyForm.value.pin.length !== 4) return toastr.warning('El PIN debe ser de 4 dígitos');
-            
-            const res = await fetch('/api/loyalty/public/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ slug, ...loyaltyForm.value })
-            });
-            
-            if (res.ok) {
-                toastr.success('¡Tarjeta creada!');
-                // Auto-login tras registro
-                await loginLoyalty(); 
-            } else {
-                const err = await res.json();
-                toastr.error(err.message || 'Error al registrar (¿Ya existe el número?)');
+            } catch (err) {
+                stripeCardErrorSave.value = err.message || 'Error al guardar tarjeta.';
+            } finally {
+                isSavingCard.value = false;
             }
         };
-        
-        const logoutLoyalty = () => {
-            localStorage.removeItem('loyalty_phone');
-            localStorage.removeItem('loyalty_pin');
-            loyaltyForm.value = { name: '', phone: '', pin: '' };
-            loyaltyState.value = { registered: false, authRequired: false };
+
+        const deleteCardForm = async (pmId) => {
+            if (!confirm('¿Eliminar esta tarjeta?')) return;
+            try {
+                await sharedCust.deleteCard(pmId);
+                toastr.success('Tarjeta eliminada');
+            } catch (err) {
+                toastr.error(err.message || 'Error al eliminar tarjeta');
+            }
         };
-        
-        const resetLoyaltyState = logoutLoyalty;
+
+        // REORDENAR DESDE LA TIENDA
+        const checkReorderCart = () => {
+            const reorderData = sessionStorage.getItem('reorder_cart');
+            if (reorderData) {
+                try {
+                    const items = JSON.parse(reorderData);
+                    cart.value = []; // Limpiar carrito
+                    items.forEach(item => {
+                        // Buscar por ID del producto (para órdenes nuevas) o por nombre exacto (para órdenes antiguas)
+                        const dbProd = products.value.find(p => p._id === item.product || p.name === item.name);
+                        if (dbProd) {
+                            cart.value.push({
+                                product: dbProd,
+                                selectedOptions: item.selectedOptions || [],
+                                quantity: item.quantity,
+                                unitPrice: item.unitPrice || dbProd.price
+                            });
+                        }
+                    });
+                    toastr.success('Pedido cargado en el carrito');
+                    showCartModal.value = true;
+                } catch(e) { console.error("Error al reordenar:", e); }
+                sessionStorage.removeItem('reorder_cart');
+            }
+        };
+
+        const reorderPastPurchaseStore = (order) => {
+            // Reordenar directamente en este mismo restaurante
+            cart.value = [];
+            order.items.forEach(item => {
+                const dbProd = products.value.find(p => p._id === item.productId);
+                if (dbProd) {
+                    cart.value.push({
+                        product: dbProd,
+                        selectedOptions: item.selectedOptions || [],
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice || dbProd.price
+                    });
+                }
+            });
+            toastr.success('Artículos agregados al carrito');
+            showLoyaltyModal.value = false;
+            showCartModal.value = true;
+        };
 
 
         const generateQR = (text) => {
@@ -838,13 +1265,15 @@ createApp({
         const goToMenu = () => {
             showSuccessScreen.value = false;
             lastOrderNumber.value = '';
+            lastOrderId.value = '';
             lastWhatsAppUrl.value = '';
         };
 
         const toggleTheme = () => { isDark.value = !isDark.value; updateHtmlClass(); localStorage.setItem('theme', isDark.value ? 'dark' : 'light'); };
         const updateHtmlClass = () => document.documentElement.classList.toggle('dark', isDark.value);
         const initTheme = () => { if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) isDark.value = true; updateHtmlClass(); };
-
+        const goToMarketplace = () => { window.location.href = '/'; };
+        
         onMounted(() => {
             initTheme();
             fetchData();
@@ -857,12 +1286,8 @@ createApp({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ slug, visitorId: getVisitorId() })
                 });
-                if(localStorage.getItem('customer_data') && localStorage.getItem('customer_data') != null) {
-                    loyaltyForm.value.phone = localStorage.getItem('loyalty_phone');
-                    loyaltyForm.value.pin = localStorage.getItem('loyalty_pin');
-                    checkLoyaltyStatus();
-                }
             }
+           
         });
 
         return {
@@ -872,13 +1297,34 @@ createApp({
             initAddToCart, showProductModal, activeProduct, activeProductAddons, isOptionSelected, toggleOption, modalQuantity, modalTotalPrice, confirmAddToCart,
             cart, showCartModal, customerName, customerPhone, customerEmail, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, paymentMethod, customerHowToPay, decreaseCartItem, cartTotalItems, cartSubTotal, commissionWebAmountCmp, deliveryCostCmp, paymentFeeCmp, cartTotalPrice, checkout, deliveryType,
             selectedColonia, stripeEnabled, showStripeModal, stripePaymentError, isProcessingPayment, processStripePayment,
-            showLoyaltyModal, loyaltyForm, loyaltyState, isRecovering,
-            openLoyaltyModal, registerLoyalty, loginLoyalty, logoutLoyalty, toggleRecoverMode, resetLoyaltyState,
+            showUserDropdown, loginForm, customerForm, setupPasswordForm, isLoginMode, isSetupPasswordMode, showUserModal, openModal, loginCustomer, submitSetupPassword, registerCustomer, logout,
+            showAuthPromptModal, authPromptContext, pendingCheckout, continueAsGuest,
+            currentUser, firstName, userInitial, userAvatarUrl,
+            // Gestión Perfil, Direcciones e Historial
+            sharedCust, activeProfileTab, profileForm, addressForm, showAddressFormModal, isEditingAddress,
+            saveProfile, handleAvatarChange, openAddAddress, openEditAddress, saveAddressForm, deleteAddressForm,
+            // Stripe y Billetera
+            showAddCardModal, stripeCardErrorSave, isSavingCard, initStripeCardElement, saveCardForm, deleteCardForm, reorderPastPurchaseStore,
+            selectedAddressId, selectedSavedCardId,
             isBusinessOpen, todaySchedule,
             alertBussinesClose,
             formatTime,
-            showSuccessScreen, lastOrderNumber, lastWhatsAppUrl,
-            sendWhatsAppOrderManual, goToMenu
+            showSuccessScreen, lastOrderNumber, lastOrderId, lastWhatsAppUrl,
+            sendWhatsAppOrderManual, goToMenu, goToMarketplace
         };
     }
-}).mount('#app');
+})
+.directive('click-outside', {
+    mounted(el, binding) {
+        el._clickOutsideHandler = (event) => {
+            if (!el.contains(event.target)) {
+                binding.value(event);
+            }
+        };
+        document.addEventListener('click', el._clickOutsideHandler, true);
+    },
+    unmounted(el) {
+        document.removeEventListener('click', el._clickOutsideHandler, true);
+    }
+})
+.mount('#app');

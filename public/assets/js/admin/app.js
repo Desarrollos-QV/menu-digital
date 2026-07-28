@@ -21,6 +21,7 @@ import { useMunicipios } from './useMunicipios.js';
 import { useCategoriesStore } from './useCategoriesStore.js';
 import { usePrinter } from './usePrinter.js'; // Gestor de impresion universal
 import { useBlog } from './useBlog.js'; // Blog Logic
+import { useNotifications } from './useNotifications.js'; // Notificaciones Generales
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -101,6 +102,7 @@ createApp({
         const categoriesStore = useCategoriesStore(auth.isDark);
         const printer = usePrinter(settings);
         const blog = useBlog(auth.isDark, media.fetchMedia);
+        const notifs = reactive(useNotifications());
 
         const saasMenu = ref([
             { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
@@ -497,6 +499,8 @@ createApp({
                     finance.fetchCurrentStatus(); // <-- Cargamos el status de la caja
                     finance.fetchHistory(); // <-- Cargamos el status de la caja
                     analytics.fetchDashboardStats(); // <-- Cargamos stadisticas
+                    notifs.startPolling(); // <-- Iniciar polling notificaciones
+                    
                     // Redirección inteligente
                     if (role === 'superadmin') {
                         currentView.value = 'saas_dashboard';
@@ -1317,7 +1321,7 @@ createApp({
             const parts = path.split('/').filter(p => p);
             const lastPart = parts[parts.length - 1]; // "pos"
             kds.stopPolling();
-
+            notifs.startPolling(); // <-- Iniciar polling notificaciones
             if (auth.isAuthenticated.value) {
                 const savedRole = localStorage.getItem('role');
                 if (savedRole) currentUserRole.value = savedRole;
@@ -1492,6 +1496,7 @@ createApp({
             // Impresion de Tickets
             showTicketModal, ticketData, openTicketPreview, printTicketNow, finishSale,
             categoriesStore,
+            notifs,
             toggleCategory,
             blog
         };

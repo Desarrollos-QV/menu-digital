@@ -6,6 +6,8 @@ export function useKds() {
     const activeOrders = ref([]);
     const isLoading = ref(false);
     let pollingInterval = null;
+    let previousPendingIds = new Set();
+    let isFirstLoad = true; // Para evitar sonido en la primera carga
 
     // --- OBTENER PEDIDOS ACTIVOS ---
     const fetchActiveOrders = async () => {
@@ -20,7 +22,26 @@ export function useKds() {
                 activeOrders.value = allOrders.filter(o => 
                     ['pending', 'preparing', 'ready'].includes(o.status)
                 ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // FIFO (Primero en entrar, primero en salir)
-                console.log(activeOrders);
+                
+                // --- LÓGICA DE AUDIO DE KDS ---
+                const currentPendingIds = activeOrders.value
+                    .filter(o => o.status === 'pending')
+                    .map(o => o._id);
+                
+                if (!isFirstLoad) {
+                    const hasNewPending = currentPendingIds.some(id => !previousPendingIds.has(id));
+                    if (hasNewPending) {
+                        try {
+                            const audio = new Audio('/assets/notification.mp3');
+                            audio.play().catch(e => console.warn('KDS Audio play prevented:', e));
+                        } catch(e) {
+                            console.error('Error playing audio', e);
+                        }
+                    }
+                }
+                
+                previousPendingIds = new Set(currentPendingIds);
+                isFirstLoad = false;
             }
         } catch (error) {
             console.error("Error KDS:", error);

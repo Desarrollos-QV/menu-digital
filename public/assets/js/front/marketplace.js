@@ -12,8 +12,18 @@ tailwind.config = {
                 // USAMOS UNA VARIABLE CSS PARA EL COLOR DINÁMICO
                 primary: 'var(--theme-color)',
                
+                brand: '#E30613',       // Rojo Tengo Hambre
+                brandYellow: '#FFC800', // Amarillo Tengo Hambre
+                
                 dark: '#0f172a',
-                light: '#f8fafc'
+                light: '#f8fafc',
+
+                // Neutros oficiales
+                dark1: '#111111',
+                dark2: '#333333',
+                dark3: '#666666',
+                light1: '#F2F2F2',
+                light2: '#FAFAFA'
             },
             animation: {
                 'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -47,6 +57,7 @@ window.initMarketplaceMap = function() {
     window._googlePlacesReady = true;
     document.dispatchEvent(new CustomEvent('maps-ready'));
 };
+
 // Carga dinámica del SDK de Google Maps
 fetch('/api/public/maps-key')
     .then(response => response.json())
@@ -75,6 +86,27 @@ createApp({
         const froods = ref([]);
         const promos = ref([]);
         const cheapProducts = ref([]);
+
+        // --- THEME LOGIC ---
+        const theme = ref(localStorage.getItem('theme') || 'light');
+        if (theme.value === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            theme.value = 'dark';
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        const toggleTheme = () => {
+            if (theme.value === 'light') {
+                theme.value = 'dark';
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                theme.value = 'light';
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        };
 
         // --- MODO ENTREGA vs RECOLECTAR ---
         const deliveryMode = ref('delivery'); // 'delivery' | 'pickup'
@@ -239,21 +271,68 @@ createApp({
         const selectedMunicipio = ref(null); // Municipio seleccionado temporalmente
         const currentLag = ref(null); // Colonia seleccionada { _id, name, ... }
 
-         const initApp = async () => {
+          // --- AUTH & USER UNIFICADO ---
+        const sharedCust = window.createSharedCustomer();
+        
+        const initApp = async () => {
             // Cargar municipios
             try {
                 const res = await fetch('/api/municipios');
                 if(res.ok) allMunicipios.value = await res.json();
             } catch(e) { console.error("Error municipios", e); }
 
-            // 3. Verificar Ubicación Guardada
+            // Verificar Ubicación Guardada en localStorage
             const storedLoc = localStorage.getItem('fudi_location');
             if(storedLoc) {
                 currentLag.value = JSON.parse(storedLoc);
             } else {
-                showLocationModal.value = true; // Forzar selección
+                // Si no hay ubicación guardada, intentar usar la dirección predeterminada del perfil
+                const defaultAddr = sharedCust.addresses.value.find(a => a.isDefault && a.coloniaId);
+                if (defaultAddr) {
+                    trySetColoniaFromAddress(defaultAddr);
+                } else {
+                    showLocationModal.value = true; // Forzar selección
+                }
+            }
+
+            // Si no está registrado, mostrar modal promocional después de 4 segundos
+            if (!sharedCust.customer.value) {
+                setTimeout(() => {
+                    // Verificar si aún no está registrado
+                    if (!sharedCust.customer.value) {
+                        authPromptContext.value = 'marketplace';
+                        showAuthPromptModal.value = true;
+                    }
+                }, 4000);
             }
         };
+
+        // Función auxiliar: busca la colonia del sistema y la setea como currentLag
+        const trySetColoniaFromAddress = (addr) => {
+            let coloniaFound = null;
+            for (const mun of allMunicipios.value) {
+                if (mun.colonias) {
+                    const col = mun.colonias.find(c => String(c._id) === String(addr.coloniaId));
+                    if (col) { coloniaFound = col; break; }
+                }
+            }
+            if (coloniaFound) {
+                currentLag.value = coloniaFound;
+                localStorage.setItem('fudi_location', JSON.stringify(coloniaFound));
+            } else {
+                showLocationModal.value = true;
+            }
+        };
+
+        // Watch para timing: si las addresses llegan después de que initApp ya corrió
+        watch(sharedCust.addresses, (addrs) => {
+            if (currentLag.value) return; // Ya hay ubicación, no hacer nada
+            if (localStorage.getItem('fudi_location')) return;
+            const defaultAddr = addrs.find(a => a.isDefault && a.coloniaId);
+            if (defaultAddr && allMunicipios.value.length > 0) {
+                trySetColoniaFromAddress(defaultAddr);
+            }
+        });
 
         // Paso 1: Seleccionar Municipio
         const selectMunicipio = (municipio) => {
@@ -299,34 +378,30 @@ createApp({
         const modalTitle = computed(() => {
             return selectedMunicipio.value ? 'Selecciona tu Colonia' : 'Selecciona tu Municipio';
         });
-        // --- AUTH & USER ---
-        const currentUser = ref(null);
+      
+
+        const currentUser = computed(() => {
+            if (!sharedCust.token.value || !sharedCust.customer.value) return null;
+            return { customer: sharedCust.customer.value };
+        });
 
         const firstName = computed(() => {
-            if (!currentUser.value) return '';
-            return currentUser.value.customer.name.split(' ')[0];
+            if (!sharedCust.customer.value) return '';
+            return sharedCust.customer.value.name.split(' ')[0];
         });
 
         const userInitial = computed(() => {
-            if (!currentUser.value) return '?';
-            return currentUser.value.customer.name.charAt(0).toUpperCase();
+            if (!sharedCust.customer.value) return '?';
+            return sharedCust.customer.value.name.charAt(0).toUpperCase();
         });
 
-        const checkAuth = () => {
-            const storedUser = localStorage.getItem('th_customer');
-            if (storedUser) {
-                try {
-                    currentUser.value = JSON.parse(storedUser);
-                } catch (e) {
-                    console.error('Error parsing user', e);
-                    localStorage.removeItem('th_customer');
-                }
-            }
-        };
+        const userAvatarUrl = computed(() => {
+            if (!sharedCust.customer.value) return '';
+            return sharedCust.customer.value.avatar;
+        });
 
         const logout = () => {
-            localStorage.removeItem('th_customer');
-            currentUser.value = null;
+            sharedCust.logout();
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -335,17 +410,22 @@ createApp({
                 icon: 'success',
                 title: 'Sesión cerrada'
             });
+            showUserDropdown.value = false;
             mobileDrawerOpen.value = false;
         };
 
         // --- MODAL USUARIO (REGISTRO & LOGIN) ---
         const showUserModal = ref(false);
+        const showAuthPromptModal = ref(false);
+        const authPromptContext = ref('marketplace');
         const isLoginMode = ref(true); // Default to Login
+        const isSetupPasswordMode = ref(false);
+        const showUserDropdown = ref(false);
 
         // Formulario Login
         const loginForm = reactive({
             phone: '',
-            pin: ''
+            password: ''
         });
 
         // Formulario Registro
@@ -353,99 +433,369 @@ createApp({
             name: '',
             phone: '',
             email: '',
-            pin: ''
+            password: ''
         });
+
+        // Formulario Configurar Contraseña (Migración de PIN)
+        const setupPasswordForm = reactive({
+            email: '',
+            password: '',
+            confirmPassword: ''
+        });
+
+        let tempPhone = '';
+        let tempPin = '';
 
         const openModal = (mode = 'login') => {
             isLoginMode.value = (mode === 'login');
+            isSetupPasswordMode.value = false;
+            setupPasswordForm.email = '';
+            setupPasswordForm.password = '';
+            setupPasswordForm.confirmPassword = '';
             showUserModal.value = true;
         };
 
         const loginCustomer = async () => {
             try {
-                const res = await fetch('/api/public/customers/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(loginForm)
+                const data = await sharedCust.login(loginForm.phone, loginForm.password);
+                
+                if (data && data.requirePasswordSetup) {
+                    tempPhone = data.phone;
+                    tempPin = data.pin;
+                    setupPasswordForm.email = data.email || '';
+                    isSetupPasswordMode.value = true;
+                    return;
+                }
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    icon: 'success',
+                    title: '¡Hola de nuevo!',
+                    text: `Bienvenido, ${sharedCust.customer.value.name}`,
+                });
+                showUserModal.value = false;
+
+                // Reset form
+                loginForm.phone = '';
+                loginForm.password = '';
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de acceso',
+                    text: err.message || 'Credenciales incorrectas.',
+                    confirmButtonColor: '#6366f1'
+                });
+            }
+        };
+
+        const submitSetupPassword = async () => {
+            if (!setupPasswordForm.email || !setupPasswordForm.email.trim()) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'El correo electrónico es obligatorio.',
+                    confirmButtonColor: '#6366f1'
+                });
+                return;
+            }
+            if (setupPasswordForm.password !== setupPasswordForm.confirmPassword) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Las contraseñas no coinciden.',
+                    confirmButtonColor: '#6366f1'
+                });
+                return;
+            }
+            if (setupPasswordForm.password.length < 4) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'La contraseña debe tener al menos 4 caracteres.',
+                    confirmButtonColor: '#6366f1'
+                });
+                return;
+            }
+
+            try {
+                await sharedCust.setupPassword(tempPhone, tempPin, setupPasswordForm.password, setupPasswordForm.email);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Contraseña configurada!',
+                    text: 'Tu cuenta ha sido actualizada con tu nueva contraseña.',
+                    confirmButtonColor: '#6366f1'
                 });
 
-                const data = await res.json();
-
-                if (res.ok) {
-                    localStorage.setItem('th_customer', JSON.stringify(data));
-                    currentUser.value = data;
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 1500,
-                        icon: 'success',
-                        title: '¡Hola de nuevo!',
-                        text: `Bienvenido, ${data.customer.name}`,
-                    });
-                    showUserModal.value = false;
-
-                    // Reset form
-                    loginForm.phone = '';
-                    loginForm.pin = '';
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error de acceso',
-                        text: data.message || 'Credenciales incorrectas.',
-                        confirmButtonColor: '#6366f1'
-                    });
-                }
+                showUserModal.value = false;
+                isSetupPasswordMode.value = false;
+                setupPasswordForm.password = '';
+                setupPasswordForm.confirmPassword = '';
+                loginForm.phone = '';
+                loginForm.password = '';
             } catch (err) {
-                console.error(err);
-                Swal.fire('Error', 'Fallo de conexión', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.message || 'No se pudo guardar la contraseña.',
+                    confirmButtonColor: '#6366f1'
+                });
             }
         };
 
         const registerCustomer = async () => {
             try {
-                const payload = {
-                    ...customerForm,
-                    businessId: null
-                };
+                await sharedCust.register(
+                    customerForm.name,
+                    customerForm.phone,
+                    customerForm.email,
+                    customerForm.password
+                );
 
-                const res = await fetch('/api/public/customers', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Bienvenido!',
+                    text: 'Tu cuenta ha sido creada exitosamente.',
+                    confirmButtonColor: '#6366f1'
                 });
+                showUserModal.value = false;
 
-                const data = await res.json();
+                // Reset form
+                customerForm.name = '';
+                customerForm.phone = '';
+                customerForm.email = '';
+                customerForm.password = '';
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: err.message || 'No se pudo crear la cuenta.',
+                    confirmButtonColor: '#6366f1'
+                });
+            }
+        };
 
-                if (res.ok) {
-                    // Guardamos sesión (Data debe contener el objeto cliente creado)
-                    localStorage.setItem('th_customer', JSON.stringify(data));
-                    currentUser.value = data;
+        // --- GESTIÓN DE PERFIL Y DATOS DESDE "MI CUENTA" ---
+        const activeProfileTab = ref('profile'); // 'profile' | 'addresses' | 'cards' | 'orders'
+        const profileForm = reactive({
+            name: '',
+            phone: '',
+            email: '',
+            password: ''
+        });
+        const addressForm = reactive({
+            _id: null,
+            alias: 'Hogar',
+            street: '',
+            number: '',
+            colony: '',
+            zipCode: '',
+            reference: '',
+            isDefault: false
+        });
+        const showAddressFormModal = ref(false);
+        const isEditingAddress = ref(false);
 
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Bienvenido!',
-                        text: 'Tu cuenta ha sido creada exitosamente.',
-                        confirmButtonColor: '#6366f1'
+        // Stripe
+        const showAddCardModal = ref(false);
+        const stripeCardElement = ref(null);
+        const stripeInstance = ref(null);
+        const stripeCardError = ref('');
+        const isSavingCard = ref(false);
+
+        const openProfileEdit = () => {
+            if (sharedCust.customer.value) {
+                profileForm.name = sharedCust.customer.value.name;
+                profileForm.phone = sharedCust.customer.value.phone;
+                profileForm.email = sharedCust.customer.value.email;
+                profileForm.password = '';
+            }
+        };
+
+        // Sincronizar formulario de perfil al recibir datos del cliente
+        watch(sharedCust.customer, () => {
+            openProfileEdit();
+        }, { immediate: true });
+
+        const saveProfile = async () => {
+            try {
+                await sharedCust.updateProfile({
+                    name: profileForm.name,
+                    phone: profileForm.phone,
+                    email: profileForm.email,
+                    password: profileForm.password || undefined
+                });
+                toastr.success('Perfil actualizado con éxito');
+            } catch (err) {
+                toastr.error(err.message || 'Error al guardar cambios');
+            }
+        };
+
+        const handleAvatarChange = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                await sharedCust.uploadAvatar(file);
+                toastr.success('Foto de perfil actualizada con éxito');
+            } catch (err) {
+                toastr.error(err.message || 'Error al subir foto de perfil');
+            }
+        };
+
+        // DIRECCIONES
+        const openAddAddress = () => {
+            isEditingAddress.value = false;
+            addressForm._id = null;
+            addressForm.alias = 'Hogar';
+            addressForm.street = '';
+            addressForm.number = '';
+            addressForm.colony = '';
+            addressForm.zipCode = '';
+            addressForm.reference = '';
+            addressForm.isDefault = false;
+            showAddressFormModal.value = true;
+        };
+
+        const openEditAddress = (addr) => {
+            isEditingAddress.value = true;
+            addressForm._id = addr._id;
+            addressForm.alias = addr.alias;
+            addressForm.street = addr.street;
+            addressForm.number = addr.number;
+            addressForm.colony = addr.colony;
+            addressForm.zipCode = addr.zipCode;
+            addressForm.reference = addr.reference || '';
+            addressForm.isDefault = addr.isDefault;
+            showAddressFormModal.value = true;
+        };
+
+        const saveAddressForm = async () => {
+            try {
+                await sharedCust.saveAddress({ ...addressForm });
+                toastr.success(isEditingAddress.value ? 'Dirección actualizada con éxito' : 'Dirección agregada');
+                showAddressFormModal.value = false;
+            } catch (err) {
+                toastr.error(err.message || 'Error al guardar dirección');
+            }
+        };
+
+        const deleteAddressForm = async (addrId) => {
+            if (!confirm('¿Estás seguro de eliminar esta dirección?')) return;
+            try {
+                await sharedCust.deleteAddress(addrId);
+                toastr.success('Dirección eliminada con éxito');
+            } catch (err) {
+                toastr.error(err.message || 'Error al eliminar dirección');
+            }
+        };
+
+        // TARJETAS (STRIPE)
+        const initStripeCardElement = async () => {
+            try {
+                const stripeConfigRes = await fetch('/api/stripe/config');
+                if (!stripeConfigRes.ok) throw new Error();
+                const stripeConfig = await stripeConfigRes.json();
+                
+                if (!stripeInstance.value && stripeConfig.publishableKey) {
+                    stripeInstance.value = Stripe(stripeConfig.publishableKey);
+                }
+                
+                if (stripeInstance.value) {
+                    showAddCardModal.value = true;
+                    stripeCardError.value = '';
+                    
+                    nextTick(() => {
+                        const elements = stripeInstance.value.elements();
+                        const style = {
+                            base: {
+                                color: '#333333',
+                                fontFamily: '"Outfit", sans-serif',
+                                fontSize: '16px',
+                                '::placeholder': { color: '#aab7c4' }
+                            }
+                        };
+                        stripeCardElement.value = elements.create('card', { style });
+                        stripeCardElement.value.mount('#card-element-save');
+                        stripeCardElement.value.on('change', (event) => {
+                            stripeCardError.value = event.error ? event.error.message : '';
+                        });
                     });
-                    showUserModal.value = false;
-
-                    // Reset form
-                    customerForm.name = '';
-                    customerForm.phone = '';
-                    customerForm.email = '';
-                    customerForm.pin = '';
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.message || 'No se pudo crear la cuenta.',
-                        confirmButtonColor: '#6366f1'
-                    });
+                    toastr.error('No se pudo inicializar la pasarela de pagos.');
+                }
+            } catch (e) {
+                toastr.error('Error al inicializar formulario de tarjeta.');
+            }
+        };
+
+        const saveCardForm = async () => {
+            if (isSavingCard.value) return;
+            isSavingCard.value = true;
+            stripeCardError.value = '';
+            
+            try {
+                const clientSecret = await sharedCust.getSetupIntent();
+                
+                const result = await stripeInstance.value.confirmCardSetup(clientSecret, {
+                    payment_method: {
+                        card: stripeCardElement.value,
+                        billing_details: {
+                            name: sharedCust.customer.value.name,
+                            email: sharedCust.customer.value.email,
+                            phone: sharedCust.customer.value.phone
+                        }
+                    }
+                });
+                
+                if (result.error) {
+                    stripeCardError.value = result.error.message;
+                } else {
+                    if (result.setupIntent.status === 'succeeded') {
+                        toastr.success('Tarjeta guardada correctamente');
+                        showAddCardModal.value = false;
+                        await sharedCust.fetchCards();
+                    }
                 }
             } catch (err) {
-                console.error(err);
-                Swal.fire('Error', 'Fallo de conexión', 'error');
+                stripeCardError.value = err.message || 'Error al guardar la tarjeta.';
+            } finally {
+                isSavingCard.value = false;
+            }
+        };
+
+        const deleteCardForm = async (pmId) => {
+            if (!confirm('¿Estás seguro de eliminar esta tarjeta?')) return;
+            try {
+                await sharedCust.deleteCard(pmId);
+                toastr.success('Tarjeta eliminada con éxito');
+            } catch (err) {
+                toastr.error(err.message || 'Error al eliminar tarjeta');
+            }
+        };
+
+        // ACCIÓN RECOMPRAR RÁPIDO (MARKETPLACE)
+        const reorderPastPurchase = (order) => {
+            if (order.businessId) {
+                // Redirigir al cliente a la página del negocio correspondiente
+                // Guardamos en sessionStorage los artículos para que app.js los precargue
+                sessionStorage.setItem('reorder_cart', JSON.stringify(order.items));
+                
+                // Buscar el slug del negocio
+                fetch(`/api/public/config?id=${order.businessId}`)
+                    .then(res => res.json())
+                    .then(cfg => {
+                        if (cfg && cfg.slug) {
+                            window.location.href = `/${cfg.slug}`;
+                        } else {
+                            toastr.error('Negocio no encontrado');
+                        }
+                    })
+                    .catch(() => toastr.error('Error al redirigir al negocio'));
+            } else {
+                toastr.error('Datos del pedido incompletos');
             }
         };
 
@@ -802,10 +1152,6 @@ createApp({
         };
 
         const goToBusiness = (biz) => {
-            if (!biz.isOpen) {
-                // Podrías mostrar un toast o alert
-                // alert("Negocio cerrado");
-            }
             window.location.href = biz.slug; // Redirección interna
         };
 
@@ -814,7 +1160,6 @@ createApp({
         onMounted(() => {
             initApp();
             window.addEventListener('scroll', handleScroll);
-            checkAuth(); // Verificar sesión al cargar
             fetchBusinesses();
             resetInterval(); // Iniciar slider
         });
@@ -825,6 +1170,7 @@ createApp({
         });
 
         return {
+            theme, toggleTheme,
             searchQuery, selectedCategory, categories,
             trendingBusinesses, filteredBusinesses,
             froods, promos, cheapProducts,
@@ -834,9 +1180,15 @@ createApp({
             selectedMunicipio, selectMunicipio, goBackToMunicipios, modalTitle,
             // Slider
             banners, activeBanner, nextBanner, prevBanner, setActiveBanner, handleBannerClick,
-            // Registro & Auth
-            showUserModal, isLoginMode, openModal, customerForm, loginForm, registerCustomer, loginCustomer,
-            currentUser, firstName, userInitial, logout,
+            // Auth y Perfil
+            sharedCust, currentUser, firstName, userInitial, userAvatarUrl, logout,
+            showUserModal, isLoginMode, isSetupPasswordMode, showUserDropdown,
+            showAuthPromptModal, authPromptContext, openModal, customerForm, loginForm, setupPasswordForm, registerCustomer, loginCustomer, submitSetupPassword,
+            // Gestión Perfil, Direcciones e Historial
+            sharedCust, activeProfileTab, profileForm, addressForm, showAddressFormModal, isEditingAddress,
+            openProfileEdit, saveProfile, handleAvatarChange, openAddAddress, openEditAddress, saveAddressForm, deleteAddressForm,
+            // Stripe y Billetera
+            showAddCardModal, stripeCardError, isSavingCard, initStripeCardElement, saveCardForm, deleteCardForm, reorderPastPurchase,
             // Horario
             isBusinessCurrentlyOpen, getTodayHours, formatTime,
             // Modo Recolectar + Mapa
@@ -847,4 +1199,18 @@ createApp({
             mobileDrawerOpen
         };
     }
-}).mount('#app');
+})
+.directive('click-outside', {
+    mounted(el, binding) {
+        el._clickOutsideHandler = (event) => {
+            if (!el.contains(event.target)) {
+                binding.value(event);
+            }
+        };
+        document.addEventListener('click', el._clickOutsideHandler, true);
+    },
+    unmounted(el) {
+        document.removeEventListener('click', el._clickOutsideHandler, true);
+    }
+})
+.mount('#app');

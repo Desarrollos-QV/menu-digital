@@ -133,7 +133,9 @@ exports.getPublicData = async (req, res) => {
                     commissionWebType: business.commissionWebType || 'percent',
                     commissionWebAmount: business.commissionWebAmount || 0,
                     // ZONAS DE ENTREGA CON COSTOS
-                    deliveryZones: mappedZones
+                    deliveryZones: mappedZones,
+                    // CONFIGURACION GENERAL
+                    allowOnlineOrders: business.allowOnlineOrders || false
                 });
 
             case 'reviews':

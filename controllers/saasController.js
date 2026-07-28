@@ -253,7 +253,7 @@ exports.createBusiness = async (req, res) => {
 // EDITAR NEGOCIO
 exports.updateBusiness = async (req, res) => {
     try {
-        const { name, ownerEmail, slug, plan, phone, address, isOpen, active, isTrending,
+        const { name, ownerEmail, slug, plan, phone, address, isOpen, active, isTrending, hasGoldStar,
                 lat, lng, allowDelivery, allowPickup,
                 commissionWebType, commissionWebAmount,
                 commissionPosType, commissionPosAmount,
@@ -277,6 +277,7 @@ exports.updateBusiness = async (req, res) => {
         if (isOpen            !== undefined) updateData.isOpen            = isOpen;
         if (active            !== undefined) updateData.active            = active;
         if (isTrending        !== undefined) updateData.isTrending        = isTrending;
+        if (hasGoldStar       !== undefined) updateData.hasGoldStar       = hasGoldStar;
         if (lat               !== undefined) updateData.lat               = lat;
         if (lng               !== undefined) updateData.lng               = lng;
         if (allowDelivery     !== undefined) updateData.allowDelivery     = allowDelivery;

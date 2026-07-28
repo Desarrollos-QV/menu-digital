@@ -82,8 +82,9 @@
                     <p class="mobile-drawer-label">Mi Cuenta</p>
                     <!-- Saludo -->
                     <div class="flex items-center gap-3 px-2 py-3 mb-2 bg-slate-50 dark:bg-slate-800 rounded-2xl">
-                        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
-                            {{ userInitial }}
+                        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0 overflow-hidden">
+                            <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-full h-full object-cover rounded-full">
+                            <span v-else>{{ userInitial }}</span>
                         </div>
                         <div>
                             <p class="font-bold text-sm text-slate-800 dark:text-white">{{ currentUser.customer.name }}</p>
@@ -145,22 +146,31 @@
                         <a href="/blog.html" class="hidden md:flex text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition items-center gap-1.5 mr-2">
                             <i class="fa-solid fa-newspaper text-brand"></i> Blog
                         </a>
+                        
+                        <!-- Theme Toggle -->
+                        <button @click="toggleTheme" class="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand transition">
+                            <i :class="theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun'"></i>
+                        </button>
 
                         <!-- ESTADO: LOGUEADO -->
-                        <div v-if="currentUser" class="relative group z-50">
-                            <button class="flex items-center gap-1.5 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
+                        <div v-if="currentUser" class="relative z-50" v-click-outside="() => showUserDropdown = false">
+                            <button @click="showUserDropdown = !showUserDropdown" class="flex items-center gap-1.5 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:shadow-md transition">
                                 <span class="text-xs font-bold text-slate-700 dark:text-slate-200 hidden sm:block ml-1">{{ firstName }}</span>
-                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                                    {{ userInitial }}
+                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm overflow-hidden">
+                                    <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-full h-full object-cover rounded-full">
+                                    <span v-else>{{ userInitial }}</span>
                                 </div>
                             </button>
 
-                            <!-- Dropdown User (Desktop hover) -->
-                            <div class="hidden md:block absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 animate-fade-in">
+                            <!-- Dropdown User (Desktop click-open) -->
+                            <div v-if="showUserDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 animate-fade-in">
                                 <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
                                     <p class="text-xs text-slate-400 font-bold">Hola, {{ currentUser.customer.name }}</p>
                                 </div>
-                                <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold">
+                                <a href="/profile" class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold">
+                                    <i class="fa-regular fa-user mr-2"></i> Mi Cuenta
+                                </a>
+                                <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold border-t border-slate-100 dark:border-slate-700 mt-1">
                                     <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
                                 </button>
                             </div>
@@ -236,9 +246,6 @@
                                     🔥 PROMOS DE HOY
                                 </h5>
                             </div>
-                            <!-- <button class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
-                                Ver todas <i class="fa-solid fa-chevron-right text-xs"></i>
-                            </button> -->
                         </div>
 
                         <!-- Horizontal Scroll list -->
@@ -279,73 +286,6 @@
                                             </p>
                                         </div>
                                     </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FROODS, DESCUBRE TU ANTOJO (Reels de comida) -->
-                    <div v-if="!searchQuery && selectedCategory === 'all' && froods.length > 0" class="mb-5 hidden"
-                        :class="promos.length === 0 ? 'mt-5' : ''">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    🎬 FROODS, DESCUBRE TU ANTOJO 🔥
-                                </h5>
-                            </div>
-                            <!-- <button class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
-                                Ver más <i class="fa-solid fa-chevron-right text-xs"></i>
-                            </button> -->
-                        </div>
-
-                        <!-- Horizontal Scroll list -->
-                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 px-4 snap-x">
-                            <div v-for="reel in froods" :key="reel.id" 
-                                class="snap-start flex-shrink-0 w-[calc((100%-36px)/2.2)] md:w-44 flex flex-col gap-2 group">
-                                
-                                <!-- Video Thumbnail Card -->
-                                <div class="relative w-full h-56 md:h-64 rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700/50 cursor-pointer">
-                                    <img :src="reel.thumbnail" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="">
-                                    <!-- Dark Overlays -->
-                                    <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
-                                    
-                                    <!-- Play Icon in center -->
-                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div class="w-10 h-10 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center text-white text-sm shadow-md transition-transform group-hover:scale-110">
-                                            <i class="fa-solid fa-play ml-0.5"></i>
-                                        </div>
-                                    </div>
-
-                                    <!-- Top Overlay: Title -->
-                                    <div class="absolute top-3 left-2 right-2 text-center">
-                                        <span class="inline-block text-[9px] md:text-[10px] font-black text-white bg-black/45 backdrop-blur-sm px-2 py-0.5 rounded-lg leading-tight tracking-wide uppercase max-w-full truncate">
-                                            {{ reel.title }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Bottom Overlay: View Count -->
-                                    <div class="absolute bottom-3 left-3 text-white text-[9px] md:text-[10px] font-bold flex items-center gap-1">
-                                        <i class="fa-regular fa-eye"></i> {{ reel.views }}
-                                    </div>
-                                </div>
-
-                                <!-- Reel Restaurant details & button below card -->
-                                <div class="flex flex-col gap-1.5 px-1">
-                                    <div class="flex items-center gap-1 min-w-0">
-                                        <div class="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-slate-100 dark:border-slate-800">
-                                            <img :src="reel.business.avatar ? 'https://tengo-hambre.com' + reel.business.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
-                                        </div>
-                                        <p class="font-bold text-[10px] text-slate-800 dark:text-slate-200 truncate flex items-center gap-0.5">
-                                            {{ reel.business.name }}
-                                            <i class="fa-solid fa-circle-check text-blue-500 text-[8px]" title="Verificado"></i>
-                                        </p>
-                                    </div>
-                                    <!-- Outlined Red Button "Pedir ahora" -->
-                                    <button @click="goToBusiness(reel.business)" 
-                                        class="w-full border border-brand/50 hover:border-brand text-brand hover:bg-brand hover:text-white rounded-xl font-bold py-1 px-2 text-[10px] text-center transition-all duration-300">
-                                        Pedir ahora
-                                    </button>
                                 </div>
 
                             </div>
@@ -484,9 +424,6 @@
                                     <span class="text-sm font-bold text-slate-400 ml-2">({{ filteredBusinesses.length }})</span>
                                 </h5>
                             </div>
-                            <!--<button v-if="!searchQuery" class="text-sm font-bold text-brand hover:text-brandDark flex items-center gap-1 transition">
-                                Ver más <i class="fa-solid fa-chevron-right text-xs"></i>
-                            </button>-->
                         </div>
 
                         <!-- Empty state -->
@@ -510,16 +447,23 @@
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80"></div>
                                     
-                                    <!-- Badge de Oferta sobre la Portada (Ej: "PIZZA FAMILIAR DESDE $199" or custom based on tags) -->
+                                    <!-- Badge de Oferta sobre la Portada (Ej: "PIZZA FAMILIAR DESDE $199" or custom based on tags)
                                     <div v-if="biz.promo || biz.deliveryCost === 0" class="absolute top-0 left-4 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md flex items-center gap-1 uppercase tracking-wider">
                                         <i class="fa-solid fa-tag"></i> 
                                         {{ biz.promo ? 'OFERTA ACTIVA' : '' }}
-                                    </div>
+                                    </div> -->
                                     
-                                    <!-- Heart Icon Overlay on top-right (Favorito) -->
+                                    <!-- Heart Icon Overlay on top-right (Favorito) 
                                     <button class="absolute top-0 right-4 w-9 h-9 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-500 hover:bg-white transition-all duration-300" @click.stop="">
                                         <i class="fa-regular fa-heart text-sm"></i>
-                                    </button>
+                                    </button>-->
+
+                                    <!-- Gold Star Tengo Hambre Awards -->
+                                    <div v-if="biz.hasGoldStar" class="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg shadow-yellow-500/50 flex items-center gap-1.5 uppercase tracking-widest border border-yellow-300/50 z-10">
+                                        <i class="fa-solid fa-star animate-pulse text-white"></i>
+                                        <span>Estrella Dorada</span>
+                                    </div>
+                                    
                                 </div>
                                 
                                 <!-- Content Box -->
@@ -548,14 +492,6 @@
                                             • {{ biz.time }} min 
                                             • Envío: {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
                                         </p>
-                                        
-                                        <!-- Red Promo Tag/Alert inside info card -->
-                                        <div class="flex items-center gap-1.5 text-xs text-brand font-bold mt-1">
-                                            <i class="fa-solid fa-tags text-[11px] animate-pulse"></i>
-                                            <span class="line-clamp-1">
-                                                {{ biz.promo ? '¡Encuentra promociones especiales en nuestro menú!' : 'Comida deliciosa al mejor precio' }}
-                                            </span>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -698,14 +634,6 @@
                             Conectando los mejores restaurantes locales con amantes de la comida como tú.
                         </p>
                     </div>
-                    <!--<div>
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-4">Descubrir</h4>
-                        <ul class="space-y-2 text-sm text-slate-500">
-                            <li><a href="#" class="hover:text-brand transition">Nuevos Lugares</a></li>
-                            <li><a href="#" class="hover:text-brand transition">Ofertas</a></li>
-                            <li><a href="#" class="hover:text-brand transition">Categorías</a></li>
-                        </ul>
-                    </div>-->
                     <div>
                         <h4 class="font-bold text-slate-900 dark:text-white mb-4">Para Negocios</h4>
                         <ul class="space-y-2 text-sm text-slate-500">
@@ -792,7 +720,7 @@
                 <!-- Modal Header -->
                 <div class="p-6 pb-2 text-center">
                     <div class="w-12 h-12 bg-brand/10 text-brand rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-                        <i class="fa-regular fa-face-smile"></i>
+                        <img src="assets/images/icon.jpg" alt="" class="w-full h-full object-cover rounded-full border-2 border-brand">
                     </div>
                     <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Bienvenido de nuevo' : 'Únete a Tengo Hambre' }}</h2>
                     <p class="text-slate-500 text-sm mt-1">
@@ -803,8 +731,43 @@
                 <!-- Modal Body -->
                 <div class="p-6 pt-2 overflow-y-auto">
                     
+                    <!-- FORM CONFIGURAR NUEVA CONTRASEÑA (Caso de migración de PIN) -->
+                    <form v-if="isSetupPasswordMode" @submit.prevent="submitSetupPassword" class="space-y-4">
+                        <div class="text-left">
+                            <div class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 mb-4 leading-relaxed">
+                                <i class="fa-solid fa-circle-info mr-1"></i>
+                                <strong>Actualización de seguridad obligatoria:</strong> Tu PIN es correcto. Por favor ingresa tu correo y crea una contraseña para acceder a tu cuenta.
+                            </div>
+                            
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                            <div class="relative mb-3">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                                <input v-model="setupPasswordForm.email" type="email" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
+                            </div>
+
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nueva Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="setupPasswordForm.password" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                            </div>
+                        </div>
+                        
+                        <div class="text-left">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Confirmar Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="setupPasswordForm.confirmPassword" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-primary hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>Guardar y Entrar</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
                     <!-- FORMULARIO DE LOGIN -->
-                    <form v-if="isLoginMode" @submit.prevent="loginCustomer" class="space-y-4">
+                    <form v-else-if="isLoginMode" @submit.prevent="loginCustomer" class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
                             <div class="relative">
@@ -814,10 +777,10 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">PIN de Acceso</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="loginForm.pin" type="password" inputmode="numeric" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="****">
+                                <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="••••••••">
                             </div>
                         </div>
 
@@ -846,18 +809,18 @@
                         </div>
                         
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email (Opcional)</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
-                                <input v-model="customerForm.email" type="email" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
+                                <input v-model="customerForm.email" type="email" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Crea un PIN (Para entrar después)</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Crea una Contraseña</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="customerForm.pin" type="password" inputmode="numeric" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Ej: 1234">
+                                <input v-model="customerForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
                             </div>
                         </div>
 
@@ -890,8 +853,61 @@
                 </button>
             </div>
         </div>
+
+        <!-- MODAL PROMOCIONAL DE REGISTRO -->
+        <div v-if="showAuthPromptModal" class="fixed inset-0 z-[70] flex flex-col items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" @click="authPromptContext === 'marketplace' && (showAuthPromptModal = false)"></div>
+            
+            <!-- Modal Principal -->
+            <div class="relative bg-dark1 border border-slate-700/50 rounded-3xl w-full max-w-[400px] shadow-2xl overflow-hidden animate-slide-up flex flex-col p-8 text-center z-10">
+                
+                <button v-if="authPromptContext === 'marketplace'" @click="showAuthPromptModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-dark2 rounded-full w-8 h-8 flex items-center justify-center transition">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+
+                <!-- Logo -->
+                <div class="mx-auto w-[84px] h-[84px] bg-brand rounded-full flex items-center justify-center mb-6 relative">
+                    <!-- <span class="text-white font-black text-xl leading-tight">TENGO<br>HAMBRE</span> -->
+                    <img src="assets/images/icon.jpg" alt="" class="w-full h-full object-cover rounded-full border-2 border-brand">
+                    
+                    <!-- Sparkles (Bigotes) Izquierda -->
+                    <span class="absolute -left-4 top-2 text-brandYellow text-xl font-black rotate-[-30deg]">-</span>
+                    <span class="absolute -left-5 top-5 text-brandYellow text-xl font-black">-</span>
+                    <span class="absolute -left-4 top-8 text-brandYellow text-xl font-black rotate-[30deg]">-</span>
+                    
+                    <!-- Sparkles (Bigotes) Derecha -->
+                    <span class="absolute -right-4 top-2 text-brandYellow text-xl font-black rotate-[30deg]">-</span>
+                    <span class="absolute -right-5 top-5 text-brandYellow text-xl font-black">-</span>
+                    <span class="absolute -right-4 top-8 text-brandYellow text-xl font-black rotate-[-30deg]">-</span>
+                </div>
+
+                <h2 class="text-2xl font-black text-white mb-2">Crea tu cuenta en 30 segundos</h2>
+                <p class="text-slate-400 text-sm mb-8 leading-relaxed px-2">
+                    Guarda tus direcciones, consulta tus pedidos y ordena mucho más rápido.
+                </p>
+
+                <div class="flex flex-col gap-3">
+                    <button @click="showAuthPromptModal = false; openModal('login')" class="w-full py-3.5 bg-brand hover:brightness-90 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-user"></i>
+                        <span>Iniciar sesión</span>
+                    </button>
+                    
+                    <button @click="showAuthPromptModal = false; openModal('register')" class="w-full py-3.5 bg-brandYellow hover:brightness-95 text-dark1 font-black rounded-xl transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Crear cuenta</span>
+                    </button>
+                </div>
+
+                <button v-if="authPromptContext === 'marketplace'" @click="showAuthPromptModal = false" class="mt-6 text-sm text-slate-400 hover:text-white font-medium transition">
+                    Continuar como invitado
+                </button>
+            </div>
+        </div>
     </div>
     <!-- Scripts -->
-    <script src="../assets/js/front/marketplace.js"></script>    
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="../assets/js/front/shared-customer.js"></script>
+    <script src="../assets/js/front/marketplace.js"></script>
+    <script src="../assets/js/front/cookie-consent.js"></script>    
 </body>
 </html>

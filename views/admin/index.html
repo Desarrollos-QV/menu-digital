@@ -182,20 +182,97 @@
             <!-- Top Header -->
             <header class="h-20 bg-white dark:bg-slate-800 shadow-sm flex items-center justify-between px-4 md:px-8 z-10 border-b dark:border-slate-700">
                 <button @click="toggleSidebar" class="text-slate-500 hover:text-primary transition focus:outline-none"><i class="fa-solid fa-bars-staggered text-2xl"></i></button>
-                <div class="flex items-center space-x-4 md:space-x-6">
+                <div class="flex items-center gap-3 md:gap-5">
                     
-                    <button v-if="settings.plan == 'pro' && finance.shiftStatus.value === 'closed'" @click="finance.showOpenModal.value = true" class="bg-emerald-500 hover:bg-emerald-600 text-white text-sm px-3 py-1.5 rounded-xl shadow-lg shadow-emerald-500/30 font-bold transition">
-                        <i class="fa-solid fa-lock-open lg:mr-2"></i> <span class="hidden md:inline"> Abrir Caja</span>
-                    </button>
-                    <button v-if="settings.plan == 'pro' && finance.shiftStatus.value === 'open'" @click="finance.showCloseModal.value = true" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-xl shadow-lg shadow-red-500/30 font-bold transition">
-                        <i class="fa-solid fa-lock lg:mr-2"></i> <span class="hidden md:inline"> Cerrar Caja (Corte)</span>
+                    <!-- OPEN/CLOSE CASH -->
+                    <button v-if="settings.plan == 'pro' && finance.shiftStatus.value === 'closed'" @click="finance.showOpenModal.value = true" class="relative group overflow-hidden bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-sm px-4 py-2 rounded-2xl shadow-lg shadow-emerald-500/25 font-bold transition-all duration-300 active:scale-95">
+                        <div class="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-shimmer skew-x-12"></div>
+                        <i class="fa-solid fa-lock-open md:mr-2"></i> <span class="hidden md:inline">Abrir Caja</span>
                     </button>
                     
-                    <button @click="toggleTheme" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-yellow-400 flex items-center justify-center hover:bg-slate-200 transition"><i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i></button>
-                    <div class="flex items-center space-x-2">
-                        <div class="text-right hidden md:block"><p class="text-sm font-bold text-slate-800 dark:text-white">{{ username }}</p><p class="text-xs text-slate-500 uppercase">{{ currentUserRole === 'superadmin' ? 'Super Admin' : 'Gerente' }}</p></div>
-                        <img v-if="settings.avatar" :src="settings.avatar" class="w-10 h-10 object-cover rounded-full ">
-                        <div v-else class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">A</div>
+                    <button v-if="settings.plan == 'pro' && finance.shiftStatus.value === 'open'" @click="finance.showCloseModal.value = true" class="relative group overflow-hidden bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white text-sm px-4 py-2 rounded-2xl shadow-lg shadow-rose-500/25 font-bold transition-all duration-300 active:scale-95">
+                        <div class="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-shimmer skew-x-12"></div>
+                        <i class="fa-solid fa-lock md:mr-2"></i> <span class="hidden md:inline">Cerrar Caja</span>
+                    </button>
+
+                    <div class="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
+
+                    <!-- THEME TOGGLE -->
+                    <button @click="toggleTheme" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-yellow-400 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 active:scale-90 hover:rotate-12 hover:text-primary dark:hover:text-yellow-300 shadow-sm">
+                        <i class="fa-solid" :class="isDark ? 'fa-sun text-lg' : 'fa-moon text-lg'"></i>
+                    </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div class="relative">
+                        <button @click="notifs.toggleMenu()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 active:scale-90 shadow-sm">
+                            <i class="fa-regular fa-bell text-lg"></i>
+                            <span v-if="notifs.unreadCount > 0" class="absolute top-1.5 right-2 w-2.5 h-2.5 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full animate-pulse"></span>
+                        </button>
+                        
+                        <!-- Panel Notificaciones -->
+                        <div v-show="notifs.showNotificationsMenu" class="absolute right-0 mt-3 w-[340px] bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl border border-white/40 dark:border-slate-700 rounded-3xl shadow-2xl z-50 overflow-hidden origin-top-right transition-all animate-fade-in-up">
+                            
+                            <!-- Header -->
+                            <div class="p-4 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
+                                <h3 class="font-black text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-bell text-primary"></i> Notificaciones
+                                    <span v-if="notifs.unreadCount > 0" class="bg-rose-100 text-rose-600 text-[10px] px-2 py-0.5 rounded-full">{{ notifs.unreadCount }} nuevas</span>
+                                </h3>
+                                <button @click="notifs.markAllAsRead()" v-if="notifs.unreadCount > 0" class="text-xs text-primary font-bold hover:text-primaryDark transition-colors">
+                                    Marcar leídas
+                                </button>
+                            </div>
+                            
+                            <!-- Body -->
+                            <div class="max-h-[350px] overflow-y-auto scrollbar-hide bg-slate-50/30 dark:bg-slate-900/30">
+                                <div v-if="notifs.notifications.length === 0" class="p-8 text-center text-slate-400 flex flex-col items-center gap-3">
+                                    <i class="fa-solid fa-inbox text-4xl text-slate-300 dark:text-slate-600"></i>
+                                    <p class="text-sm">No tienes notificaciones recientes.</p>
+                                </div>
+                                
+                                <div v-for="n in notifs.notifications" :key="n.id" 
+                                     @click="notifs.markAsRead(n.id); navigate({view: 'kds', id: 3})"
+                                     class="p-4 border-b border-slate-100 dark:border-slate-700/30 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer flex gap-3 relative"
+                                     :class="!n.read ? 'bg-primary/5 dark:bg-primary/10' : ''">
+                                     
+                                    <div v-if="!n.read" class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+                                     
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" :class="n.color">
+                                        <i :class="n.icon"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-start mb-0.5">
+                                            <p class="text-sm font-bold text-slate-800 dark:text-white truncate" :class="!n.read ? 'font-black' : ''">{{ n.title }}</p>
+                                            <span class="text-[10px] font-medium text-slate-400 whitespace-nowrap ml-2">{{ notifs.getTimeElapsed(n.time) }}</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-snug truncate">{{ n.message }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Footer -->
+                            <div class="p-3 bg-slate-50 dark:bg-slate-800/80 text-center border-t border-slate-100 dark:border-slate-700/50">
+                                <button @click="notifs.toggleMenu()" class="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-white transition-colors">Cerrar Panel</button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
+                    
+                    <!-- AVATAR -->
+                    <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 py-1.5 px-2 md:pl-4 md:pr-1.5 rounded-full border border-slate-200 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                        <div class="text-right hidden md:block">
+                            <p class="text-sm font-black text-slate-800 dark:text-white leading-tight">{{ username }}</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ currentUserRole === 'superadmin' ? 'Super Admin' : 'Gerente' }}</p>
+                        </div>
+                        <div class="relative">
+                            <img v-if="settings.avatar" :src="settings.avatar" class="w-9 h-9 object-cover rounded-full ring-2 ring-white dark:ring-slate-800 shadow-sm">
+                            <div v-else class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primaryDark flex items-center justify-center text-white font-black text-sm ring-2 ring-white dark:ring-slate-800 shadow-sm">
+                                {{ username ? username.charAt(0).toUpperCase() : 'A' }}
+                            </div>
+                            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full"></div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -2708,6 +2785,7 @@
                                             <div v-else class="text-slate-400 flex flex-col items-center text-center p-2">
                                                 <i class="fa-regular fa-image text-2xl md:text-3xl mb-1"></i>
                                                 <span class="text-[9px] md:text-[10px] font-medium uppercase">Subir Portada</span>
+                                                <span class="text-[8px] md:text-[9px] text-slate-400 mt-1">800x400 px</span>
                                             </div>
                                             <div v-if="isUploadingCover" class="absolute inset-0 bg-white/80 dark:bg-black/60 flex items-center justify-center z-10">
                                                 <i class="fa-solid fa-circle-notch fa-spin text-primary text-lg md:text-xl"></i>
@@ -3617,7 +3695,7 @@
                 </div>
 
                 <!-- DATOS BÁSICOS -->
-                <div>
+                <div class="mt-4">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Información del Negocio</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -3673,80 +3751,95 @@
                             </p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Tipos de Servicio -->
-                    <div class="mt-4">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Tipos de Servicio</p>
-                        <div class="grid grid-cols-2 gap-3">
-                            <!-- Envíos a domicilio -->
-                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
-                                :class="saasForm.allowDelivery ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
-                                <input type="checkbox" v-model="saasForm.allowDelivery" class="sr-only">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    :class="saasForm.allowDelivery ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
-                                    <i class="fa-solid fa-motorcycle text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Envíos a domicilio</p>
-                                    <p class="text-[10px] text-slate-500">Reparte en las zonas configuradas</p>
-                                </div>
-                                <i class="ml-auto text-sm" :class="saasForm.allowDelivery ? 'fa-solid fa-square-check text-primary' : 'fa-regular fa-square text-slate-400'"></i>
-                            </label>
+                <!-- Tipos de Servicio -->
+                <div class="mt-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Tipos de Servicio</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Pedidos En Linea -->
+                        <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                            :class="saasForm.allowOnlineOrders ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                            <input type="checkbox" v-model="saasForm.allowOnlineOrders" class="sr-only">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                :class="saasForm.allowOnlineOrders ? 'bg-blue-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                <i class="fa-solid fa-globe text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white">Pedidos en línea</p>
+                                <p class="text-[10px] text-slate-500">Activa KDS y Seguimiento</p>
+                            </div>
+                            <i class="ml-auto text-sm" :class="saasForm.allowOnlineOrders ? 'fa-solid fa-square-check text-blue-500' : 'fa-regular fa-square text-slate-400'"></i>
+                        </label>
 
-                            <!-- Recoger en comedor -->
-                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
-                                :class="saasForm.allowPickup ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
-                                <input type="checkbox" v-model="saasForm.allowPickup" class="sr-only">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    :class="saasForm.allowPickup ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
-                                    <i class="fa-solid fa-utensils text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Recoger en comedor</p>
-                                    <p class="text-[10px] text-slate-500">El cliente recoge en sucursal</p>
-                                </div>
-                                <i class="ml-auto text-sm" :class="saasForm.allowPickup ? 'fa-solid fa-square-check text-emerald-500' : 'fa-regular fa-square text-slate-400'"></i>
-                            </label>
-                        </div>
-                    </div>
+                        <!-- Envíos a domicilio -->
+                        <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                            :class="saasForm.allowDelivery ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                            <input type="checkbox" v-model="saasForm.allowDelivery" class="sr-only">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                :class="saasForm.allowDelivery ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                <i class="fa-solid fa-motorcycle text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white">Envíos a domicilio</p>
+                                <p class="text-[10px] text-slate-500">Reparte en las zonas configuradas</p>
+                            </div>
+                            <i class="ml-auto text-sm" :class="saasForm.allowDelivery ? 'fa-solid fa-square-check text-primary' : 'fa-regular fa-square text-slate-400'"></i>
+                        </label>
 
-                    <!-- Métodos de Pago -->
-                    <div class="mt-4">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Métodos de Pago</p>
-                        <div class="grid grid-cols-2 gap-3">
-                            <!-- Efectivo -->
-                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
-                                :class="saasForm.acceptCash ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
-                                <input type="checkbox" v-model="saasForm.acceptCash" class="sr-only">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    :class="saasForm.acceptCash ? 'bg-violet-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
-                                    <i class="fa-solid fa-money-bill-wave text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Efectivo</p>
-                                    <p class="text-[10px] text-slate-500">Pago en efectivo</p>
-                                </div>
-                                <i class="ml-auto text-sm" :class="saasForm.acceptCash ? 'fa-solid fa-square-check text-violet-500' : 'fa-regular fa-square text-slate-400'"></i>
-                            </label>
-
-                            <!-- Stripe -->
-                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
-                                :class="saasForm.acceptCard ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
-                                <input type="checkbox" v-model="saasForm.acceptCard" class="sr-only">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    :class="saasForm.acceptCard ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
-                                    <i class="fa-brands fa-stripe-s text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-800 dark:text-white">Stripe (Línea)</p>
-                                    <p class="text-[10px] text-slate-500">Tarjeta crédito/débito</p>
-                                </div>
-                                <i class="ml-auto text-sm" :class="saasForm.acceptCard ? 'fa-solid fa-square-check text-indigo-500' : 'fa-regular fa-square text-slate-400'"></i>
-                            </label>
-                        </div>
+                        <!-- Recoger en comedor -->
+                        <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                            :class="saasForm.allowPickup ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                            <input type="checkbox" v-model="saasForm.allowPickup" class="sr-only">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                :class="saasForm.allowPickup ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                <i class="fa-solid fa-utensils text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white">Recoger en comedor</p>
+                                <p class="text-[10px] text-slate-500">El cliente recoge en sucursal</p>
+                            </div>
+                            <i class="ml-auto text-sm" :class="saasForm.allowPickup ? 'fa-solid fa-square-check text-emerald-500' : 'fa-regular fa-square text-slate-400'"></i>
+                        </label>
                     </div>
                 </div>
 
+                <!-- Métodos de Pago -->
+                <div class="mt-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Métodos de Pago</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Efectivo -->
+                        <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                            :class="saasForm.acceptCash ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                            <input type="checkbox" v-model="saasForm.acceptCash" class="sr-only">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                :class="saasForm.acceptCash ? 'bg-violet-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                <i class="fa-solid fa-money-bill-wave text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white">Efectivo</p>
+                                <p class="text-[10px] text-slate-500">Pago en efectivo</p>
+                            </div>
+                            <i class="ml-auto text-sm" :class="saasForm.acceptCash ? 'fa-solid fa-square-check text-violet-500' : 'fa-regular fa-square text-slate-400'"></i>
+                        </label>
+
+                        <!-- Stripe -->
+                        <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition select-none"
+                            :class="saasForm.acceptCard ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                            <input type="checkbox" v-model="saasForm.acceptCard" class="sr-only">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                :class="saasForm.acceptCard ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-500'">
+                                <i class="fa-brands fa-stripe-s text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white">Stripe (Línea)</p>
+                                <p class="text-[10px] text-slate-500">Tarjeta crédito/débito</p>
+                            </div>
+                            <i class="ml-auto text-sm" :class="saasForm.acceptCard ? 'fa-solid fa-square-check text-indigo-500' : 'fa-regular fa-square text-slate-400'"></i>
+                        </label>
+                    </div>
+                </div>
+            
                 <!-- PLAN Y CONTROLES -->
                 <div>
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Plan y Estado</p>
@@ -3781,6 +3874,26 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Estrella de Tengo hambre -->
+                <div v-if="editingBusiness">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Tengo Hambre Awards</p>
+                    <button @click="saasForm.hasGoldStar = !saasForm.hasGoldStar"
+                        class="w-full flex items-center gap-4 p-4 rounded-xl border-2 transition"
+                        :class="saasForm.hasGoldStar ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
+                            :class="saasForm.hasGoldStar ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="font-bold text-slate-800 dark:text-white">Estrella Dorada</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Destacar negocio como "Más Votado" en la plataforma.
+                            </p>
+                        </div>
+                        <i class="text-xl" :class="saasForm.hasGoldStar ? 'fa-solid fa-toggle-on text-yellow-500' : 'fa-solid fa-toggle-off text-slate-400'"></i>
+                    </button>
                 </div>
 
                 <!-- COMISIONES -->

@@ -1,82 +1,238 @@
 const LoyaltyProgram = require('../models/LoyaltyProgram');
 const Customer = require('../models/Customer');
-const Business = require('../models/Business'); // Asegurar importación
+const Business = require('../models/Business');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const SECRET_KEY = process.env.JWT_SECRET || 'jwt_secret_key_default';
 
 // --- PÚBLICO (WebApp) ---
 
 exports.getCustomerStatus = async (req, res) => {
     try {
-        const { slug, phone, pin } = req.body; // Recibimos PIN opcional
+        const { slug, phone, pin, password } = req.body; 
+        const inputPassword = password || pin; // Retrocompatibilidad con nombres antiguos
         
         let decodedSlug = slug;
         try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
-        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+        
+        let business = null;
+        let program = null;
+        
+        if (slug) {
+            const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+            business = await Business.findOne({ slug: { $in: possibleSlugs } });
+            if (business) {
+                program = await LoyaltyProgram.findOne({ businessId: business._id });
+            }
+        }
 
-        const business = await Business.findOne({ slug: { $in: possibleSlugs } });
-        if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
-
-        const program = await LoyaltyProgram.findOne({ businessId: business._id });
-        if (!program) return res.status(404).json({ message: 'No hay programa activo' });
-
-        const customer = await Customer.findOne({ businessId: business._id, phone });
+        // Búsqueda global por teléfono para permitir inicio de sesión unificado
+        const customer = await Customer.findOne({ phone });
         
         // Escenario 1: Cliente no existe
         if (!customer) {
             return res.json({ registered: false, program });
         }
 
-        // Escenario 2: Cliente existe, pero no enviaron PIN (Intento de login)
-        if (!pin) {
+        // Escenario 2: Cliente existe, pero no enviaron contraseña (Intento de login)
+        if (!inputPassword) {
             return res.json({ 
                 registered: true, 
-                active: (program.active) ? true : false, 
-                authRequired: true, // Bandera para que el front pida PIN
+                active: program ? (program.active ? true : false) : false, 
+                authRequired: true, 
                 program
-                // NO enviamos datos sensibles del cliente aun
             });
         }
 
-        // Escenario 3: Cliente existe y enviaron PIN (Validación)
-        if (customer.pin !== pin) {
-            return res.status(401).json({ message: 'PIN incorrecto' });
+        // Escenario 3: Cliente existe y enviaron contraseña (Validación)
+        // Soporte tanto para bcrypt como para PINs anteriores en texto plano (migración automática asistida)
+        let isMatch = false;
+        if (customer.password) {
+            isMatch = await bcrypt.compare(inputPassword, customer.password);
+            if (!isMatch) {
+                return res.status(401).json({ message: 'Contraseña incorrecta' });
+            }
+        } else if (customer.pin) {
+            isMatch = (customer.pin === inputPassword);
+            if (!isMatch) {
+                return res.status(401).json({ message: 'Contraseña incorrecta' });
+            }
+            // Si el pin coincide pero no tiene contraseña encriptada, solicitar la configuración
+            return res.json({
+                registered: true,
+                requirePasswordSetup: true,
+                phone: customer.phone,
+                pin: inputPassword,
+                email: customer.email || '',
+                message: 'Actualización de seguridad requerida: configura tu contraseña.'
+            });
+        } else {
+            // Caso raro de usuario sin PIN ni Password en la BD
+            return res.json({
+                registered: true,
+                requirePasswordSetup: true,
+                phone: customer.phone,
+                email: customer.email || '',
+                message: 'Actualización de seguridad requerida: configura tu contraseña.'
+            });
         }
+
+        // Generar Token JWT
+        const token = jwt.sign(
+            { id: customer._id, phone: customer.phone, email: customer.email, name: customer.name },
+            SECRET_KEY,
+            { expiresIn: '7d' }
+        );
 
         // Login Exitoso
         res.json({ 
             registered: true, 
-            active: (program.active) ? true : false, 
+            active: program ? (program.active ? true : false) : false, 
             authSuccess: true,
-            customer, 
+            token,
+            customer: {
+                _id: customer._id,
+                name: customer.name,
+                phone: customer.phone,
+                email: customer.email,
+                avatar: customer.avatar || '',
+                points: customer.points
+            }, 
             program 
         });
 
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-exports.registerCustomer = async (req, res) => {
+exports.setupPassword = async (req, res) => {
     try {
-        const { slug, name, phone, pin } = req.body;
-        
-        if (!pin || pin.length !== 4) {
-            return res.status(400).json({ message: 'El PIN debe ser de 4 dígitos' });
+        const { phone, pin, password, email } = req.body;
+        if (!phone || !password || password.trim().length < 4) {
+            return res.status(400).json({ message: 'Datos incompletos o contraseña inválida (mínimo 4 caracteres).' });
         }
 
-        let decodedSlug = slug;
-        try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
-        const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+        const customer = await Customer.findOne({ phone });
+        if (!customer) {
+            return res.status(404).json({ message: 'Cliente no encontrado.' });
+        }
 
-        const business = await Business.findOne({ slug: { $in: possibleSlugs } });
+        // Si ya tiene contraseña, no permitir reconfiguración por este método abierto
+        if (customer.password) {
+            return res.status(400).json({ message: 'Esta cuenta ya tiene una contraseña configurada.' });
+        }
+
+        // Validar que el PIN legacy coincida si existe en la base de datos
+        if (customer.pin && customer.pin !== pin) {
+            return res.status(401).json({ message: 'El PIN de verificación es incorrecto.' });
+        }
+
+        // Si se envió un correo, validamos y guardamos
+        if (email && email.trim()) {
+            const trimmedEmail = email.toLowerCase().trim();
+            // Verificar si el correo ya existe en otro cliente
+            const existingEmail = await Customer.findOne({ email: trimmedEmail, _id: { $ne: customer._id } });
+            if (existingEmail) {
+                return res.status(400).json({ message: 'El correo electrónico ya está registrado por otro usuario.' });
+            }
+            customer.email = trimmedEmail;
+        } else if (!customer.email) {
+            // Si la cuenta no tenía correo y no se envió ninguno
+            return res.status(400).json({ message: 'El correo electrónico es obligatorio para actualizar tu cuenta.' });
+        }
+
+        // Cifrar nueva contraseña y guardar
+        customer.password = await bcrypt.hash(password, 10);
+        customer.pin = undefined; // Limpiar PIN obsoleto
+        await customer.save();
+
+        // Generar Token JWT
+        const token = jwt.sign(
+            { id: customer._id, phone: customer.phone, email: customer.email, name: customer.name },
+            SECRET_KEY,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            success: true,
+            token,
+            customer: {
+                _id: customer._id,
+                name: customer.name,
+                phone: customer.phone,
+                email: customer.email,
+                avatar: customer.avatar || '',
+                points: customer.points
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
+
+exports.registerCustomer = async (req, res) => {
+    try {
+        const { slug, name, phone, pin, password, email } = req.body;
+        const inputPassword = password || pin;
+        
+        if (!email || !email.trim()) {
+            return res.status(400).json({ message: 'El correo electrónico es obligatorio' });
+        }
+
+        if (!inputPassword || inputPassword.length < 4) {
+            return res.status(400).json({ message: 'La contraseña debe tener al menos 4 caracteres' });
+        }
+
+        // Verificar si ya existe un cliente con ese email o teléfono
+        const existingCustomer = await Customer.findOne({ $or: [{ phone }, { email: email.toLowerCase() }] });
+        if (existingCustomer) {
+            return res.status(400).json({ message: 'El teléfono o correo ya se encuentra registrado' });
+        }
+
+        let businessId = null;
+        if (slug) {
+            let decodedSlug = slug;
+            try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
+            const possibleSlugs = [slug, decodedSlug, decodedSlug.replace(/’/g, "'"), decodedSlug.replace(/'/g, "’")];
+            const business = await Business.findOne({ slug: { $in: possibleSlugs } });
+            if (business) businessId = business._id;
+        }
+
+        // Encriptar password
+        const hashedPassword = await bcrypt.hash(inputPassword, 10);
         
         const newCustomer = new Customer({
-            businessId: business._id,
+            businessId,
             name,
             phone,
-            pin // Guardamos el PIN
+            email: email.toLowerCase(),
+            password: hashedPassword
         });
         
         await newCustomer.save();
-        res.json({ success: true, customer: newCustomer });
-    } catch (e) { res.status(400).json({ error: 'Error al registrar o ya existe' }); }
+
+        // Generar Token JWT
+        const token = jwt.sign(
+            { id: newCustomer._id, phone: newCustomer.phone, email: newCustomer.email, name: newCustomer.name },
+            SECRET_KEY,
+            { expiresIn: '7d' }
+        );
+
+        res.json({ 
+            success: true, 
+            token,
+            customer: {
+                _id: newCustomer._id,
+                name: newCustomer.name,
+                phone: newCustomer.phone,
+                email: newCustomer.email,
+                avatar: '',
+                points: 0
+            } 
+        });
+    } catch (e) { 
+        res.status(400).json({ error: 'Error al registrar el cliente: ' + e.message }); 
+    }
 };
 exports.getProgramConfig = async (req, res) => {  
     try {

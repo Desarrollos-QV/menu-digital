@@ -22,6 +22,15 @@ router.get('/categories-store', categoryStoreController.getCategoriesStore);
 // Ejemplo: /api/public/products?slug=tacos-pepe
 router.get('/:type', publicMenuController.getPublicData);
 
+// Ruta para obtener el slug por id
+router.get('/business-slug/:id', async (req, res) => {
+    try {
+        const Business = require('../models/Business');
+        const b = await Business.findById(req.params.id);
+        res.json({ slug: b ? b.slug : null, name: b ? b.name : null });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Ruta para registrar negocio
 router.post('/register', publicMenuController.registerBusiness);
 

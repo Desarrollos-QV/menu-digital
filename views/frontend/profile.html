@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Perfil - Tengo Hambre</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Fuentes & Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- JQUERY (Toastr requirement) -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- TOASTR (Notifications) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="../assets/css/front.css">
+    
+    <script>
+        // Configuración de Tailwind para mantener la consistencia de colores
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#ff4757',
+                        brandDark: '#e84118',
+                        primary: '#ff4757',
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-brand selection:text-white">
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
+        
+        <!-- ===== HEADER TOP ===== -->
+        <nav class="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/80 transition-colors duration-300">
+            <div class="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <!-- Volver / Atrás -->
+                    <a href="/" class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition flex-shrink-0" title="Volver al inicio">
+                        <i class="fa-solid fa-arrow-left text-sm"></i>
+                    </a>
+                    
+                    <!-- Logo -->
+                    <a href="/" class="flex items-center gap-2 group cursor-pointer">
+                        <div class="w-8 h-8 md:w-9 md:h-9 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition flex-shrink-0">
+                            <img src="/assets/images/logo.jpg" alt="Logo" class="rounded-xl object-cover w-full h-full">
+                        </div>
+                        <span class="text-sm font-black tracking-tight text-slate-800 dark:text-white hidden sm:block">TENGO HAMBRE</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Toggle Dark Mode -->
+                    <button @click="toggleTheme" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 flex items-center justify-center transition-colors">
+                        <i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
+                    </button>
+                    
+                    <!-- Perfil dropdown click-trigger -->
+                    <div v-if="currentUser" class="relative z-50" v-click-outside="() => showUserDropdown = false">
+                        <button @click="showUserDropdown = !showUserDropdown" class="flex items-center gap-1.5 pl-2 pr-1 py-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200/30 dark:border-slate-700 hover:shadow-md transition">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 hidden sm:block ml-1">{{ firstName }}</span>
+                            <div class="w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold shadow-sm overflow-hidden">
+                                <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-full h-full object-cover rounded-full">
+                                <span v-else>{{ userInitial }}</span>
+                            </div>
+                        </button>
+
+                        <div v-if="showUserDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 animate-fade-in">
+                            <a href="/" class="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold">
+                                <i class="fa-solid fa-house mr-2"></i> Volver a Tienda
+                            </a>
+                            <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-550 hover:text-white font-bold border-t border-slate-100 dark:border-slate-700 mt-1">
+                                <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ===== MAIN CONTAINER ===== -->
+        <main class="flex-1 pt-24 md:pt-32 pb-16 px-4">
+            <div class="max-w-6xl mx-auto">
+                
+                <!-- CASO: NO LOGUEADO (PANTALLA DE ACCESO MIGRADA DIRECTAMENTE AQUÍ) -->
+                <div v-if="!currentUser" class="max-w-md mx-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-8 shadow-2xl relative">
+                    <div class="text-center mb-6">
+                        <div class="w-14 h-14 bg-brand/10 text-brand rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+                            <i class="fa-regular fa-face-smile"></i>
+                        </div>
+                        <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Inicia Sesión' : 'Crea tu Cuenta' }}</h2>
+                        <p class="text-slate-500 text-sm mt-1">
+                            {{ isLoginMode ? 'Ingresa para ver tu cuenta' : 'Únete para guardar ubicaciones y tarjetas' }}
+                        </p>
+                    </div>
+
+                    <!-- FORM CONFIGURAR NUEVA CONTRASEÑA (Caso de migración de PIN) -->
+                    <form v-if="isSetupPasswordMode" @submit.prevent="submitSetupPassword" class="space-y-4">
+                        <div class="text-left">
+                            <div class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 mb-4 leading-relaxed">
+                                <i class="fa-solid fa-circle-info mr-1"></i>
+                                <strong>Actualización de seguridad obligatoria:</strong> Tu PIN es correcto. Por favor ingresa tu correo y crea una contraseña para acceder a tu cuenta.
+                            </div>
+                            
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                            <div class="relative mb-3">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                                <input v-model="setupPasswordForm.email" type="email" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
+                            </div>
+
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nueva Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="setupPasswordForm.password" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                            </div>
+                        </div>
+                        
+                        <div class="text-left">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Confirmar Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="setupPasswordForm.confirmPassword" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-brand hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>Guardar y Entrar</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- FORMULARIO DE LOGIN -->
+                    <form v-else-if="isLoginMode" @submit.prevent="loginCustomer" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-brands fa-whatsapp"></i></span>
+                                <input v-model="loginForm.phone" type="tel" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="55 1234 5678">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="••••••••">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-brand hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>Iniciar Sesión</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- FORMULARIO DE REGISTRO -->
+                    <form v-else @submit.prevent="registerCustomer" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre Completo</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-user"></i></span>
+                                <input v-model="customerForm.name" type="text" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Tu nombre">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-brands fa-whatsapp"></i></span>
+                                <input v-model="customerForm.phone" type="tel" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="55 1234 5678">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                                <input v-model="customerForm.email" type="email" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Crea una Contraseña</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                                <input v-model="customerForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-brand hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                            <span>Crear Cuenta</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <!-- Toggle Mode -->
+                    <div class="text-center mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <p v-if="isLoginMode" class="text-sm text-slate-500">
+                            ¿Aún no tienes cuenta? 
+                            <button @click="openModal('register')" class="text-brand font-bold hover:underline">Regístrate aquí</button>
+                        </p>
+                        <p v-else class="text-sm text-slate-500">
+                            ¿Ya tienes cuenta? 
+                            <button @click="openModal('login')" class="text-brand font-bold hover:underline">Inicia Sesión</button>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- CASO: LOGUEADO - PANEL DE PERFIL DEDICADO -->
+                <div v-else class="flex flex-col md:flex-row gap-8">
+                    
+                    <!-- Sidebar Tabs (Desktop) / Dropdown (Mobile) -->
+                    <div class="w-full md:w-64 flex-shrink-0" :class="activeProfileTab !== '' ? 'hidden md:block' : 'block'">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                            
+                            <!-- User Mini Profile -->
+                            <div class="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800/80">
+                                <div class="relative group cursor-pointer w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center text-xl font-bold shadow-lg overflow-hidden flex-shrink-0">
+                                    <img v-if="userAvatarUrl" :src="userAvatarUrl" class="w-full h-full object-cover rounded-full">
+                                    <span v-else>{{ userInitial }}</span>
+                                    <label class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-[10px] text-white font-bold cursor-pointer">
+                                        <i class="fa-solid fa-camera"></i>
+                                        <input type="file" @change="handleAvatarChange" class="hidden" accept="image/*">
+                                    </label>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-extrabold text-slate-800 dark:text-white truncate text-base leading-tight first-letter:uppercase">{{ firstName }}</p>
+                                    <p class="text-xs text-slate-400 truncate mt-1">{{ currentUser.customer.email }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation Tabs -->
+                            <nav class="space-y-1.5 flex flex-col">
+                                <button @click="activeProfileTab = 'profile'" :class="activeProfileTab === 'profile' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" class="w-full text-left px-4 py-3 rounded-2xl font-bold text-sm flex items-center gap-3 transition">
+                                    <i class="fa-regular fa-user text-base"></i>
+                                    <span>Mi Perfil</span>
+                                </button>
+                                <button @click="activeProfileTab = 'addresses'" :class="activeProfileTab === 'addresses' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" class="w-full text-left px-4 py-3 rounded-2xl font-bold text-sm flex items-center gap-3 transition">
+                                    <i class="fa-solid fa-map-location-dot text-base"></i>
+                                    <span>Direcciones</span>
+                                </button>
+                                <button @click="activeProfileTab = 'cards'" :class="activeProfileTab === 'cards' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" class="w-full text-left px-4 py-3 rounded-2xl font-bold text-sm flex items-center gap-3 transition">
+                                    <i class="fa-regular fa-credit-card text-base"></i>
+                                    <span>Métodos de Pago</span>
+                                </button>
+                                <button @click="activeProfileTab = 'orders'" :class="activeProfileTab === 'orders' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" class="w-full text-left px-4 py-3 rounded-2xl font-bold text-sm flex items-center gap-3 transition">
+                                    <i class="fa-solid fa-history text-base"></i>
+                                    <span>Mis Pedidos</span>
+                                </button>
+                                <!-- <button @click="activeProfileTab = 'loyalty'" :class="activeProfileTab === 'loyalty' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'" class="w-full text-left px-4 py-3 rounded-2xl font-bold text-sm flex items-center gap-3 transition">
+                                    <i class="fa-solid fa-gift text-base"></i>
+                                    <span>Programa de Lealtad</span>
+                                </button> -->
+                                
+                                <button @click="logout" class="w-full text-left px-4 py-3 rounded-2xl font-bold text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-3 transition mt-6 border border-transparent hover:border-red-200/30">
+                                    <i class="fa-solid fa-right-from-bracket text-base"></i>
+                                    <span>Cerrar Sesión</span>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Panel -->
+                    <div class="flex-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm" :class="activeProfileTab === '' ? 'hidden md:block' : 'block'">
+                        
+                        <!-- TAB: PERFIL -->
+                        <div v-if="activeProfileTab === 'profile'" class="space-y-6 animate-fade-in">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="activeProfileTab = ''" class="text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 md:hidden w-8 h-8 rounded-full flex items-center justify-center">
+                                        <i class="fa-solid fa-arrow-left text-base"></i>
+                                    </button>
+                                    <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Información de Perfil</h3>
+                                </div>
+                                <p class="text-sm text-slate-400 mt-1">Mantén tus datos de contacto actualizados para tus envíos.</p>
+                            </div>
+                            
+                            <form @submit.prevent="saveProfile" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nombre Completo</label>
+                                    <input v-model="profileForm.name" type="text" required class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">WhatsApp (Teléfono)</label>
+                                        <input v-model="profileForm.phone" type="tel" required class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Correo Electrónico</label>
+                                        <input v-model="profileForm.email" type="email" required class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nueva Contraseña (Dejar vacío para no cambiarla)</label>
+                                    <input v-model="profileForm.password" type="password" class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="••••••••">
+                                </div>
+                                <button type="submit" class="py-3 px-6 bg-brand hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/20 transition transform active:scale-95 flex items-center justify-center gap-2">
+                                    <i class="fa-regular fa-floppy-disk"></i>
+                                    <span>Guardar Cambios</span>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- TAB: DIRECCIONES -->
+                        <div v-if="activeProfileTab === 'addresses'" class="space-y-6 animate-fade-in">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="activeProfileTab = ''" class="text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 md:hidden w-8 h-8 rounded-full flex items-center justify-center">
+                                            <i class="fa-solid fa-arrow-left text-base"></i>
+                                        </button>
+                                        <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Direcciones de Entrega</h3>
+                                    </div>
+                                    <p class="text-sm text-slate-400 mt-1">Administra tus ubicaciones para recibirlos a domicilio.</p>
+                                </div>
+                                <button @click="openAddAddress" class="py-2.5 px-4 bg-brand/10 hover:bg-brand text-brand hover:text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition">
+                                    <i class="fa-solid fa-plus"></i>
+                                    Nueva Dirección
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div v-for="addr in sharedCust.addresses.value" :key="addr._id" class="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850 flex flex-col justify-between relative hover:shadow-md transition">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="text-sm font-bold text-slate-800 dark:text-white">{{ addr.alias }}</span>
+                                            <span v-if="addr.isDefault" class="text-[10px] bg-brand text-white font-extrabold px-1.5 py-0.5 rounded-full uppercase">Default</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-350 leading-relaxed">
+                                            {{ addr.street }} #{{ addr.number }}<br>
+                                            Col. {{ addr.colony }}, CP {{ addr.zipCode }}
+                                        </p>
+                                        <p v-if="addr.reference" class="text-[11px] text-slate-400 mt-1.5 italic">Ref: {{ addr.reference }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                        <button @click="openEditAddress(addr)" class="text-xs font-bold text-slate-500 hover:text-brand transition flex items-center gap-1">
+                                            <i class="fa-solid fa-pen text-[10px]"></i> Editar
+                                        </button>
+                                        <button @click="deleteAddressForm(addr._id)" class="text-xs font-bold text-red-550 hover:text-red-650 transition flex items-center gap-1 ml-auto">
+                                            <i class="fa-solid fa-trash-can text-[10px]"></i> Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-if="sharedCust.addresses.value.length === 0" class="col-span-2 py-12 text-center">
+                                    <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-3">
+                                        <i class="fa-solid fa-map-pin text-xl"></i>
+                                    </div>
+                                    <p class="font-bold text-slate-500 dark:text-slate-455">No tienes direcciones guardadas</p>
+                                    <p class="text-xs text-slate-400 mt-1">Registra tu dirección para que el checkout sea más rápido.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- TAB: TARJETAS -->
+                        <div v-if="activeProfileTab === 'cards'" class="space-y-6 animate-fade-in">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="activeProfileTab = ''" class="text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 md:hidden w-8 h-8 rounded-full flex items-center justify-center">
+                                            <i class="fa-solid fa-arrow-left text-base"></i>
+                                        </button>
+                                        <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Métodos de Pago</h3>
+                                    </div>
+                                    <p class="text-sm text-slate-400 mt-1">Tus tarjetas están guardadas de forma segura vía Stripe.</p>
+                                </div>
+                                <button @click="initStripeCardElement" class="py-2.5 px-4 bg-brand/10 hover:bg-brand text-brand hover:text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition">
+                                    <i class="fa-solid fa-plus"></i>
+                                    Nueva Tarjeta
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div v-for="card in sharedCust.cards.value" :key="card.id" class="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850 flex items-center justify-between hover:shadow-md transition">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 flex items-center justify-center text-slate-500 flex-shrink-0">
+                                            <i v-if="card.card.brand === 'visa'" class="fa-brands fa-cc-visa text-blue-600 text-xl"></i>
+                                            <i v-else-if="card.card.brand === 'mastercard'" class="fa-brands fa-cc-mastercard text-orange-500 text-xl"></i>
+                                            <i v-else-if="card.card.brand === 'amex'" class="fa-brands fa-cc-amex text-cyan-600 text-xl"></i>
+                                            <i v-else class="fa-regular fa-credit-card text-slate-500 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-800 dark:text-white">•••• {{ card.card.last4 }}</p>
+                                            <p class="text-[10px] text-slate-400 uppercase mt-0.5">Expira: {{ card.card.exp_month }}/{{ card.card.exp_year }}</p>
+                                        </div>
+                                    </div>
+                                    <button @click="deleteCardForm(card.id)" class="w-8 h-8 rounded-full bg-red-50 hover:bg-red-550 text-red-550 hover:text-white flex items-center justify-center transition" title="Eliminar Tarjeta">
+                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                </div>
+                                <div v-if="sharedCust.cards.value.length === 0" class="col-span-2 py-12 text-center">
+                                    <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-3">
+                                        <i class="fa-regular fa-credit-card text-xl"></i>
+                                    </div>
+                                    <p class="font-bold text-slate-500 dark:text-slate-455">No tienes tarjetas guardadas</p>
+                                    <p class="text-xs text-slate-400 mt-1">Guarda tu tarjeta y realiza pagos en un solo toque.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- TAB: HISTORIAL -->
+                        <div v-if="activeProfileTab === 'orders'" class="space-y-6 animate-fade-in">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="activeProfileTab = ''" class="text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 md:hidden w-8 h-8 rounded-full flex items-center justify-center">
+                                        <i class="fa-solid fa-arrow-left text-base"></i>
+                                    </button>
+                                    <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Historial de Pedidos</h3>
+                                </div>
+                                <p class="text-sm text-slate-400 mt-1">Tus compras anteriores. Puedes repetir un pedido con un solo click.</p>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div v-for="order in sharedCust.orders.value" :key="order._id" class="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-850 hover:shadow-md transition">
+                                    <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                                        <div>
+                                            <p class="text-xs font-bold text-slate-800 dark:text-white">Pedido #{{ order.orderNumber || order._id.slice(-6).toUpperCase() }}</p>
+                                            <p class="text-[10px] text-slate-400 mt-0.5">{{ new Date(order.createdAt).toLocaleDateString('es-MX', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'}) }}</p>
+                                        </div>
+                                        <span :class="{
+                                            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/35 dark:text-yellow-450': order.status === 'pending',
+                                            'bg-blue-100 text-blue-800 dark:bg-blue-900/35 dark:text-blue-450': order.status === 'preparing',
+                                            'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/35 dark:text-emerald-450': order.status === 'ready',
+                                            'bg-green-100 text-green-800 dark:bg-green-900/35 dark:text-green-450': order.status === 'completed',
+                                            'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400': order.status === 'cancelled'
+                                        }" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                            {{ order.status === 'pending' ? 'Pendiente' : order.status === 'preparing' ? 'Preparando' : order.status === 'ready' ? 'Listo' : order.status === 'completed' ? 'Completado' : 'Cancelado' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                        <div class="min-w-0">
+                                            <p class="text-xs text-slate-500 dark:text-slate-350 truncate">
+                                                {{ order.items.map(i => `${i.quantity}x ${i.name}`).join(', ') }}
+                                            </p>
+                                            <p class="text-sm font-extrabold text-slate-800 dark:text-white mt-1">Total: ${{ order.total.toFixed(2) }}</p>
+                                        </div>
+
+
+                                        <div class="flex flex-col items-between">
+                                            <div class="flex-shrink-0" v-if="order.status !== 'completed' && order.status !== 'cancelled'">
+                                                <a :href="'/tracking.html?orderId=' + order._id" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white text-xs font-bold rounded-xl shadow-lg shadow-brand/20 hover:scale-105 active:scale-95 transition-all">
+                                                    <span>Seguir Pedido</span>
+                                                    <i class="fa-solid fa-arrow-right"></i>
+                                                </a>
+                                            </div>
+                                            <!-- Boton de volver a pedir -->
+                                            <div class="flex-shrink-0" v-if="order.status === 'completed' || order.status === 'cancelled'">
+                                                <button @click="reorderPastPurchase(order)" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand text-white text-xs font-bold rounded-xl shadow-lg shadow-brand/20 hover:scale-105 active:scale-95 transition-all">
+                                                    <span>Volver a pedir</span>
+                                                    <i class="fa-solid fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="sharedCust.orders.value.length === 0" class="py-12 text-center">
+                                    <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-3">
+                                        <i class="fa-solid fa-history text-xl"></i>
+                                    </div>
+                                    <p class="font-bold text-slate-500 dark:text-slate-455">No has realizado compras aún</p>
+                                    <p class="text-xs text-slate-400 mt-1">Tus pedidos aparecerán listados aquí una vez completados.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB: LEALTAD -->
+                        <div v-if="activeProfileTab === 'loyalty'" class="space-y-6 animate-fade-in">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="activeProfileTab = ''" class="text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 md:hidden w-8 h-8 rounded-full flex items-center justify-center">
+                                        <i class="fa-solid fa-arrow-left text-base"></i>
+                                    </button>
+                                    <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Programa de Lealtad</h3>
+                                </div>
+                                <p class="text-sm text-slate-400 mt-1">Acumula puntos y obtén recompensas exclusivas.</p>
+                            </div>
+                            
+                            <!-- Banner Global de Puntos -->
+                            <div class="bg-gradient-to-br from-brand to-brandDark rounded-3xl p-6 text-white shadow-lg shadow-brand/20 relative overflow-hidden">
+                                <div class="relative z-10">
+                                    <p class="text-white/80 text-sm font-medium mb-1">Mis Puntos TengoHambre</p>
+                                    <h2 class="text-4xl font-extrabold">{{ currentUser?.customer?.points || 0 }} <span class="text-xl">pts</span></h2>
+                                    <p class="text-white/70 text-xs mt-3 max-w-xs">Tus puntos son válidos en todos los negocios afiliados a nuestra plataforma.</p>
+                                </div>
+                                <i class="fa-solid fa-gift absolute -bottom-6 -right-6 text-8xl text-white/10 transform -rotate-12"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- SUB-MODAL: FORMULARIO DIRECCIÓN -->
+        <div v-if="showAddressFormModal" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="showAddressFormModal = false"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-100 dark:border-slate-800 p-6 relative animate-fade-in">
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mb-4">{{ isEditingAddress ? 'Editar Dirección' : 'Agregar Dirección' }}</h4>
+                    
+                    <form @submit.prevent="saveAddressForm" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre / Alias (Ej: Hogar, Trabajo)</label>
+                            <input v-model="addressForm.alias" type="text" required class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Calle</label>
+                            <input v-model="addressForm.street" type="text" required class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Número</label>
+                                <input v-model="addressForm.number" type="text" required class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código Postal</label>
+                                <input v-model="addressForm.zipCode" type="text" required class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                <i class="fa-solid fa-map-pin mr-1"></i>Colonia / Zona de Entrega
+                            </label>
+
+                            <!-- Colonia YA seleccionada: badge con botón para cambiar -->
+                            <div v-if="addressForm.coloniaId" class="flex items-center justify-between gap-2 p-3 rounded-xl bg-brand/10 border border-brand/30">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <i class="fa-solid fa-map-pin text-brand text-sm shrink-0"></i>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-brand text-sm truncate">{{ addressForm.colony }}</p>
+                                        <p class="text-xs text-slate-500 truncate">{{ addressForm.municipioName }}<span v-if="addressForm.zipCode"> · CP {{ addressForm.zipCode }}</span></p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="addrClearColonia" class="shrink-0 w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 hover:text-red-500 flex items-center justify-center text-xs transition">
+                                    <i class="fa-solid fa-times"></i>
+                                </button>
+                            </div>
+
+                            <!-- Selector Municipio → Colonia (cuando NO hay colonia seleccionada) -->
+                            <div v-else class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                                <!-- Header del selector -->
+                                <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
+                                    <button v-if="addrSelectedMunicipio" type="button" @click="addrGoBack" class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-brand transition">
+                                        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                                    </button>
+                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300 flex-1">
+                                        {{ addrSelectedMunicipio ? `Colonias en ${addrSelectedMunicipio.name}` : 'Selecciona tu Municipio' }}
+                                    </span>
+                                </div>
+
+                                <!-- Buscador -->
+                                <div class="relative border-b border-slate-100 dark:border-slate-700">
+                                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                    <input v-model="addrLocationSearch" type="text"
+                                        :placeholder="addrSelectedMunicipio ? 'Buscar colonia...' : 'Buscar municipio...'"
+                                        class="w-full pl-8 pr-3 py-2 text-xs bg-white dark:bg-slate-800 outline-none dark:text-white">
+                                </div>
+
+                                <!-- Lista de ítems (max-h con scroll) -->
+                                <div class="max-h-44 overflow-y-auto thin-scroll">
+                                    <div v-if="addrFilteredItems.length > 0">
+                                        <button v-for="item in addrFilteredItems" :key="item._id" type="button"
+                                            @click="addrSelectedMunicipio ? addrSelectColonia(item) : addrSelectMunicipio(item)"
+                                            class="w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition group border-b border-slate-50 dark:border-slate-800/50 last:border-0">
+                                            <div class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-brand/10 text-slate-400 group-hover:text-brand flex items-center justify-center transition shrink-0">
+                                                <i :class="addrSelectedMunicipio ? 'fa-solid fa-map-pin text-[10px]' : 'fa-solid fa-city text-[10px]'"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-xs font-bold text-slate-700 dark:text-white group-hover:text-brand transition truncate">{{ item.name }}</p>
+                                                <p v-if="!addrSelectedMunicipio && item.colonias" class="text-[10px] text-slate-400">{{ item.colonias.length }} zonas</p>
+                                                <p v-else-if="item.zipCode" class="text-[10px] text-slate-400">CP: {{ item.zipCode }}</p>
+                                            </div>
+                                            <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                    <div v-else class="text-center py-6 text-xs text-slate-400">
+                                        Sin resultados 😢
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Referencias de Entrega (Opcional)</label>
+                            <input v-model="addressForm.reference" type="text" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Color de casa, entre calles, etc.">
+                        </div>
+                        <div class="flex items-center gap-2 py-2">
+                            <input v-model="addressForm.isDefault" type="checkbox" id="addr-default" class="w-4 h-4 rounded text-brand border-slate-300 focus:ring-brand">
+                            <label for="addr-default" class="text-xs font-bold text-slate-600 dark:text-slate-350 cursor-pointer">Establecer como dirección predeterminada</label>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button type="button" @click="showAddressFormModal = false" class="py-2.5 px-5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs transition">Cancelar</button>
+                            <button type="submit" class="py-2.5 px-5 bg-brand text-white font-bold rounded-xl text-xs shadow-lg shadow-brand/20 transition">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUB-MODAL: GUARDAR TARJETA -->
+        <div v-if="showAddCardModal" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="showAddCardModal = false"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-100 dark:border-slate-800 p-6 relative animate-fade-in">
+                    
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center font-bold">
+                                <i class="fa-regular fa-credit-card text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-extrabold text-slate-800 dark:text-white leading-tight">Agregar Tarjeta</h4>
+                                <p class="text-xs text-slate-400">Encriptación de pago segura con Stripe</p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showAddCardModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <i class="fa-solid fa-times text-sm"></i>
+                        </button>
+                    </div>
+                    
+                    <form @submit.prevent="saveCardForm" class="space-y-4">
+                        <!-- Input Grande: Número de Tarjeta -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                                <span># Tarjeta</span>
+                                <div class="flex items-center gap-1.5 text-slate-400 text-sm">
+                                    <i class="fa-brands fa-cc-visa"></i>
+                                    <i class="fa-brands fa-cc-mastercard"></i>
+                                    <i class="fa-brands fa-cc-amex"></i>
+                                </div>
+                            </label>
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-brand/40 transition">
+                                <div id="card-number-element"></div>
+                            </div>
+                        </div>
+
+                        <!-- 2 Inputs Abajo (lg-6 / grid-cols-2): Expiración (MM/AA) y CVV -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                                    Fecha (MM/AA)
+                                </label>
+                                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-brand/40 transition">
+                                    <div id="card-expiry-element"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                                    CVV
+                                </label>
+                                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 focus-within:ring-2 focus-within:ring-brand/40 transition">
+                                    <div id="card-cvc-element"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="stripeCardError" class="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-2 border border-red-200/40 dark:border-red-800/30">
+                            <i class="fa-solid fa-circle-exclamation shrink-0"></i>
+                            <span>{{ stripeCardError }}</span>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 mt-6 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" @click="showAddCardModal = false" class="py-3 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs transition">
+                                Cancelar
+                            </button>
+                            <button type="submit" :disabled="isSavingCard" class="py-3 px-6 bg-brand hover:bg-brandDark text-white font-bold rounded-xl text-xs shadow-lg shadow-brand/25 transition flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95">
+                                <i v-if="isSavingCard" class="fa-solid fa-spinner animate-spin"></i>
+                                <i v-else class="fa-solid fa-shield-halved text-xs"></i>
+                                <span>{{ isSavingCard ? 'Guardando...' : 'Guardar Tarjeta' }}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="../assets/js/front/shared-customer.js"></script>
+    <script src="../assets/js/front/profile.js"></script>
+    <script src="../assets/js/front/cookie-consent.js"></script>
+</body>
+</html>

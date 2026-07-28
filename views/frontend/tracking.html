@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seguimiento de Pedido - Tengo Hambre</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Fuentes & Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- JQUERY (Toastr requirement) -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <!-- TOASTR (Notifications) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <link rel="stylesheet" href="../assets/css/front.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#ff4757',
+                        brandDark: '#e84118',
+                        primary: '#ff4757',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 antialiased">
+
+<div id="app" class="flex flex-col min-h-screen relative overflow-hidden" v-cloak>
+    
+    <!-- Loading Overlay -->
+    <div v-if="loading" class="fixed inset-0 bg-white dark:bg-slate-950 z-50 flex flex-col items-center justify-center">
+        <i class="fa-solid fa-circle-notch fa-spin text-brand text-5xl mb-4"></i>
+        <p class="font-bold text-slate-500 animate-pulse">Buscando tu pedido...</p>
+    </div>
+
+    <!-- Error Screen -->
+    <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-red-500 mb-6 text-3xl">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold mb-2 dark:text-white">Pedido no encontrado</h2>
+        <p class="text-slate-500 mb-8 max-w-sm">{{ error }}</p>
+        <a href="/profile.html" class="px-6 py-3 bg-brand text-white font-bold rounded-xl shadow-lg shadow-brand/30 hover:scale-105 transition-transform">
+            Volver a mi perfil
+        </a>
+    </div>
+
+    <!-- Tracking Content -->
+    <template v-else>
+        
+        <!-- Header (Fixed) -->
+        <header class="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-between">
+            <a href="/profile.html" class="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div class="text-center">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pedido</p>
+                <h1 class="text-sm font-extrabold dark:text-white">#{{ order.orderNumber || order._id.slice(-6).toUpperCase() }}</h1>
+            </div>
+            <div class="w-10 h-10"></div> <!-- Spacer -->
+        </header>
+
+        <!-- Illustration Area (UberEats Style) -->
+        <div class="pt-20 pb-8 px-4 bg-slate-100 dark:bg-slate-900 relative">
+            <div class="max-w-md mx-auto">
+                <div class="relative h-48 sm:h-56 rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-brand shadow-lg flex items-center justify-center">
+                    <!-- Decoraciones de fondo -->
+                    <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]"></div>
+                    
+                    <!-- Icono principal animado según estado -->
+                    <div class="relative z-10 text-white text-7xl drop-shadow-xl transform transition-transform duration-700" 
+                         :class="{'animate-bounce': order.status === 'preparing' || order.status === 'ready'}">
+                        <i v-if="order.status === 'pending'" class="fa-solid fa-clock"></i>
+                        <i v-else-if="order.status === 'preparing'" class="fa-solid fa-fire-burner"></i>
+                        <i v-else-if="order.status === 'ready'" class="fa-solid fa-motorcycle"></i>
+                        <i v-else-if="order.status === 'completed'" class="fa-solid fa-check-circle"></i>
+                        <i v-else-if="order.status === 'cancelled'" class="fa-solid fa-circle-xmark"></i>
+                    </div>
+
+                    <!-- Badge flotante de tiempo (simulado) -->
+                    <div v-if="order.status !== 'completed' && order.status !== 'cancelled'" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-white/20 text-center flex items-center gap-2">
+                        <i class="fa-solid fa-hourglass-half text-brand text-sm animate-spin-slow"></i>
+                        <span class="font-extrabold text-slate-800 dark:text-white text-sm whitespace-nowrap">{{ estimatedTimeMsg }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline & Details (Bottom Sheet Style) -->
+        <main class="flex-1 bg-white dark:bg-slate-950 -mt-6 rounded-t-3xl relative z-10 p-6 md:p-8 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+            <div class="max-w-md mx-auto">
+                
+                <!-- Status Header -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white mb-1">{{ currentStatusTitle }}</h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm">{{ currentStatusDescription }}</p>
+                </div>
+
+                <!-- Timeline Progress -->
+                <div class="relative mb-10">
+                    <!-- Linea de fondo -->
+                    <div class="absolute top-4 left-6 right-6 h-1 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+                    <!-- Linea de progreso activa -->
+                    <div class="absolute top-4 left-6 h-1 bg-brand rounded-full transition-all duration-1000 ease-in-out" :style="{ width: progressWidth }"></div>
+
+                    <div class="relative flex justify-between">
+                        <!-- Step 1: Pendiente -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-4 border-white dark:border-slate-950 transition-colors duration-500"
+                                 :class="stepIndex >= 1 ? 'bg-brand text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase mt-2" :class="stepIndex >= 1 ? 'text-slate-800 dark:text-white' : 'text-slate-400'">Recibido</span>
+                        </div>
+                        
+                        <!-- Step 2: Preparando -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-4 border-white dark:border-slate-950 transition-colors duration-500"
+                                 :class="stepIndex >= 2 ? 'bg-brand text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                <i class="fa-solid fa-fire"></i>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase mt-2" :class="stepIndex >= 2 ? 'text-slate-800 dark:text-white' : 'text-slate-400'">Preparando</span>
+                        </div>
+                        
+                        <!-- Step 3: Listo / En Camino -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-4 border-white dark:border-slate-950 transition-colors duration-500"
+                                 :class="stepIndex >= 3 ? 'bg-brand text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                <i class="fa-solid fa-motorcycle"></i>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase mt-2" :class="stepIndex >= 3 ? 'text-slate-800 dark:text-white' : 'text-slate-400'">En Camino</span>
+                        </div>
+
+                        <!-- Step 4: Entregado -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-4 border-white dark:border-slate-950 transition-colors duration-500"
+                                 :class="stepIndex >= 4 ? 'bg-brand text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase mt-2" :class="stepIndex >= 4 ? 'text-slate-800 dark:text-white' : 'text-slate-400'">Entregado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles de Entrega -->
+                <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 mb-6 border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 flex-shrink-0">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Entregar en</p>
+                            <p class="font-bold text-slate-800 dark:text-white text-sm">{{ order.customerStreet }} {{ order.customerNumber }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ order.customerColony }}, C.P. {{ order.customerZipCode }}</p>
+                            <p v-if="order.customerReference" class="text-xs text-slate-400 mt-2 bg-white dark:bg-slate-800 p-2 rounded-lg italic">
+                                "{{ order.customerReference }}"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de Orden -->
+                <div class="mb-6">
+                    <h3 class="font-extrabold text-slate-800 dark:text-white mb-4">Resumen del Pedido</h3>
+                    <div class="space-y-3">
+                        <div v-for="item in order.items" :key="item.product" class="flex justify-between items-start text-sm">
+                            <div class="flex gap-2">
+                                <span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    {{ item.quantity }}
+                                </span>
+                                <div>
+                                    <p class="font-medium text-slate-800 dark:text-white">{{ item.name }}</p>
+                                    <p v-if="item.selectedOptions && item.selectedOptions.length" class="text-xs text-slate-400">
+                                        {{ item.selectedOptions.map(o => o.name).join(', ') }}
+                                    </p>
+                                    <p v-if="item.note" class="text-xs text-amber-500 italic mt-0.5">Nota: {{ item.note }}</p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-slate-800 dark:text-white">${{ (item.price * item.quantity).toFixed(2) }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-sm">
+                        <div class="flex justify-between text-slate-500">
+                            <span>Subtotal</span>
+                            <span>${{ order.subtotal?.toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-500" v-if="order.deliveryCost > 0">
+                            <span>Costo de envío</span>
+                            <span>${{ order.deliveryCost?.toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between font-extrabold text-lg text-slate-800 dark:text-white mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <span>Total</span>
+                            <span>${{ order.total?.toFixed(2) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call to action al restaurante -->
+                <div class="text-center pb-6">
+                    <a :href="'https://wa.me/5211234567890?text=Hola, tengo una duda sobre mi pedido #' + (order.orderNumber || order._id.slice(-6).toUpperCase())" target="_blank" class="text-brand font-bold text-sm hover:underline flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-lg"></i>
+                        <span>Contactar al restaurante</span>
+                    </a>
+                </div>
+
+            </div>
+        </main>
+        <!-- Review Modal -->
+        <div v-if="showReviewModal" class="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"></div>
+            
+            <div class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-3xl w-full max-w-[400px] shadow-2xl overflow-hidden animate-slide-up flex flex-col p-8 text-center z-10">
+                
+                <!-- Logo o Icono -->
+                <div class="mx-auto w-16 h-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mb-4 text-3xl">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white mb-2">Déjanos tu reseña</h2>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 px-2">
+                    ¿Qué te pareció tu pedido de <strong class="text-slate-800 dark:text-white">{{ businessInfo.name || 'este negocio' }}</strong>?
+                </p>
+
+                <!-- Formulario -->
+                <div class="text-left space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Calificación</label>
+                        <div class="flex gap-2 text-3xl text-slate-200 dark:text-slate-700 cursor-pointer justify-center my-2">
+                            <i v-for="i in 5" :key="i" class="fa-solid fa-star hover:scale-110 transition-transform" 
+                               :class="i <= newReview.rating ? 'text-yellow-400' : ''" 
+                               @click="newReview.rating = i"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Nombre</label>
+                        <input v-model="newReview.customerName" type="text" placeholder="Ej: Juan Pérez" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Comentarios</label>
+                        <textarea v-model="newReview.comment" placeholder="La comida estuvo deliciosa..." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary resize-none h-24"></textarea>
+                    </div>
+
+                    <button @click="submitReview" :disabled="submittingReview" class="w-full mt-2 bg-brand hover:bg-brandDark text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50">
+                        <i v-if="submittingReview" class="fa-solid fa-circle-notch fa-spin"></i>
+                        <span v-else>Publicar Reseña y Continuar</span>
+                    </button>
+                    
+                    <button v-if="!submittingReview" @click="skipReview" class="w-full text-sm text-slate-400 hover:text-slate-500 dark:hover:text-white font-medium transition mt-3">
+                        Saltar y ver mis pedidos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </template>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/front/shared-customer.js"></script>
+<script src="../assets/js/front/tracking.js"></script>
+<script src="../assets/js/front/cookie-consent.js"></script>
+</body>
+</html>

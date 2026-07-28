@@ -67,7 +67,7 @@ exports.registerOrder = async (req, res) => {
             stripePaymentIntentId,
             stripePaymentStatus: paymentMethod === 'stripe' ? 'succeeded' : undefined,
             items: cart.map(item => ({
-                productId: item.product._id,
+                product: item.product._id,
                 name: item.product.name,
                 quantity: item.quantity,
                 price: item.product.price
@@ -205,7 +205,7 @@ exports.createPosOrder = async (req, res) => {
             customerName: customer ? customer.name : 'Cliente Mostrador',
             customerId: customer ? customer._id : null,
             items: cart.map(item => ({
-                productId: item._id,
+                product: item._id,
                 name: item.name,
                 quantity: item.qty,
                 price: item.price,

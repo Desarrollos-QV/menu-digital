@@ -21,10 +21,12 @@ const businessSchema = new mongoose.Schema({
     isTrending: { type: Boolean, default: false },
     isOpen: { type: Boolean, default: true },
     promo: { type: Boolean, default: false },
+    hasGoldStar: { type: Boolean, default: false }, // Estrella Dorada Tengo Hambre Awards
     // Ubicación con coordenadas
     lat: { type: Number, default: null },
     lng: { type: Number, default: null },
     // Tipos de servicio
+    allowOnlineOrders: { type: Boolean, default: false },
     allowDelivery: { type: Boolean, default: true },
     allowPickup: { type: Boolean, default: false },
     // Métodos de pago aceptados

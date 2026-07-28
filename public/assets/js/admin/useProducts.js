@@ -60,7 +60,6 @@ export function useProducts(isDark, fetchMedia) {
             if (res.ok) products.value = await res.json();
             // Ordenamos por sort
             products.value.sort((a, b) => a.sort - b.sort);
-            console.log("Listado de productos: " , products.value)
         } catch (e) { console.error("Error fetching products", e); }
     };
 
