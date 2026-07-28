@@ -37,13 +37,11 @@ export async function authFetch(url, options = {}) {
         localStorage.clear();
         auth.isAuthenticated.value = false;
         auth.credentials.value = { username: '', password: '' };
-        // 2. Redirigir al login (recargando la página para limpiar estado de Vue)
-        // Si ya estamos en el login no recargamos para evitar bucles
+        
+        // 2. Redirigir al login solo si estamos fuera del admin panel, 
+        // de lo contrario Vue reaccionará a isAuthenticated = false
         if (!window.location.pathname.endsWith('/admin') && window.location.pathname !== '/admin/') {
             window.location.href = '/admin';
-        } else {
-            // Si estamos en la misma SPA, forzamos recarga para mostrar pantalla de login
-            window.location.reload();
         }
 
         // Retornamos respuesta para que el código que llamó no explote (aunque se redirija)

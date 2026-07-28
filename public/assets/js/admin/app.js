@@ -1312,6 +1312,13 @@ createApp({
         };
 
         // Exponer la funcion global para llamarla desde los selects en el HTML
+        watch(() => auth.isAuthenticated.value, (newVal, oldVal) => {
+            // Si pasamos de no autenticado a autenticado, recargamos para inicializar toda la app
+            if (newVal && !oldVal) {
+                window.location.reload();
+            }
+        });
+
         window.renderDashboardCharts = renderDashboardCharts;
 
         onMounted(async () => {
@@ -1321,8 +1328,9 @@ createApp({
             const parts = path.split('/').filter(p => p);
             const lastPart = parts[parts.length - 1]; // "pos"
             kds.stopPolling();
-            notifs.startPolling(); // <-- Iniciar polling notificaciones
+            
             if (auth.isAuthenticated.value) {
+                notifs.startPolling(); // <-- Iniciar polling notificaciones
                 const savedRole = localStorage.getItem('role');
                 if (savedRole) currentUserRole.value = savedRole;
                 await settings.fetchSettings();
