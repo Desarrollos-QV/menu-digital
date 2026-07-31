@@ -8,7 +8,7 @@ const User = require('../models/User');
 const Review = require('../models/Review');
 const jwt = require('jsonwebtoken');
 
-const SECRET_KEY = process.env.JWT_SECRET; 
+const SECRET_KEY = process.env.JWT_SECRET || 'jwt_secret_key_default';
 
 // Helper para obtener ID del negocio desde el slug
 const getBusinessIdBySlug = async (slug) => {

@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Visit = require('../models/Visit');
 const Product = require('../models/Product');
 const Business = require('../models/Business');
+const Coupon = require('../models/Coupon');
 const mongoose = require('mongoose');
 const tzHelper = require('../helper/timezone');
 
@@ -42,7 +43,7 @@ exports.registerVisit = async (req, res) => {
 // 2. Registrar Pedido / Clic WhatsApp (Público)
 exports.registerOrder = async (req, res) => {
     try {
-        const { slug, customerName, customerPhone, customerId, cart, total, subtotal, commission, deliveryCost, deliveryZone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay, paymentMethod, stripePaymentIntentId, paymentFee } = req.body;
+        const { slug, customerName, customerPhone, customerId, cart, total, subtotal, commission, deliveryCost, deliveryZone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay, paymentMethod, stripePaymentIntentId, paymentFee, discount } = req.body;
         
         let decodedSlug = slug;
         try { decodedSlug = decodeURIComponent(slug); } catch (e) {}
@@ -77,6 +78,7 @@ exports.registerOrder = async (req, res) => {
             deliveryCost: deliveryCost || 0,
             deliveryZone: deliveryZone || '',
             paymentFee: paymentFee || 0,
+            discount: discount ? discount : undefined,
             commission: commission ? {
                 type: commission.type,
                 amount: commission.amount,
@@ -84,6 +86,14 @@ exports.registerOrder = async (req, res) => {
             } : undefined
         });
         await newOrder.save();
+
+        // Actualizar métricas del cupón si se aplicó uno y es de un usuario registrado
+        if (discount && discount.couponId && customerId) {
+            await Coupon.findByIdAndUpdate(discount.couponId, {
+                $inc: { currentUses: 1 },
+                $addToSet: { usedBy: customerId }
+            });
+        }
 
         // Incrementar contador de "Más Vendidos" en Productos
         // Esto optimiza la lectura de estadísticas después

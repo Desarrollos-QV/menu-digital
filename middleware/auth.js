@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = process.env.JWT_SECRET; 
+const SECRET_KEY = process.env.JWT_SECRET || 'jwt_secret_key_default';
 
 module.exports = (req, res, next) => {
     // Leer token del header "Authorization: Bearer <token>"

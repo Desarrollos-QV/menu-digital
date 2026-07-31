@@ -40,6 +40,7 @@ app.use('/api/finance', require('./routes/finance')); // <-- Gestion de cajas
 app.use('/api/orders', require('./routes/orders')); // <-- Gestion de ventas
 app.use('/api/quotes', require('./routes/quotes')); // <-- Gestion de Cotizaciones
 app.use('/api/stripe', require('./routes/stripe')); // <-- Stripe Payments
+app.use('/api/coupons', require('./routes/coupons')); // <-- Cupones de descuento
 // --- RUTA PÚBLICA (SIN AUTH) ---
 app.use('/api/public', require('./routes/public'));
 app.use('/api/loyalty', require('./routes/loyalty'));

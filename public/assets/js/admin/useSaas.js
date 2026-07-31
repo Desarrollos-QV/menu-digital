@@ -161,6 +161,7 @@ export function useSaas() {
                     address:       saasForm.value.address,
                     lat:           saasForm.value.lat,
                     lng:           saasForm.value.lng,
+                    allowOnlineOrders:   saasForm.value.allowOnlineOrders,
                     allowDelivery:       saasForm.value.allowDelivery,
                     allowPickup:         saasForm.value.allowPickup,
                     isOpen:              saasForm.value.isOpen,

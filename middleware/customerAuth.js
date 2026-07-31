@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = process.env.JWT_SECRET;
+const SECRET_KEY = process.env.JWT_SECRET || 'jwt_secret_key_default';
 
 module.exports = (req, res, next) => {
     // Read token from header "Authorization: Bearer <token>"
@@ -14,6 +14,7 @@ module.exports = (req, res, next) => {
         req.customer = verified; // { id, phone, email, name }
         next();
     } catch (error) {
-        res.status(401).json({ message: 'Sesión expirada o token inválido.' });
+        console.error("JWT Verification Error (Customer):", error.message, error);
+        res.status(401).json({ message: 'Sesión expirada o token inválido.', error: error.message });
     }
 };

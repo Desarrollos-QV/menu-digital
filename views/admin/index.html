@@ -720,7 +720,6 @@
                     </div>
                 </div>
 
-
                 <!-- SAAS CLIENTS VIEW -->
                 <div v-if="currentView === 'saas_clients'" class="space-y-6 animate-fade-in">
                     <div class="flex justify-between items-center">
@@ -2981,6 +2980,61 @@
                     </div>
                 </div>
 
+                <!-- ===================== CUPONES DE DESCUENTO (SUPERADMIN) ===================== -->
+                <div v-if="currentView === 'coupons'" class="animate-fade-in space-y-6 pb-10">
+                    <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+                        <h2 class="text-2xl font-black text-gray-800">Cupones Globales</h2>
+                        <button @click="couponsModule.resetCouponForm()" class="px-4 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition shadow-sm">
+                            <i class="fa-solid fa-plus mr-2"></i>Nuevo Cupón
+                        </button>
+                    </div>
+
+                    <!-- Tabla de Cupones -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b border-gray-100">
+                            <h3 class="font-bold text-gray-700">Listado de Cupones</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="text-gray-500 uppercase bg-gray-50">
+                                        <th class="px-4 py-3 font-semibold">Código</th>
+                                        <th class="px-4 py-3 font-semibold">Descuento</th>
+                                        <th class="px-4 py-3 font-semibold">Usos</th>
+                                        <th class="px-4 py-3 font-semibold">Estado</th>
+                                        <th class="px-4 py-3 font-semibold text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="coupon in couponsModule.coupons" :key="coupon._id" class="border-b border-gray-50 hover:bg-gray-50">
+                                        <td class="px-4 py-3 font-bold text-gray-800">{{ coupon.code }}</td>
+                                        <td class="px-4 py-3">
+                                            {{ coupon.discountType === 'percentage' ? coupon.discountValue + '%' : '$' + coupon.discountValue.toFixed(2) }}
+                                        </td>
+                                        <td class="px-4 py-3">{{ coupon.currentUses }} / {{ coupon.maxUses > 0 ? coupon.maxUses : '∞' }}</td>
+                                        <td class="px-4 py-3">
+                                            <span :class="coupon.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-1 rounded text-xs font-bold">
+                                                {{ coupon.isActive ? 'Activo' : 'Inactivo' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <button @click="couponsModule.editCoupon(coupon)" class="text-blue-500 hover:text-blue-700 p-2">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                            <button @click="couponsModule.deleteCoupon(coupon._id)" class="text-red-500 hover:text-red-700 p-2">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="couponsModule.coupons.length === 0">
+                                        <td colspan="5" class="text-center py-8 text-gray-500">No hay cupones registrados.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ===================== VIEW BLOG ===================== -->
                 <div v-if="currentView === 'blog'" class="animate-fade-in space-y-6 pb-10">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -3040,6 +3094,64 @@
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Modal de Cupón -->
+    <div v-show="couponsModule.showCouponModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in border dark:border-slate-700">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white">{{ couponsModule.couponForm._id ? 'Editar Cupón' : 'Nuevo Cupón' }}</h3>
+                <button @click="couponsModule.showCouponModal = false" class="text-slate-400 hover:text-red-500">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Código del Cupón</label>
+                    <input type="text" v-model="couponsModule.couponForm.code" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary uppercase dark:text-white" placeholder="Ej. VERANO20" :disabled="couponsModule.couponForm._id">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Tipo Descuento</label>
+                        <select v-model="couponsModule.couponForm.discountType" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-white" :disabled="couponsModule.couponForm._id">
+                            <option value="percentage">Porcentaje (%)</option>
+                            <option value="fixed">Monto Fijo ($)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Valor</label>
+                        <input type="number" v-model="couponsModule.couponForm.discountValue" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-white" min="0" :disabled="couponsModule.couponForm._id">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Compra Mínima</label>
+                        <input type="number" v-model="couponsModule.couponForm.minPurchaseAmount" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-white" min="0" :disabled="couponsModule.couponForm._id">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Límite de Usos</label>
+                        <input type="number" v-model="couponsModule.couponForm.maxUses" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-white" min="0" placeholder="0 = Sin límite">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Fecha de Expiración (Opcional)</label>
+                    <input type="date" v-model="couponsModule.couponForm.expirationDate" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-white">
+                </div>
+                <div class="flex items-center mt-2">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" v-model="couponsModule.couponForm.isActive" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                        <span class="ml-3 text-sm font-bold text-slate-700 dark:text-slate-300">Cupón Activo</span>
+                    </label>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2 bg-slate-50 dark:bg-slate-800/50">
+                <button @click="couponsModule.showCouponModal = false" class="px-4 py-2 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition">Cancelar</button>
+                <button @click="couponsModule.saveCoupon" class="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-orange-600 transition">
+                    Guardar
+                </button>
+            </div>
         </div>
     </div>
 

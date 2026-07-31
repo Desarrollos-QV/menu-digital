@@ -57,4 +57,8 @@ router.post('/cards/charge', customerController.chargeSavedCard);
 // --- HISTORIAL DE PEDIDOS ---
 router.get('/orders', customerController.getOrders);
 
+// --- CUPONES DE DESCUENTO ---
+const couponController = require('../controllers/couponController');
+router.post('/coupons/validate', couponController.validateCoupon);
+
 module.exports = router;

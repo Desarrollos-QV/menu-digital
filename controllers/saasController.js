@@ -254,7 +254,7 @@ exports.createBusiness = async (req, res) => {
 exports.updateBusiness = async (req, res) => {
     try {
         const { name, ownerEmail, slug, plan, phone, address, isOpen, active, isTrending, hasGoldStar,
-                lat, lng, allowDelivery, allowPickup,
+                lat, lng, allowDelivery, allowPickup, allowOnlineOrders,
                 commissionWebType, commissionWebAmount,
                 commissionPosType, commissionPosAmount,
                 acceptCash, acceptCard } = req.body;
@@ -282,6 +282,7 @@ exports.updateBusiness = async (req, res) => {
         if (lng               !== undefined) updateData.lng               = lng;
         if (allowDelivery     !== undefined) updateData.allowDelivery     = allowDelivery;
         if (allowPickup       !== undefined) updateData.allowPickup       = allowPickup;
+        if (allowOnlineOrders !== undefined) updateData.allowOnlineOrders = allowOnlineOrders;
         // Comisiones
         if (commissionWebType   !== undefined) updateData.commissionWebType   = commissionWebType;
         if (commissionWebAmount !== undefined) updateData.commissionWebAmount = commissionWebAmount;

@@ -24,7 +24,9 @@ const orderSchema = new mongoose.Schema({
     discount: { 
         amount: { type: Number, default: 0 },
         type: { type: String, enum: ['percentage', 'fixed'], default: 'fixed' },
-        reason: String 
+        reason: String,
+        couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+        couponCode: String
     },
     commission: {
         type: { type: String, enum: ['percent', 'fixed'], default: 'fixed' },

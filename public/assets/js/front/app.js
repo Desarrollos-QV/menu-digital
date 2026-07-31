@@ -78,6 +78,11 @@ createApp({
         const deliveryType = ref('delivery');
         const selectedColonia = ref(null);   // Colonia específica (tiene el deliveryCost)
 
+        // Cupones Logic
+        const couponCodeInput = ref('');
+        const appliedCoupon = ref(null);
+        const isApplyingCoupon = ref(false);
+
         // Stripe Logic
         const stripeEnabled = ref(false);
         const stripePublishableKey = ref('');
@@ -502,6 +507,54 @@ createApp({
             else { cart.value.splice(idx, 1); if (!cart.value.length) showCartModal.value = false; }
         };
 
+        const applyCoupon = async () => {
+            if (!couponCodeInput.value.trim()) {
+                return toastr.warning('Ingresa un código de cupón');
+            }
+            if (!sharedCust.customer.value) {
+                return toastr.warning('Debes iniciar sesión para usar un cupón');
+            }
+
+            isApplyingCoupon.value = true;
+            try {
+                const currentBusinessId = config.value._id;
+                const token = sharedCust.token.value;
+
+                const res = await fetch('/api/customer/coupons/validate', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({
+                        code: couponCodeInput.value,
+                        businessId: currentBusinessId,
+                        subtotal: cartSubTotal.value
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.valid) {
+                    appliedCoupon.value = data;
+                    toastr.success('Cupón aplicado con éxito');
+                } else {
+                    throw new Error(data.message || 'Error al validar cupón');
+                }
+            } catch (error) {
+                console.error("Error aplicando cupón:", error);
+                toastr.error(error.message || 'Error al validar cupón');
+                appliedCoupon.value = null;
+            } finally {
+                isApplyingCoupon.value = false;
+            }
+        };
+
+        const removeCoupon = () => {
+            appliedCoupon.value = null;
+            couponCodeInput.value = '';
+        };
+
         const alertBussinesClose = () => {
             toastr.error(`El negocio está cerrado por el momento.`);
         };
@@ -712,6 +765,10 @@ createApp({
             msg += `\n`;
             msg += `📄 *SubTotal: ${config.value.currency || '$'}${cartSubTotal.value.toFixed(2)}*\n`;
             
+            if (appliedCoupon.value) {
+                msg += `🎟️ *Cupón (${appliedCoupon.value.code}): -${config.value.currency || '$'}${appliedCoupon.value.discountAmount.toFixed(2)}*\n`;
+            }
+
             if (commissionWebAmountCmp.value > 0) {
                 const typeLabel = config.value.commissionWebType === 'percent' ? `${config.value.commissionWebAmount}%` : `$`;
                 msg += `⚙️ *Comisión de Plataforma (${typeLabel}): +${config.value.currency || '$'}${commissionWebAmountCmp.value.toFixed(2)}*\n`;
@@ -767,6 +824,13 @@ createApp({
                 deliveryZone: selectedColonia.value?.name || '',
                 paymentFee: paymentFeeCmp.value,
                 stripePaymentIntentId: finalPaymentMethod === 'stripe' ? stripePaymentIntentId.value : undefined,
+                discount: appliedCoupon.value ? {
+                    amount: appliedCoupon.value.discountAmount,
+                    type: appliedCoupon.value.discountType,
+                    reason: `Cupón: ${appliedCoupon.value.code}`,
+                    couponId: appliedCoupon.value.couponId,
+                    couponCode: appliedCoupon.value.code
+                } : undefined,
                 commission: {
                     type: config.value.commissionWebType || 'percent',
                     amount: parseFloat(config.value.commissionWebAmount) || 0,
@@ -908,7 +972,13 @@ createApp({
             return Math.ceil(stripeFeeToCharge * 100) / 100;
         });
 
-        const cartTotalPrice = computed(() => cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value + paymentFeeCmp.value); // $136.97 + $7.93 = $144.90
+        const cartTotalPrice = computed(() => {
+            let total = cartSubTotal.value + commissionWebAmountCmp.value + deliveryCostCmp.value + paymentFeeCmp.value;
+            if (appliedCoupon.value && appliedCoupon.value.discountAmount) {
+                total -= appliedCoupon.value.discountAmount;
+            }
+            return total > 0 ? total : 0;
+        }); // $136.97 + $7.93 = $144.90
 
         // Filters & UI
         const filteredProducts = computed(() => {
@@ -1318,6 +1388,7 @@ createApp({
             selectedColonia, stripeEnabled, showStripeModal, stripePaymentError, isProcessingPayment, processStripePayment,
             showUserDropdown, loginForm, customerForm, setupPasswordForm, isLoginMode, isSetupPasswordMode, showUserModal, openModal, loginCustomer, submitSetupPassword, registerCustomer, logout,
             showAuthPromptModal, authPromptContext, pendingCheckout, continueAsGuest,
+            couponCodeInput, appliedCoupon, isApplyingCoupon, applyCoupon, removeCoupon,
             currentUser, firstName, userInitial, userAvatarUrl,
             // Gestión Perfil, Direcciones e Historial
             sharedCust, activeProfileTab, profileForm, addressForm, showAddressFormModal, isEditingAddress,

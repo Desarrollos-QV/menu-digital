@@ -22,6 +22,7 @@ import { useCategoriesStore } from './useCategoriesStore.js';
 import { usePrinter } from './usePrinter.js'; // Gestor de impresion universal
 import { useBlog } from './useBlog.js'; // Blog Logic
 import { useNotifications } from './useNotifications.js'; // Notificaciones Generales
+import { useCoupons } from './useCoupons.js'; // Cupones Globales
 
 // Configuracion de Tailwind
 tailwind.config = {
@@ -103,17 +104,18 @@ createApp({
         const printer = usePrinter(settings);
         const blog = useBlog(auth.isDark, media.fetchMedia);
         const notifs = reactive(useNotifications());
+        const couponsModule = reactive(useCoupons());
 
         const saasMenu = ref([
             { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
             { id: 106, label: 'Usuarios Frecuentes', icon: 'fa-solid fa-users', view: 'saas_frequent_customers' },
+            { id: 107, label: 'Cupones', icon: 'fa-solid fa-ticket', view: 'coupons' },
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
             { id: 102, label: 'Galería Global', icon: 'fa-solid fa-images', view: 'media' },
             { id: 103, label: 'Categorias', icon: 'fa-solid fa-burger', view: 'categoriesStore' },
             { id: 104, label: 'Municipios', icon: 'fa-solid fa-map-location-dot', view: 'municipios' },
-            { id: 105, label: 'Blog (Noticias)', icon: 'fa-solid fa-newspaper', view: 'blog' },
-            //  { id: 104, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
+            { id: 105, label: 'Blog (Noticias)', icon: 'fa-solid fa-newspaper', view: 'blog' }
         ]);
 
         const businessMenu = ref([
@@ -591,6 +593,7 @@ createApp({
                     saas.fetchDashboardStats();
                     saas.fetchGlobalOrders();
                 }
+                if (item.view === 'coupons') couponsModule.fetchCoupons();
                 if (item.view === 'products') products.fetchProducts();
                 if (item.view === 'categories') categories.fetchCategories();
                 if (item.view === 'addons') addons.fetchAddons();
@@ -1324,7 +1327,7 @@ createApp({
             kds.stopPolling();
             
             if (auth.isAuthenticated.value) {
-                notifs.startPolling(); // <-- Iniciar polling notificaciones
+               
                 const savedRole = localStorage.getItem('role');
                 if (savedRole) currentUserRole.value = savedRole;
                 await settings.fetchSettings();
@@ -1349,6 +1352,7 @@ createApp({
                     if (currentView.value === 'municipios') municipios.fetchMunicipios();
                     if (currentView.value === 'categoriesStore') categoriesStore.fetchCategories();
                 } else {
+                    notifs.startPolling(); // <-- Iniciar polling notificaciones
                     // Si la URL es solo /admin, vamos al dashboard
                     if (path.endsWith('/admin') || path.endsWith('/admin/')) {
                         currentView.value = 'dashboard';
@@ -1434,6 +1438,9 @@ createApp({
                                 collapsed.value = true;
                             }
                         }
+                        if (currentView.value === 'coupons') {
+                            couponsModule.fetchCoupons();
+                        }
 
                     }
                 }
@@ -1480,6 +1487,7 @@ createApp({
             ...municipios,
             toggleMunicipio,
             kds, // KDS Expuesto
+            couponsModule, // Módulo de Cupones
             // POS
             pos, showItemDetailsModal, selectedCartItem, openItemDetails,
             selectedItemAddonGroups, selectedItemUnitPrice, toggleAddonOption, isOptionSelected,
