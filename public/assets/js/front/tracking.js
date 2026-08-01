@@ -24,7 +24,7 @@ const app = createApp({
                 const res = await fetch(`/api/public/business-slug/${businessId}`);
                 const data = await res.json();
                 if (data.slug) {
-                    businessInfo.value = { slug: data.slug, name: data.name };
+                    businessInfo.value = { slug: data.slug, name: data.name, cover: data.cover, avatar: data.avatar };
                 }
             } catch (e) {
                 console.error('Error fetching business info:', e);
@@ -32,6 +32,7 @@ const app = createApp({
         };
 
         const triggerReviewModal = async () => {
+            
             if (order.value && order.value.businessId) {
                 await fetchBusinessInfo(order.value.businessId);
                 showReviewModal.value = true;
@@ -193,6 +194,9 @@ const app = createApp({
             initTracking().then(() => {
                 if (!error.value) {
                     startPolling();
+                    if (order.value && order.value.businessId) {
+                        fetchBusinessInfo(order.value.businessId);
+                    }
                 }
             });
         });

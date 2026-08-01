@@ -27,7 +27,11 @@ router.get('/business-slug/:id', async (req, res) => {
     try {
         const Business = require('../models/Business');
         const b = await Business.findById(req.params.id);
-        res.json({ slug: b ? b.slug : null, name: b ? b.name : null });
+
+        // obtener la url de la imagen
+        const coverUrl = b.cover || '';
+        const avatarUrl = b.avatar || '';
+        res.json({ slug: b ? b.slug : null, name: b ? b.name : null, cover: coverUrl, avatar: avatarUrl });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

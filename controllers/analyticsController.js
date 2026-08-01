@@ -40,7 +40,45 @@ exports.registerVisit = async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-// 2. Registrar Pedido / Clic WhatsApp (Público)
+// 2. Validar Carrito (Límites de Promo, etc.) antes del checkout
+exports.validateCart = async (req, res) => {
+    try {
+        const { customerId, cart } = req.body;
+        
+        console.log('--- VALIDATE CART ---');
+        console.log('Body:', { customerId, cartLength: cart?.length });
+        
+        if (customerId && cart && cart.length > 0) {
+            for (const item of cart) {
+                const product = await Product.findById(item.product._id);
+                if (product && product.isPromo && product.promoLimit > 0) {
+                    console.log('Checking product:', product.name, 'Promo Limit:', product.promoLimit);
+                    const pastOrders = await Order.find({ customerId, 'items.product': product._id, status: { $ne: 'cancelled' } });
+                    console.log('Past orders found:', pastOrders.length);
+                    
+                    let totalBought = 0;
+                    for (const pastOrder of pastOrders) {
+                        const foundItem = pastOrder.items.find(i => i.product.toString() === product._id.toString());
+                        if (foundItem) {
+                            totalBought += foundItem.quantity;
+                        }
+                    }
+
+                    if ((totalBought + item.quantity) > product.promoLimit) {
+                        return res.status(400).json({ 
+                            error: `Has excedido el límite permitido (${product.promoLimit}) para la promoción de: ${product.name}. Ya has comprado ${totalBought} anteriormente.` 
+                        });
+                    }
+                }
+            }
+        }
+        res.json({ status: 'ok' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
+
+// 3. Registrar Pedido / Clic WhatsApp (Público)
 exports.registerOrder = async (req, res) => {
     try {
         const { slug, customerName, customerPhone, customerId, cart, total, subtotal, commission, deliveryCost, deliveryZone, customerStreet, customerColony, customerNumber, customerZipCode, customerReference, customerHowToPay, paymentMethod, stripePaymentIntentId, paymentFee, discount } = req.body;
@@ -51,6 +89,36 @@ exports.registerOrder = async (req, res) => {
 
         const business = await Business.findOne({ slug: { $in: possibleSlugs } });
         if (!business) return res.status(404).json({ error: 'Negocio no encontrado' });
+        
+        console.log('--- REGISTER ORDER ---');
+        console.log('Body:', { customerId, cartLength: cart?.length });
+        
+        // --- VALIDAR LÍMITES DE PROMOCIÓN POR USUARIO ---
+        if (customerId) {
+            for (const item of cart) {
+                const product = await Product.findById(item.product._id);
+                if (product && product.isPromo && product.promoLimit > 0) {
+                    // Contar cuántas unidades ha comprado el usuario en el pasado (excluyendo canceladas)
+                    const pastOrders = await Order.find({ customerId, 'items.product': product._id, status: { $ne: 'cancelled' } });
+                    
+                    let totalBought = 0;
+                    for (const pastOrder of pastOrders) {
+                        const foundItem = pastOrder.items.find(i => i.product.toString() === product._id.toString());
+                        if (foundItem) {
+                            totalBought += foundItem.quantity;
+                        }
+                    }
+
+                    // Sumar lo que intenta comprar ahora
+                    if ((totalBought + item.quantity) > product.promoLimit) {
+                        return res.status(400).json({ 
+                            error: `Has excedido el límite permitido (${product.promoLimit}) para la promoción de: ${product.name}. Ya has comprado ${totalBought} anteriormente.` 
+                        });
+                    }
+                }
+            }
+        }
+        // ------------------------------------------------
         
         // Guardar Orden
         const newOrder = new Order({

@@ -2908,9 +2908,14 @@
                                         </div>
                                     </div>
                                     
-                                    <button @click="kds.advanceStatus(order, 'preparing')" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
-                                        Empezar <i class="fa-solid fa-fire ml-1"></i>
-                                    </button>
+                                    <div class="flex gap-2">
+                                        <button @click="kds.openInfoPanel(order)" title="Ver información del pedido" class="py-3 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg shadow-sm transition active:scale-95">
+                                            <i class="fa-solid fa-circle-info text-lg"></i>
+                                        </button>
+                                        <button @click="kds.advanceStatus(order, 'preparing')" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
+                                            Empezar <i class="fa-solid fa-fire ml-1"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div v-if="kds.pendingOrders.value.length === 0" class="text-center text-slate-400 py-10 opacity-50"><i class="fa-solid fa-mug-hot text-4xl mb-2"></i><p>Sin pedidos</p></div>
                             </div>
@@ -2953,9 +2958,14 @@
                                         </div>
                                     </div>
 
-                                    <button @click="kds.advanceStatus(order, 'ready')" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
-                                        Terminar <i class="fa-solid fa-check ml-1"></i>
-                                    </button>
+                                    <div class="flex gap-2">
+                                        <button @click="kds.openInfoPanel(order)" title="Ver información del pedido" class="py-3 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg shadow-sm transition active:scale-95">
+                                            <i class="fa-solid fa-circle-info text-lg"></i>
+                                        </button>
+                                        <button @click="kds.advanceStatus(order, 'ready')" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition">
+                                            Terminar <i class="fa-solid fa-check ml-1"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2970,14 +2980,148 @@
                                         <span class="text-xs font-bold text-emerald-600">LISTO</span>
                                     </div>
                                     <div class="text-sm text-slate-500 mb-4">{{ order.customerId ? order.customerId.name : 'Mostrador' }}</div>
-                                    <button @click="kds.advanceStatus(order, 'completed')" class="w-full py-3 bg-slate-800 dark:bg-slate-900 text-white font-bold rounded-lg shadow-lg active:scale-95 transition opacity-90 hover:opacity-100">
-                                        Entregar / Servir
-                                    </button>
+                                    <div class="flex gap-2 mt-4">
+                                        <button @click="kds.openInfoPanel(order)" title="Ver información del pedido" class="py-3 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg shadow-sm transition active:scale-95">
+                                            <i class="fa-solid fa-circle-info text-lg"></i>
+                                        </button>
+                                        <button @click="kds.advanceStatus(order, 'completed')" class="flex-1 py-3 bg-slate-800 dark:bg-slate-900 text-white font-bold rounded-lg shadow-lg active:scale-95 transition opacity-90 hover:opacity-100">
+                                            Entregar / Servir
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                     </div>
+
+                    <!-- PANEL LATERAL DE INFORMACIÓN (KDS) -->
+                    <transition name="slide-fade">
+                        <div v-if="kds.showInfoPanel.value && kds.selectedOrder.value" class="fixed inset-y-0 right-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-slate-700 transform transition-transform duration-300">
+                            <!-- HEADER -->
+                            <div class="px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm z-10">
+                                <h2 class="text-lg font-bold text-slate-800 dark:text-white flex items-center">
+                                    <i class="fa-solid fa-receipt mr-2 text-slate-400"></i> Información de Venta
+                                </h2>
+                                <button @click="kds.closeInfoPanel()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition active:scale-95">
+                                    <i class="fa-solid fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- BODY -->
+                            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                                
+                                <!-- Información General -->
+                                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+                                    
+                                    <div class="space-y-4">
+                                        <!-- Cliente -->
+                                        <div class="flex items-start gap-3">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+                                                <i class="fa-solid fa-user"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cliente</p>
+                                                <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">{{ kds.selectedOrder.value.customerId ? kds.selectedOrder.value.customerId.name : (kds.selectedOrder.value.customerName || 'Mostrador') }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Teléfono -->
+                                        <div class="flex items-start gap-3" v-if="kds.selectedOrder.value.customerId?.phone || kds.selectedOrder.value.customerPhone">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+                                                <i class="fa-solid fa-phone"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Teléfono</p>
+                                                <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">{{ kds.selectedOrder.value.customerId?.phone || kds.selectedOrder.value.customerPhone }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Calle y Número -->
+                                        <div class="flex items-start gap-3" v-if="kds.selectedOrder.value.customerStreet">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+                                                <i class="fa-solid fa-location-dot"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Calle y Número</p>
+                                                <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">{{ kds.selectedOrder.value.customerStreet }} {{ kds.selectedOrder.value.customerNumber || '' }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Referencia -->
+                                        <div class="flex items-start gap-3" v-if="kds.selectedOrder.value.customerReference">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+                                                <i class="fa-solid fa-location-crosshairs"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Referencia</p>
+                                                <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">{{ kds.selectedOrder.value.customerReference }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Paga Con -->
+                                        <div class="flex items-start gap-3" v-if="kds.selectedOrder.value.paymentMethod === 'cash' && kds.selectedOrder.value.customerHowToPay">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+                                                <i class="fa-solid fa-money-bill-wave"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Paga Con:</p>
+                                                <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">${{ kds.selectedOrder.value.customerHowToPay }} <span class="text-xs text-slate-500 ml-1 font-normal" v-if="(kds.selectedOrder.value.customerHowToPay - kds.selectedOrder.value.total) >= 0">(Cambio: ${{ (kds.selectedOrder.value.customerHowToPay - kds.selectedOrder.value.total).toFixed(2) }})</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Canal y Pago Tags -->
+                                    <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700 flex justify-between">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Canal</span>
+                                            <span class="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md text-xs font-bold uppercase tracking-wider">{{ kds.selectedOrder.value.source === 'pos' ? 'POS' : 'WHATSAPP' }}</span>
+                                        </div>
+                                        <div class="flex flex-col text-right items-end">
+                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pago</span>
+                                            <span class="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md text-xs font-bold uppercase tracking-wider">{{ kds.selectedOrder.value.paymentMethod || 'CASH' }}</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                
+                                <!-- Resumen Financiero -->
+                                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <h3 class="text-base font-bold text-slate-800 dark:text-white mb-4">Resumen Financiero</h3>
+                                    
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="text-slate-500 dark:text-slate-400">Subtotal</span>
+                                            <span class="font-medium text-slate-800 dark:text-white">${{ (kds.selectedOrder.value.subtotal || ((kds.selectedOrder.value.total || 0) - (kds.selectedOrder.value.deliveryCost || 0) - (kds.selectedOrder.value.commission || 0))).toFixed(2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-sm" v-if="kds.selectedOrder.value.commission > 0">
+                                            <span class="text-orange-500 font-medium">Comisión (%)</span>
+                                            <span class="font-bold text-orange-500">${{ kds.selectedOrder.value.commission.toFixed(2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-sm" v-if="kds.selectedOrder.value.deliveryCost > 0">
+                                            <span class="text-blue-500 flex items-center font-medium"><i class="fa-solid fa-motorcycle mr-1 text-xs"></i> Costo de Envío <span v-if="kds.selectedOrder.value.deliveryZone" class="ml-2 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold uppercase tracking-wider">{{ kds.selectedOrder.value.deliveryZone }}</span></span>
+                                            <span class="font-bold text-blue-500">+${{ kds.selectedOrder.value.deliveryCost.toFixed(2) }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="text-slate-500 dark:text-slate-400">IVA (16%)</span>
+                                            <span class="font-medium text-slate-800 dark:text-white">$0.00</span>
+                                        </div>
+                                        
+                                        <div class="pt-4 mt-2 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                                            <span class="font-bold text-slate-800 dark:text-white">Total</span>
+                                            <span class="text-2xl font-black text-emerald-600">${{ (kds.selectedOrder.value.total || 0).toFixed(2) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </transition>
+                    
+                    <!-- BACKDROP DEL PANEL -->
+                    <transition name="fade">
+                        <div v-if="kds.showInfoPanel.value" @click="kds.closeInfoPanel()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"></div>
+                    </transition>
+
                 </div>
 
                 <!-- ===================== CUPONES DE DESCUENTO (SUPERADMIN) ===================== -->
@@ -4717,9 +4861,15 @@
                             </span>
                         </label>
                     </div>
-                    <div v-if="productForm.isPromo" class="animate-fade-in">
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Etiqueta de Promoción (Ej. "Exclusivo", "2x1", "Solo Hoy")</label>
-                        <input v-model="productForm.promoTag" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:border-slate-700 dark:border-slate-600 dark:text-white" placeholder="Ej: 2x1, Solo Hoy, Especial, Exclusivo">
+                    <div v-if="productForm.isPromo" class="animate-fade-in space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Etiqueta de Promoción (Ej. "Exclusivo", "2x1", "Solo Hoy")</label>
+                            <input v-model="productForm.promoTag" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:border-slate-700 dark:border-slate-600 dark:text-white" placeholder="Ej: 2x1, Solo Hoy, Especial, Exclusivo">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Límite de usos por usuario (0 = Sin límite)</label>
+                            <input v-model="productForm.promoLimit" type="number" min="0" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:border-slate-700 dark:border-slate-600 dark:text-white" placeholder="0 para sin límite">
+                        </div>
                     </div>
                 </div>
 

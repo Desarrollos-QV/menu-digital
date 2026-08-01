@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 
 // Rutas Públicas (Desde la WebApp del cliente)
 router.post('/visit', analyticsController.registerVisit);
+router.post('/validate-cart', analyticsController.validateCart);
 router.post('/order', analyticsController.registerOrder);
 
 // Rutas Privadas (Para el Panel Admin)

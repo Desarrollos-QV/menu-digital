@@ -291,7 +291,11 @@ createApp({
 
                 if (bannersRes.ok) banners.value = await bannersRes.json();
                 if (catsRes.ok) categories.value = await catsRes.json();
-                if (prodsRes.ok) products.value = await prodsRes.json();
+                if (prodsRes.ok) {
+                    const allProducts = await prodsRes.json();
+                    // Omitir productos agotados (stock <= 0). Si es null o undefined, no tiene tracking de stock.
+                    products.value = allProducts.filter(p => p.stock === null || p.stock === undefined || p.stock > 0);
+                }
                 if (addonsRes.ok) addons.value = await addonsRes.json();
                 if (reviewsRes.ok) reviews.value = await reviewsRes.json();
 
@@ -560,7 +564,7 @@ createApp({
         };
 
         // Checkout & Send Whatsapp
-        const checkout = () => {
+        const checkout = async () => {
             // --- Validaciones Generales ---
             if (!customerName.value.trim()) {
                 return toastr.warning('⚠️ Tu nombre es requerido');
@@ -570,7 +574,7 @@ createApp({
             }
 
             // --- Bloqueo de Registro ---
-            if (!sharedCust.customer.value && !skipAuthPrompt.value) {
+            if (!sharedCust.customer.value) {
                 authPromptContext.value = 'checkout';
                 pendingCheckout.value = true;
                 
@@ -611,6 +615,27 @@ createApp({
             }
 
             if (window.clarity) window.clarity("set", "Checkout", "Started");
+
+            // --- VALIDACIÓN DE PROMOCIONES ---
+            try {
+                const custId = sharedCust.customer.value ? sharedCust.customer.value._id : null;
+                
+                const validateRes = await fetch('/api/analytics/validate-cart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerId: custId,
+                        cart: cart.value
+                    })
+                });
+                
+                if (!validateRes.ok) {
+                    const validateData = await validateRes.json().catch(() => ({}));
+                    return toastr.error(validateData.error || 'No puedes comprar esta cantidad.');
+                }
+            } catch (err) {
+                console.error("Error al validar carrito:", err);
+            }
 
             if (paymentMethod.value === 'stripe') {
                 if (selectedSavedCardId.value) {
@@ -802,11 +827,10 @@ createApp({
             msg += `\n`;
 
             // 1. Enviar datos al Backend (Sin esperar respuesta crítica)
-            const cs = JSON.parse(localStorage.getItem('customer_data')) ?? [];
             const dataReq = {
                 slug,
                 customerName: customerName.value,
-                customerId: (cs._value) ? cs._value._id : null,
+                customerId: sharedCust.customer.value ? sharedCust.customer.value._id : null,
                 customerPhone: customerPhone.value,
                 customerEmail: customerEmail.value || '',
                 deliveryType: deliveryType.value,
@@ -862,13 +886,14 @@ createApp({
             if (orderRes.ok) {
                 const resData = await orderRes.json();
                 orderId = resData.orderId || '';
+            } else {
+                const errorData = await orderRes.json().catch(() => ({}));
+                return toastr.error(errorData.error || 'Hubo un error al guardar tu pedido en el sistema. Por favor intenta de nuevo.');
             }
 
             if (orderId) {
                 lastOrderNumber.value = orderId.slice(-6).toUpperCase();
                 lastOrderId.value = orderId;
-            } else {
-                lastOrderNumber.value = Math.floor(100000 + Math.random() * 900000).toString();
             }
 
             /**

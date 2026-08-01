@@ -22,7 +22,8 @@ export function useProducts(isDark, fetchMedia) {
         active: true,
         isTrending: false,
         isPromo: false,
-        promoTag: ''
+        promoTag: '',
+        promoLimit: 0
     };
     const productForm = ref({ ...defaultForm });
 
@@ -78,7 +79,8 @@ export function useProducts(isDark, fetchMedia) {
                 categories: prod.categories || [],
                 addons: prod.addons || [],
                 isPromo: prod.isPromo !== undefined ? prod.isPromo : false,
-                promoTag: prod.promoTag || ''
+                promoTag: prod.promoTag || '',
+                promoLimit: prod.promoLimit || 0
             };
         } else {
             productForm.value = { ...defaultForm, categories: [], addons: [] };
