@@ -80,7 +80,15 @@
                 
                 <!-- Botones de Acción -->
                 <div class="space-y-3">
-                    <div class="text-xs text-slate-600 dark:text-slate-400 mb-2 leading-relaxed bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 text-left flex items-start gap-2.5">
+                    
+                    <!-- Mensaje para Pedidos en Línea (Con seguimiento) -->
+                    <div v-if="config.allowOnlineOrders" class="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/60 rounded-xl p-3 text-left flex items-start gap-2.5">
+                        <i class="fa-solid fa-bell text-blue-500 mt-0.5 shrink-0 text-sm"></i>
+                        <span><strong>¡Todo listo!</strong> Tu pedido ha sido recibido. Puedes darle seguimiento en tiempo real dando clic en el botón de abajo o desde tu cuenta.</span>
+                    </div>
+
+                    <!-- Mensaje para Pedidos por WhatsApp (Sin seguimiento online) -->
+                    <div v-if="!config.allowOnlineOrders" class="text-xs text-slate-600 dark:text-slate-400 mb-2 leading-relaxed bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 text-left flex items-start gap-2.5">
                         <i class="fa-solid fa-circle-info text-amber-500 mt-0.5 shrink-0 text-sm"></i>
                         <span><strong>Nota:</strong> Si WhatsApp no se abrió automáticamente, por favor presiona el botón verde de abajo para enviar tu pedido y confirmarlo con el negocio.</span>
                     </div>
@@ -90,11 +98,16 @@
                         <span>Enviar pedido por WhatsApp</span>
                     </a>
                     
-                    <a v-if="config.allowOnlineOrders && lastOrderId" :href="'/tracking.html?orderId=' + lastOrderId" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex items-center justify-center transition active:scale-95 text-base cursor-pointer gap-2">
-                        <span>Seguir Pedido</span>
+                    <a v-if="config.allowOnlineOrders && lastOrderId" :href="'/tracking.html?orderId=' + lastOrderId" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center transition active:scale-95 text-base cursor-pointer gap-2">
+                        <span>Seguir mi Pedido</span>
                         <i class="fa-solid fa-arrow-right"></i>
                     </a>
-                    <button v-else @click="goToMenu" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex items-center justify-center transition active:scale-95 text-base cursor-pointer">
+                    
+                    <!-- Este botón de volver al menú es genérico -->
+                    <button v-if="!config.allowOnlineOrders" @click="goToMenu" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex items-center justify-center transition active:scale-95 text-base cursor-pointer">
+                        <span>Volver al menú</span>
+                    </button>
+                    <button v-else @click="goToMenu" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl flex items-center justify-center transition active:scale-95 text-sm cursor-pointer mt-2">
                         <span>Volver al menú</span>
                     </button>
                 </div>
@@ -534,12 +547,14 @@
                                     </div>
 
                                     <button v-if="isBusinessOpen" @click="checkout" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
-                                        <i class="fa-brands fa-whatsapp text-xl"></i>
-                                        <span>Enviar Pedido a WhatsApp</span>
+                                        <i v-if="!config.allowOnlineOrders" class="fa-brands fa-whatsapp text-xl"></i>
+                                        <i v-else class="fa-solid fa-check text-xl"></i>
+                                        <span>{{ config.allowOnlineOrders ? 'Realizar pedido' : 'Enviar Pedido a WhatsApp' }}</span>
                                     </button>
                                     <button v-else @click="alertBussinesClose()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-gray-500/30 flex items-center justify-center gap-2 transition active:scale-95" :disabled="cart.length === 0">
-                                        <i class="fa-brands fa-whatsapp text-xl"></i>
-                                        <span>Enviar Pedido a WhatsApp</span>
+                                        <i v-if="!config.allowOnlineOrders" class="fa-brands fa-whatsapp text-xl"></i>
+                                        <i v-else class="fa-solid fa-check text-xl"></i>
+                                        <span>{{ config.allowOnlineOrders ? 'Realizar pedido' : 'Enviar Pedido a WhatsApp' }}</span>
                                     </button>
                                 </div>
                             </div>

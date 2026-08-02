@@ -155,6 +155,50 @@ export function useKds() {
         return `Hace ${diff} min`;
     };
 
+    // --- ENVIAR A REPARTIDOR ---
+    const driverPhone = ref(localStorage.getItem('kds_driver_phone') || '');
+
+    const sendToDriver = () => {
+        if (!driverPhone.value) {
+            Swal.fire('Atención', 'Ingresa el número de WhatsApp del repartidor', 'warning');
+            return;
+        }
+
+        // Guardar el número para que no lo tenga que teclear a cada rato
+        localStorage.setItem('kds_driver_phone', driverPhone.value);
+
+        const order = selectedOrder.value;
+        if (!order) return;
+
+        let msg = `🛵 *NUEVO PEDIDO PARA ENTREGAR* 🛵\n\n`;
+        msg += `*Pedido #*: ${order._id.slice(-6).toUpperCase()}\n`;
+        msg += `*Cliente*: ${order.customerName || (order.customerId && order.customerId.name) || 'Mostrador'}\n`;
+        if (order.customerPhone) msg += `*Teléfono*: ${order.customerPhone}\n`;
+        msg += `\n`;
+
+        msg += `📍 *Dirección de Entrega:*\n`;
+        msg += `Calle: ${order.customerStreet || ''} #${order.customerNumber || 'S/N'}\n`;
+        msg += `Colonia: ${order.customerColony || ''}\n`;
+        if (order.customerZipCode) msg += `CP: ${order.customerZipCode}\n`;
+        if (order.customerReference) msg += `Ref: ${order.customerReference}\n`;
+
+        // Link de Google Maps
+        const addressForMaps = `${order.customerStreet || ''} ${order.customerNumber || ''}, ${order.customerColony || ''}, ${order.customerZipCode || ''}`;
+        msg += `\n🗺️ *Google Maps:* https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressForMaps)}\n\n`;
+
+        msg += `💰 *Total a Cobrar:* $${(order.total || 0).toFixed(2)}\n`;
+        
+        let paymentStatus = order.paymentMethod === 'stripe' ? '✅ PAGADO EN LÍNEA' : '❌ EFECTIVO (Cobrar al entregar)';
+        msg += `*Estado del Pago:* ${paymentStatus}\n`;
+
+        if (order.paymentMethod === 'cash' && order.customerHowToPay) {
+            msg += `*Paga con:* $${order.customerHowToPay} (Llevar cambio de $${(order.customerHowToPay - (order.total || 0)).toFixed(2)})\n`;
+        }
+
+        const url = `https://wa.me/${driverPhone.value.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    };
+
     return {
         activeOrders,
         pendingOrders, preparingOrders, readyOrders,
@@ -162,6 +206,8 @@ export function useKds() {
         startPolling, stopPolling,
         getTimeElapsed, isLoading,
         // Panel lateral
-        showInfoPanel, selectedOrder, openInfoPanel, closeInfoPanel
+        showInfoPanel, selectedOrder, openInfoPanel, closeInfoPanel,
+        // Repartidor
+        driverPhone, sendToDriver
     };
 }

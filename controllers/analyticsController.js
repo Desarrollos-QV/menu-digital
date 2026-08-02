@@ -139,7 +139,9 @@ exports.registerOrder = async (req, res) => {
                 product: item.product._id,
                 name: item.product.name,
                 quantity: item.quantity,
-                price: item.product.price
+                price: item.product.price,
+                selectedOptions: item.selectedOptions || [],
+                note: item.note || ''
             })),
             total,
             subtotal,

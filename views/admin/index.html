@@ -3013,6 +3013,7 @@
                                 <!-- Información General -->
                                 <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
                                     
+                                    <!-- Datos del cliente -->
                                     <div class="space-y-4">
                                         <!-- Cliente -->
                                         <div class="flex items-start gap-3">
@@ -3068,6 +3069,23 @@
                                                 <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">${{ kds.selectedOrder.value.customerHowToPay }} <span class="text-xs text-slate-500 ml-1 font-normal" v-if="(kds.selectedOrder.value.customerHowToPay - kds.selectedOrder.value.total) >= 0">(Cambio: ${{ (kds.selectedOrder.value.customerHowToPay - kds.selectedOrder.value.total).toFixed(2) }})</span></p>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    <!-- Opcion de envio de whatsapp -->
+                                    <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700" v-if="kds.selectedOrder.value.customerStreet && kds.selectedOrder.value.status === 'ready'">
+                                        <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3"><i class="fa-brands fa-whatsapp text-green-500 mr-1 text-base"></i> Asignar a Repartidor</h4>
+                                        <div class="flex gap-2">
+                                            <div class="relative flex-1">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <i class="fa-solid fa-phone text-slate-400 text-xs"></i>
+                                                </div>
+                                                <input type="text" v-model="kds.driverPhone.value" placeholder="Número de WhatsApp..." class="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition" />
+                                            </div>
+                                            <button @click="kds.sendToDriver()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-lg shadow-sm transition active:scale-95 flex items-center gap-2">
+                                                Enviar <i class="fa-solid fa-paper-plane"></i>
+                                            </button>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400 mt-2 leading-tight">Enviará nombre, dirección, mapa de Google, total a cobrar y método de pago al repartidor.</p>
                                     </div>
                                     
                                     <!-- Canal y Pago Tags -->
