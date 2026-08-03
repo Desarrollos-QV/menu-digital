@@ -180,11 +180,7 @@ export function useKds() {
         msg += `Calle: ${order.customerStreet || ''} #${order.customerNumber || 'S/N'}\n`;
         msg += `Colonia: ${order.customerColony || ''}\n`;
         if (order.customerZipCode) msg += `CP: ${order.customerZipCode}\n`;
-        if (order.customerReference) msg += `Ref: ${order.customerReference}\n`;
-
-        // Link de Google Maps
-        const addressForMaps = `${order.customerStreet || ''} ${order.customerNumber || ''}, ${order.customerColony || ''}, ${order.customerZipCode || ''}`;
-        msg += `\n🗺️ *Google Maps:* https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressForMaps)}\n\n`;
+        if (order.customerReference) msg += `Ref: ${order.customerReference}\n\n`;
 
         msg += `💰 *Total a Cobrar:* $${(order.total || 0).toFixed(2)}\n`;
         

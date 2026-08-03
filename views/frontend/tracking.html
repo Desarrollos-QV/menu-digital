@@ -79,8 +79,21 @@
             <div class="max-w-md mx-auto space-y-4">
                 
                 <!-- Banner Principal (Imagen completa) -->
-                <div class="rounded-3xl overflow-hidden shadow-lg">
-                    <img src="../assets/images/tracking.jpeg" class="w-full h-auto block" alt="Estado de tu pedido" />
+                <div class="rounded-3xl overflow-hidden shadow-lg bg-slate-200 dark:bg-slate-800 min-h-[150px] flex items-center justify-center relative">
+                    <transition
+                        mode="out-in"
+                        enter-active-class="transition-all duration-500 ease-out"
+                        enter-from-class="opacity-0 translate-x-4 scale-95"
+                        enter-to-class="opacity-100 translate-x-0 scale-100"
+                        leave-active-class="transition-all duration-300 ease-in"
+                        leave-from-class="opacity-100 translate-x-0 scale-100"
+                        leave-to-class="opacity-0 -translate-x-4 scale-95"
+                    >
+                        <img :key="'step-img-' + (stepIndex || 1)" 
+                             :src="`../assets/images/step${stepIndex >= 4 ? 4 : (stepIndex <= 1 ? 1 : stepIndex)}.png`" 
+                             class="w-full h-auto block object-cover" 
+                             alt="Estado de tu pedido" />
+                    </transition>
                 </div>
 
                 <!-- Timeline Progress -->
@@ -93,50 +106,56 @@
 
                         <!-- Step 1: Recibido -->
                         <div class="flex flex-col items-center relative z-10 w-1/4">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm"
-                                 :class="stepIndex >= 1 ? 'bg-[#c80000] text-white border-2 border-[#c80000]' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
-                                <i class="fa-solid fa-receipt"></i>
-                                <div v-if="stepIndex > 1" class="absolute -bottom-1 -right-1 bg-[#ffb800] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-slate-50 dark:border-[#0b101e]">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm transition-all duration-500"
+                                 :class="stepIndex >= 1 ? (stepIndex === 1 ? 'bg-[#c80000] text-white border-2 border-white dark:border-[#0b101e] shadow-[0_0_15px_rgba(200,0,0,0.5)] scale-110' : 'bg-[#c80000] text-white border-2 border-[#c80000]') : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
+                                <i class="fa-solid fa-receipt" :class="stepIndex === 1 ? 'animate-pulse' : ''"></i>
+                                <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-0" enter-to-class="opacity-100 scale-100">
+                                    <div v-if="stepIndex > 1" class="absolute -bottom-1 -right-1 bg-[#ffb800] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-slate-50 dark:border-[#0b101e]">
+                                        <i class="fa-solid fa-check"></i>
+                                    </div>
+                                </transition>
                             </div>
-                            <span class="text-xs font-bold text-center leading-tight" :class="stepIndex >= 1 ? 'text-slate-900 dark:text-white' : 'text-slate-500'">Pedido<br>recibido</span>
+                            <span class="text-xs font-bold text-center leading-tight transition-all duration-300" :class="stepIndex >= 1 ? (stepIndex === 1 ? 'text-[#c80000] dark:text-[#ffb800] scale-105' : 'text-slate-900 dark:text-white') : 'text-slate-500'">Pedido<br>recibido</span>
                             <span v-if="stepIndex >= 1" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">1:32 PM</span>
                         </div>
                         
                         <!-- Step 2: Preparando -->
                         <div class="flex flex-col items-center relative z-10 w-1/4">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm"
-                                 :class="stepIndex >= 2 ? 'bg-[#c80000] text-white border-2 border-[#c80000]' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
-                                <i class="fa-solid fa-fire-burner"></i>
-                                <div v-if="stepIndex > 2" class="absolute -bottom-1 -right-1 bg-[#ffb800] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-slate-50 dark:border-[#0b101e]">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm transition-all duration-500"
+                                 :class="stepIndex >= 2 ? (stepIndex === 2 ? 'bg-[#c80000] text-white border-2 border-white dark:border-[#0b101e] shadow-[0_0_15px_rgba(200,0,0,0.5)] scale-110' : 'bg-[#c80000] text-white border-2 border-[#c80000]') : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
+                                <i class="fa-solid fa-fire-burner" :class="stepIndex === 2 ? 'animate-pulse' : ''"></i>
+                                <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-0" enter-to-class="opacity-100 scale-100">
+                                    <div v-if="stepIndex > 2" class="absolute -bottom-1 -right-1 bg-[#ffb800] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-slate-50 dark:border-[#0b101e]">
+                                        <i class="fa-solid fa-check"></i>
+                                    </div>
+                                </transition>
                             </div>
-                            <span class="text-xs font-bold text-center leading-tight" :class="stepIndex >= 2 ? 'text-slate-900 dark:text-white' : 'text-slate-500'">Restaurante<br>preparando</span>
+                            <span class="text-xs font-bold text-center leading-tight transition-all duration-300" :class="stepIndex >= 2 ? (stepIndex === 2 ? 'text-[#c80000] dark:text-[#ffb800] scale-105' : 'text-slate-900 dark:text-white') : 'text-slate-500'">Restaurante<br>preparando</span>
                             <span v-if="stepIndex >= 2" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">1:36 PM</span>
                         </div>
                         
                         <!-- Step 3: En Camino -->
                         <div class="flex flex-col items-center relative z-10 w-1/4">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm"
-                                 :class="stepIndex >= 3 ? (stepIndex === 3 ? 'bg-[#c80000] text-white border-2 border-white dark:border-[#0b101e] shadow-[0_0_15px_rgba(200,0,0,0.5)]' : 'bg-[#c80000] text-white border-2 border-[#c80000]') : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
-                                <i class="fa-solid fa-motorcycle"></i>
-                                <div v-if="stepIndex > 3" class="absolute -bottom-1 -right-1 bg-[#ffb800] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-slate-50 dark:border-[#0b101e]">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm transition-all duration-500"
+                                 :class="stepIndex >= 3 ? (stepIndex === 3 ? 'bg-[#c80000] text-white border-2 border-white dark:border-[#0b101e] shadow-[0_0_15px_rgba(200,0,0,0.5)] scale-110' : 'bg-[#c80000] text-white border-2 border-[#c80000]') : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
+                                <i class="fa-solid fa-motorcycle" :class="stepIndex === 3 ? 'animate-pulse' : ''"></i>
+                                <transition enter-active-class="transition-all duration-300" enter-from-class="opacity-0 scale-0" enter-to-class="opacity-100 scale-100">
+                                    <div v-if="stepIndex > 3" class="absolute -bottom-1 -right-1 bg-[#ffb800] text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border-2 border-slate-50 dark:border-[#0b101e]">
+                                        <i class="fa-solid fa-check"></i>
+                                    </div>
+                                </transition>
                             </div>
-                            <span class="text-xs font-bold text-center leading-tight" :class="stepIndex >= 3 ? 'text-slate-900 dark:text-white' : 'text-slate-500'">En camino</span>
+                            <span class="text-xs font-bold text-center leading-tight transition-all duration-300" :class="stepIndex >= 3 ? (stepIndex === 3 ? 'text-[#c80000] dark:text-[#ffb800] scale-105' : 'text-slate-900 dark:text-white') : 'text-slate-500'">En camino</span>
                             <span v-if="stepIndex >= 3" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">1:45 PM</span>
                         </div>
 
                         <!-- Step 4: Entregado -->
                         <div class="flex flex-col items-center relative z-10 w-1/4">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm"
-                                 :class="stepIndex >= 4 ? 'bg-[#c80000] text-white border-2 border-[#c80000]' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
-                                <i class="fa-solid fa-bag-shopping"></i>
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 shadow-sm transition-all duration-500"
+                                 :class="stepIndex >= 4 ? (stepIndex === 4 ? 'bg-[#c80000] text-white border-2 border-white dark:border-[#0b101e] shadow-[0_0_15px_rgba(200,0,0,0.5)] scale-110' : 'bg-[#c80000] text-white border-2 border-[#c80000]') : 'bg-slate-200 dark:bg-slate-800 text-slate-500'">
+                                <i class="fa-solid fa-bag-shopping" :class="stepIndex === 4 ? 'animate-pulse' : ''"></i>
                             </div>
-                            <span class="text-xs font-bold text-center leading-tight" :class="stepIndex >= 4 ? 'text-slate-900 dark:text-white' : 'text-slate-500'">Entregado</span>
+                            <span class="text-xs font-bold text-center leading-tight transition-all duration-300" :class="stepIndex >= 4 ? (stepIndex === 4 ? 'text-[#c80000] dark:text-[#ffb800] scale-105' : 'text-slate-900 dark:text-white') : 'text-slate-500'">Entregado</span>
                             <span v-if="stepIndex < 4" class="text-[10px] text-slate-500 mt-1">Próximamente</span>
                             <span v-else class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">2:00 PM</span>
                         </div>
