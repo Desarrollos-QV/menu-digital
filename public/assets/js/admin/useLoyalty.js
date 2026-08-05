@@ -11,11 +11,9 @@ export function useLoyalty() {
 
     const fetchProgram = async () => {
         try {
-            console.log("Solicitamos config")
             const res = await authFetch('/api/loyalty/config');
             if (res.ok) {
                 program.value = await res.json();
-                console.log("program ",program.value);
                 
             }
         } catch (e) { console.error(e); }

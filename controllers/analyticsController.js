@@ -45,16 +45,12 @@ exports.validateCart = async (req, res) => {
     try {
         const { customerId, cart } = req.body;
         
-        console.log('--- VALIDATE CART ---');
-        console.log('Body:', { customerId, cartLength: cart?.length });
-        
         if (customerId && cart && cart.length > 0) {
             for (const item of cart) {
                 const product = await Product.findById(item.product._id);
                 if (product && product.isPromo && product.promoLimit > 0) {
-                    console.log('Checking product:', product.name, 'Promo Limit:', product.promoLimit);
                     const pastOrders = await Order.find({ customerId, 'items.product': product._id, status: { $ne: 'cancelled' } });
-                    console.log('Past orders found:', pastOrders.length);
+                  
                     
                     let totalBought = 0;
                     for (const pastOrder of pastOrders) {
@@ -89,9 +85,6 @@ exports.registerOrder = async (req, res) => {
 
         const business = await Business.findOne({ slug: { $in: possibleSlugs } });
         if (!business) return res.status(404).json({ error: 'Negocio no encontrado' });
-        
-        console.log('--- REGISTER ORDER ---');
-        console.log('Body:', { customerId, cartLength: cart?.length });
         
         // --- VALIDAR LÍMITES DE PROMOCIÓN POR USUARIO ---
         if (customerId) {

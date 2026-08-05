@@ -5,7 +5,7 @@ const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWI
 exports.getOrders = async (req, res) => {
     try {
         const orders = await Order.find({ businessId: req.user.businessId })
-            .select('createdAt total status paymentMethod customerId customerName customerPhone customerStreet customerNumber customerReference customerHowToPay createdBy items subtotal commission tax source') // Solo campos necesarios para tabla
+            .select('createdAt total status paymentMethod customerId customerName customerPhone customerStreet customerColony customerNumber customerReference customerHowToPay createdBy items subtotal commission tax source') // Solo campos necesarios para tabla
             .populate('customerId', 'name')
             .populate('createdBy', 'username')
             .sort({ createdAt: -1 })
@@ -78,14 +78,7 @@ exports.updateOrder = async (req, res) => {
             }
 
             if (messageBody) {
-                // Enviamos sin await para no bloquear la respuesta al frontend
-                // client.messages.create({
-                //     body: messageBody,
-                //     from: fromPhone,
-                //     to: toPhone
-                // })
-                // .then(message => console.log(`Mensaje enviado: ${message.sid}`))
-                // .catch(err => console.error("Error enviando WhatsApp:", err));
+               
             }
         }
         // -------------------------------------

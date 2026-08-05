@@ -35,7 +35,6 @@ export function useCategoriesStore(isDark) {
             const res = await authFetch('/api/categoriesStore');
             if (res.ok) {
                 categories.list = await res.json();
-                console.log("Listado de categorias Store ",categories.list);
             }
         } catch (e) {
             console.error("Error fetching global categories", e);

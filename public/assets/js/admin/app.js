@@ -750,7 +750,6 @@ createApp({
             
             printer.printTicket(ord);
             
-            console.log('Ticket impreso: ', ord);
             showTicketModal.value = false;
         };
 
@@ -1130,7 +1129,6 @@ createApp({
                     // Buscar la última orden para imprimir su ticket
                     await orders.fetchOrders();
                     const lastOrder = orders.ordersList.value[0];
-                    console.log(lastOrder);
 
                     if (lastOrder) {
                         ticketData.value = {

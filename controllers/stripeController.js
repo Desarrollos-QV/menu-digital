@@ -50,7 +50,6 @@ exports.handleWebhook = async (req, res) => {
     switch (event.type) {
         case 'payment_intent.succeeded':
             const paymentIntent = event.data.object;
-            console.log(`PaymentIntent ${paymentIntent.id} succeeded`);
             
             try {
                 const order = await Order.findOneAndUpdate(
@@ -61,14 +60,14 @@ exports.handleWebhook = async (req, res) => {
                     },
                     { new: true }
                 );
-                if(order) console.log(`Order ${order._id} updated via Stripe webhook.`);
+                
             } catch (err) {
                 console.error("Error updating order on webhook:", err);
             }
             break;
         case 'payment_intent.payment_failed':
             const paymentFailed = event.data.object;
-            console.log(`PaymentIntent ${paymentFailed.id} failed`);
+          
             try {
                 await Order.findOneAndUpdate(
                     { stripePaymentIntentId: paymentFailed.id },
@@ -79,7 +78,7 @@ exports.handleWebhook = async (req, res) => {
             }
             break;
         default:
-            console.log(`Unhandled event type ${event.type}`);
+           
     }
 
     res.send();

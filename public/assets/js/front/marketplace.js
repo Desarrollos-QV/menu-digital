@@ -1010,7 +1010,7 @@ createApp({
                 } 
             } catch (err) {
                 // const req = err.json();
-                console.log(err)
+              
                 error.value = true;
             } finally {
                 loading.value = false;

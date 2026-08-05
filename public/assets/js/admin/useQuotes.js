@@ -38,7 +38,6 @@ export function useQuotes(setingsRef) {
         try {
             const res = await authFetch('/api/quotes');
             if (res.ok) quotesList.value = await res.json();
-            console.log("Listado de productos> " , quotesList.value)
         } catch (e) { console.error("Error fetching Quotes", e); }
     };
 
@@ -128,7 +127,6 @@ export function useQuotes(setingsRef) {
                 ...product,
                 qty: 1
             });
-            console.log("elemento agregado... " , form);
             const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000 });
             Toast.fire({ icon: 'success', title: 'Producto agregado' });
         }

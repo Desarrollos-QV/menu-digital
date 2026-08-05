@@ -30,7 +30,6 @@ export function useCoupons() {
             expirationDate: ''
         };
 
-        console.log("Abrimos el MODAL")
         showCouponModal.value = true;
     };
 

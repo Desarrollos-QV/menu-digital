@@ -320,7 +320,7 @@ export function usePrinter(settings) {
 
             // 2. Pedir a QZ la lista de impresoras
             const printers = await qz.printers.find();
-            console.log("Impresoras detectadas:", printers);
+           
             
             return printers; // Devuelve un array de strings: ['POS-58', 'Microsoft Print to PDF', ...]
 

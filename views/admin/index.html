@@ -3046,7 +3046,19 @@
                                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Calle y Número</p>
                                                 <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">{{ kds.selectedOrder.value.customerStreet }} {{ kds.selectedOrder.value.customerNumber || '' }}</p>
                                             </div>
+                                            
                                         </div>
+
+                                        <!-- Colonia -->
+                                        <div class="flex items-start gap-3" v-if="kds.selectedOrder.value.customerColony">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 shrink-0">
+                                                <i class="fa-solid fa-location-dot"></i>
+                                            </div>
+                                            <div >
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Colonia de entrega</p>
+                                                <p class="font-medium text-slate-800 dark:text-white leading-tight mt-0.5">{{ kds.selectedOrder.value.customerColony }}</p>
+                                            </div>
+                                         </div>
                                         
                                         <!-- Referencia -->
                                         <div class="flex items-start gap-3" v-if="kds.selectedOrder.value.customerReference">
