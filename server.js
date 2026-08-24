@@ -22,8 +22,8 @@ app.use(express.static(path.join(__dirname, 'views/frontend')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Servir Panel de Control (Admin + SuperAdmin)
-// El panel vive en la carpeta hermana /panel/ fuera del backend
-app.use('/panel', express.static(path.join(__dirname, '../panel')));
+// El panel vive en backend/panel/
+app.use('/panel', express.static(path.join(__dirname, 'panel')));
 
 // Rutas de la API (Backend)
 app.use('/api', require('./routes/api'));
@@ -70,9 +70,9 @@ app.get(/.*/, (req, res) => {
        return res.sendFile(path.join(__dirname, 'views','frontend', 'profile.html'));
     }
     
-    // 3. Rutas de Admin → Servir desde el panel/ externo
+    // 3. Rutas de Admin → Servir desde backend/panel/
     if (req.url.startsWith('/admin')) {
-        return res.sendFile(path.join(__dirname, '../panel', 'index.html'));
+        return res.sendFile(path.join(__dirname, 'panel', 'index.html'));
     }
 
     // 3. Rutas de Admin
