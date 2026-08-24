@@ -189,7 +189,7 @@ createApp({
             return currentUserRole.value === 'superadmin' ? saasMenu.value : businessMenu.value;
         });
 
-        // --- LÃ"GICA LOCAL PARA MODAL DETALLE ITEM ---
+        // --- LÃƒ"GICA LOCAL PARA MODAL DETALLE ITEM ---
         const showItemDetailsModal = ref(false);
         const selectedCartItem = ref(null);
 
@@ -266,7 +266,7 @@ createApp({
                             data: 'categories',
                             orderable: false,
                             render: (data) => {
-                                if (!data || data.length === 0) return '<span class="text-slate-300 text-xs italic">â?"</span>';
+                                if (!data || data.length === 0) return '<span class="text-slate-300 text-xs italic">Ã¢?"</span>';
                                 return data.slice(0, 2).map(id =>
                                     `<span class="inline-block bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full text-[10px] font-bold mr-1">${products.getCategoryName(id)}</span>`
                                 ).join('') + (data.length > 2 ? `<span class="text-[10px] text-slate-400">+${data.length - 2}</span>` : '');
@@ -661,7 +661,7 @@ createApp({
                         toastr.warning(`MÃ¡ximo ${group.maxOptions} opciones para ${group.name}`);
                     }
                 } else {
-                    // LÃ³gica Radio (Ãsnico: reemplaza otros del mismo grupo)
+                    // LÃ³gica Radio (Ãƒsnico: reemplaza otros del mismo grupo)
                     const others = item.selectedOptions.filter(o => o.group !== group.name);
                     others.push({ name: option.name, price: option.priceExtra, group: group.name });
                     item.selectedOptions = others;
@@ -699,7 +699,7 @@ createApp({
             toastr.success('Reporte descargado correctamente');
         };
 
-        // --- LÃ"GICA IMPRESIÃ"N DE TICKETS PRO ---
+        // --- LÃƒ"GICA IMPRESIÃƒ"N DE TICKETS PRO ---
         const showTicketModal = ref(false);
         const ticketData = ref(null);
 
@@ -807,7 +807,7 @@ createApp({
             doc.text(`Atendido por: ${ord.createdBy ? ord.createdBy.username : 'Sistema (Web)'}`, 20, y);
             y += lineH;
 
-            // ---- DATOS DE ENVÃO (solo si es a domicilio) ----
+            // ---- DATOS DE ENVÃƒO (solo si es a domicilio) ----
             const isDelivery = ord.deliveryType === 'delivery' || ord.customerStreet;
             if (isDelivery) {
                 y += 3;
@@ -872,7 +872,7 @@ createApp({
                 if (item.note) {
                     doc.setFontSize(7);
                     doc.setTextColor(180, 100, 0);
-                    doc.text(`  â~. Nota: ${item.note}`, 22, y);
+                    doc.text(`  Ã¢~. Nota: ${item.note}`, 22, y);
                     doc.setFontSize(9);
                     doc.setTextColor(0);
                     y += 4;
@@ -942,7 +942,7 @@ createApp({
             toastr.success('PDF generado correctamente');
         };
 
-        // --- LÃ"GICA DE COTIZACIONES (BRIDGE) ---
+        // --- LÃƒ"GICA DE COTIZACIONES (BRIDGE) ---
         const startNewQuote = () => {
             // Asegurarnos que tenemos los usuarios cargados
             users.fetchUsers().then(() => {
@@ -1094,15 +1094,15 @@ createApp({
                 const commLine = ord.commission && ord.commission.amount > 0
                     ? `\nComisiÃ³n: +$${ord.commission.type === 'percent' ? (ord.subtotal * ord.commission.amount / 100).toFixed(2) : ord.commission.amount.toFixed(2)}`
                     : '';
-                const items = ord.items.map(i => `  â?¢ ${i.quantity}x ${i.name} - $${(i.price * i.quantity).toFixed(2)}`).join('\n');
-                msg = `Â¡Hola *${ord.customerId ? ord.customerId.name : (ord.customerName || 'Cliente')}*! AquÃ­ tienes el detalle de tu pedido en *${settings.settings.value.appName || 'Tengo Hambre'}*.âo.\n\n`;
-                msg += `ğY"¦ *Folio:* #${ord._id.slice(-6).toUpperCase()}\n`;
-                msg += `ğY". *Fecha:* ${new Date(ord.createdAt).toLocaleString()}\n`;
-                msg += `ğY'³ *MÃ©todo de pago:* ${ord.paymentMethod}\n${deliverySection}\n\n`;
-                msg += `ğY>' *Productos:*\n${items}\n\n`;
-                msg += `ğY'° *SubTotal:* $${(ord.subtotal || 0).toFixed(2)}${commLine}${deliveryCostLine}\n`;
-                msg += `â­ *TOTAL: $${ord.total.toFixed(2)}*\n\n`;
-                msg += `ğYT Â¡Gracias por tu preferencia!`;
+                const items = ord.items.map(i => `  Ã¢?Â¢ ${i.quantity}x ${i.name} - $${(i.price * i.quantity).toFixed(2)}`).join('\n');
+                msg = `Â¡Hola *${ord.customerId ? ord.customerId.name : (ord.customerName || 'Cliente')}*! AquÃ­ tienes el detalle de tu pedido en *${settings.settings.value.appName || 'Tengo Hambre'}*.Ã¢o.\n\n`;
+                msg += `Ã°Y"Â¦ *Folio:* #${ord._id.slice(-6).toUpperCase()}\n`;
+                msg += `Ã°Y". *Fecha:* ${new Date(ord.createdAt).toLocaleString()}\n`;
+                msg += `Ã°Y'Â³ *MÃ©todo de pago:* ${ord.paymentMethod}\n${deliverySection}\n\n`;
+                msg += `Ã°Y>' *Productos:*\n${items}\n\n`;
+                msg += `Ã°Y'Â° *SubTotal:* $${(ord.subtotal || 0).toFixed(2)}${commLine}${deliveryCostLine}\n`;
+                msg += `Ã¢Â­ *TOTAL: $${ord.total.toFixed(2)}*\n\n`;
+                msg += `Ã°YT Â¡Gracias por tu preferencia!`;
             } else {
                 // Usar la lÃ³gica de mensaje de useQuotes
                 msg = decodeURIComponent(quotes.sendWhatsApp());
@@ -1122,7 +1122,7 @@ createApp({
             finance.showCloseModal.value = true;
         }
 
-        // --- FUNCIÃ"N: PROCESAR VENTA Y ABRIR TICKET ---
+        // --- FUNCIÃƒ"N: PROCESAR VENTA Y ABRIR TICKET ---
         const finishSale = async () => {
             await pos.processSale(finance)
             // Si el modal de pago se cierra, asumimos Ã©xito
@@ -1449,7 +1449,7 @@ createApp({
         });
 
 
-        // 4. MANEJAR BOTÃ"N "ATRÃS" DEL NAVEGADOR
+        // 4. MANEJAR BOTÃƒ"N "ATRÃƒS" DEL NAVEGADOR
         window.onpopstate = (event) => {
             if (event.state && event.state.view) {
                 currentView.value = event.state.view;
