@@ -10,6 +10,7 @@ export function useSaas() {
     const dashboardStats = ref({ 
         visits: [], 
         profits: [],
+        ranking: [],
         kpis: {
             todayProfits: 0,
             todayOrders: 0,
@@ -21,6 +22,7 @@ export function useSaas() {
     });
     const dashboardLoading = ref(false);
     const dashboardMonthFilter = ref('current');
+    const rankingSearchQuery = ref('');
 
     // KPIs por rango de fechas (para los cards de comisiones/pedidos/deuda)
     const today = new Date().toISOString().split('T')[0];
@@ -548,6 +550,7 @@ export function useSaas() {
         dashboardStats,
         dashboardLoading,
         dashboardMonthFilter,
+        rankingSearchQuery,
         fetchDashboardStats,
         // KPIs por rango
         kpiDateFrom,

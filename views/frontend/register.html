@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Toastr & jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
     <link rel="stylesheet" href="./assets/css/front.css">
     <script>
         tailwind.config = { 
@@ -93,8 +93,8 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN DE CATEGORÍAS ---
-        // --- 1. CONFIGURACIÓN DE CATEGORÍAS (DINÁMICAS) ---
+        // --- 1. CONFIGURACI�"N DE CATEGORÍAS ---
+        // --- 1. CONFIGURACI�"N DE CATEGORÍAS (DINÁMICAS) ---
         const selectedCategories = new Set(); // Usamos Set para evitar duplicados
         const container = document.getElementById('categories-container');
 
@@ -121,7 +121,7 @@
                     btn.className = `category-card cursor-pointer border border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center gap-1 text-center hover:bg-slate-50 transition bg-white`;
                     // Usamos _id de mongo como clave
                     btn.innerHTML = `
-                        <span class="text-xl">${cat.emoji || '🍽️'}</span>
+                        <span class="text-xl">${cat.emoji || '�Y��️'}</span>
                         <span class="text-[10px] font-bold leading-tight uppercase text-slate-600">${cat.name}</span>
                     `;
                     btn.onclick = () => toggleCategory(cat._id, btn, cat.name); // Pasamos ID real
@@ -144,7 +144,7 @@
             // enviaremos el NOMBRE para que sea legible, o podemos enviar el ID si queremos relación estricta. 
             // PERO, la app usa nombres para mostrar filtros. Usemos el NOMBRE (slugify si fuera necesario, pero el user pide "Nombre").
             
-            // CORRECCIÓN: Si usamos el sistema de categorías globales, idealmente guardaríamos IDs. pero el frontend legacy usa strings.
+            // CORRECCI�"N: Si usamos el sistema de categorías globales, idealmente guardaríamos IDs. pero el frontend legacy usa strings.
             // Vamos a guardar el NOMBRE TAL CUAL viene de la store.
             
             const val = name; // Usaremos el nombre como identificador por compatibilidad con el front actual que espera strings.
@@ -165,7 +165,7 @@
         // Iniciar carga
         loadCategories();
 
-        // --- 2. LÓGICA DE REGISTRO ---
+        // --- 2. L�"GICA DE REGISTRO ---
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();

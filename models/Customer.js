@@ -10,7 +10,9 @@ const customerSchema = new mongoose.Schema({
     stripeCustomerId: { type: String, default: '' }, // ID de cliente Stripe
     points: { type: Number, default: 0 },
     visits: { type: Number, default: 0 },
-    lastVisit: { type: Date, default: Date.now }
+    lastVisit: { type: Date, default: Date.now },
+    resetOtp: { type: String, default: null },
+    resetOtpExpires: { type: Date, default: null }
 });
 
 // Nota: Para clientes del Marketplace global, businessId puede ser opcional o nulo.

@@ -109,6 +109,7 @@ createApp({
         const saasMenu = ref([
             { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
+            { id: 108, label: 'Ranking Restaurantes', icon: 'fa-solid fa-trophy', view: 'saas_ranking' },
             { id: 106, label: 'Usuarios Frecuentes', icon: 'fa-solid fa-users', view: 'saas_frequent_customers' },
             { id: 107, label: 'Cupones', icon: 'fa-solid fa-ticket', view: 'coupons' },
             { id: 101, label: 'Publicidad Global', icon: 'fa-solid fa-globe', view: 'ads' },
@@ -188,7 +189,7 @@ createApp({
             return currentUserRole.value === 'superadmin' ? saasMenu.value : businessMenu.value;
         });
 
-        // --- LÃ“GICA LOCAL PARA MODAL DETALLE ITEM ---
+        // --- LÃ"GICA LOCAL PARA MODAL DETALLE ITEM ---
         const showItemDetailsModal = ref(false);
         const selectedCartItem = ref(null);
 
@@ -209,7 +210,7 @@ createApp({
                             renderer: $.fn.dataTable.Responsive.renderer.listHiddenNodes(),
                         }
                     },
-                    language: { url: "/es-ES.json" },
+                    language: { url: "/panel/es-ES.json" },
                     pageLength: 15,
                     columnDefs: [
                         { responsivePriority: 1, targets: 1 },  // Nombre: siempre visible
@@ -265,7 +266,7 @@ createApp({
                             data: 'categories',
                             orderable: false,
                             render: (data) => {
-                                if (!data || data.length === 0) return '<span class="text-slate-300 text-xs italic">â€”</span>';
+                                if (!data || data.length === 0) return '<span class="text-slate-300 text-xs italic">â?"</span>';
                                 return data.slice(0, 2).map(id =>
                                     `<span class="inline-block bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full text-[10px] font-bold mr-1">${products.getCategoryName(id)}</span>`
                                 ).join('') + (data.length > 2 ? `<span class="text-[10px] text-slate-400">+${data.length - 2}</span>` : '');
@@ -329,7 +330,7 @@ createApp({
                 usersTable = $('#usersTable').DataTable({
                     data: users.usersList.value,
                     responsive: true,
-                    language: { url: "/es-ES.json" },
+                    language: { url: "/panel/es-ES.json" },
                     columns: [
                         { data: 'name', render: (data) => `<div class="font-bold text-slate-800 dark:text-white">${data}</div>` },
                         { data: 'phone' },
@@ -364,7 +365,7 @@ createApp({
                 ordersTable = $('#ordersTable').DataTable({
                     data: orders.ordersList.value,
                     responsive: true,
-                    language: { url: "/es-ES.json" },
+                    language: { url: "/panel/es-ES.json" },
                     order: [[7, 'ASC']], // Ordenar por fecha descendente
                     columns: [
                         { data: '_id', render: (data) => `<span class="font-mono text-xs text-slate-500">#${data.slice(-6).toUpperCase()}</span>` },
@@ -439,7 +440,7 @@ createApp({
                 QuotesTable = $('#quotesTable').DataTable({
                     data: quotes.quotesList.value,
                     responsive: true,
-                    language: { url: "/es-ES.json" },
+                    language: { url: "/panel/es-ES.json" },
                     order: [[0, 'desc']], // Ordenar por fecha descendente
                     columns: [
                         { data: '_id', render: (data) => `<span class="font-mono text-xs text-slate-500">#${data.slice(-6).toUpperCase()}</span>` },
@@ -588,6 +589,7 @@ createApp({
 
                 // Vistas EspecÃ­ficas
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
+                if (item.view === 'saas_ranking') saas.fetchDashboardStats();
                 if (item.view === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
                 if (item.view === 'saas_dashboard') {
                     saas.fetchDashboardStats();
@@ -659,7 +661,7 @@ createApp({
                         toastr.warning(`MÃ¡ximo ${group.maxOptions} opciones para ${group.name}`);
                     }
                 } else {
-                    // LÃ³gica Radio (Ãšnico: reemplaza otros del mismo grupo)
+                    // LÃ³gica Radio (Ãsnico: reemplaza otros del mismo grupo)
                     const others = item.selectedOptions.filter(o => o.group !== group.name);
                     others.push({ name: option.name, price: option.priceExtra, group: group.name });
                     item.selectedOptions = others;
@@ -697,7 +699,7 @@ createApp({
             toastr.success('Reporte descargado correctamente');
         };
 
-        // --- LÃ“GICA IMPRESIÃ“N DE TICKETS PRO ---
+        // --- LÃ"GICA IMPRESIÃ"N DE TICKETS PRO ---
         const showTicketModal = ref(false);
         const ticketData = ref(null);
 
@@ -805,7 +807,7 @@ createApp({
             doc.text(`Atendido por: ${ord.createdBy ? ord.createdBy.username : 'Sistema (Web)'}`, 20, y);
             y += lineH;
 
-            // ---- DATOS DE ENVÃO (solo si es a domicilio) ----
+            // ---- DATOS DE ENVÃO (solo si es a domicilio) ----
             const isDelivery = ord.deliveryType === 'delivery' || ord.customerStreet;
             if (isDelivery) {
                 y += 3;
@@ -870,7 +872,7 @@ createApp({
                 if (item.note) {
                     doc.setFontSize(7);
                     doc.setTextColor(180, 100, 0);
-                    doc.text(`  â˜… Nota: ${item.note}`, 22, y);
+                    doc.text(`  â~. Nota: ${item.note}`, 22, y);
                     doc.setFontSize(9);
                     doc.setTextColor(0);
                     y += 4;
@@ -940,7 +942,7 @@ createApp({
             toastr.success('PDF generado correctamente');
         };
 
-        // --- LÃ“GICA DE COTIZACIONES (BRIDGE) ---
+        // --- LÃ"GICA DE COTIZACIONES (BRIDGE) ---
         const startNewQuote = () => {
             // Asegurarnos que tenemos los usuarios cargados
             users.fetchUsers().then(() => {
@@ -1092,15 +1094,15 @@ createApp({
                 const commLine = ord.commission && ord.commission.amount > 0
                     ? `\nComisiÃ³n: +$${ord.commission.type === 'percent' ? (ord.subtotal * ord.commission.amount / 100).toFixed(2) : ord.commission.amount.toFixed(2)}`
                     : '';
-                const items = ord.items.map(i => `  â€¢ ${i.quantity}x ${i.name} - $${(i.price * i.quantity).toFixed(2)}`).join('\n');
-                msg = `Â¡Hola *${ord.customerId ? ord.customerId.name : (ord.customerName || 'Cliente')}*! AquÃ­ tienes el detalle de tu pedido en *${settings.settings.value.appName || 'Tengo Hambre'}*.âœ…\n\n`;
-                msg += `ðŸ“¦ *Folio:* #${ord._id.slice(-6).toUpperCase()}\n`;
-                msg += `ðŸ“… *Fecha:* ${new Date(ord.createdAt).toLocaleString()}\n`;
-                msg += `ðŸ’³ *MÃ©todo de pago:* ${ord.paymentMethod}\n${deliverySection}\n\n`;
-                msg += `ðŸ›’ *Productos:*\n${items}\n\n`;
-                msg += `ðŸ’° *SubTotal:* $${(ord.subtotal || 0).toFixed(2)}${commLine}${deliveryCostLine}\n`;
-                msg += `â­ *TOTAL: $${ord.total.toFixed(2)}*\n\n`;
-                msg += `ðŸ™ Â¡Gracias por tu preferencia!`;
+                const items = ord.items.map(i => `  â?¢ ${i.quantity}x ${i.name} - $${(i.price * i.quantity).toFixed(2)}`).join('\n');
+                msg = `Â¡Hola *${ord.customerId ? ord.customerId.name : (ord.customerName || 'Cliente')}*! AquÃ­ tienes el detalle de tu pedido en *${settings.settings.value.appName || 'Tengo Hambre'}*.âo.\n\n`;
+                msg += `ðY"¦ *Folio:* #${ord._id.slice(-6).toUpperCase()}\n`;
+                msg += `ðY". *Fecha:* ${new Date(ord.createdAt).toLocaleString()}\n`;
+                msg += `ðY'³ *MÃ©todo de pago:* ${ord.paymentMethod}\n${deliverySection}\n\n`;
+                msg += `ðY>' *Productos:*\n${items}\n\n`;
+                msg += `ðY'° *SubTotal:* $${(ord.subtotal || 0).toFixed(2)}${commLine}${deliveryCostLine}\n`;
+                msg += `â­ *TOTAL: $${ord.total.toFixed(2)}*\n\n`;
+                msg += `ðYT Â¡Gracias por tu preferencia!`;
             } else {
                 // Usar la lÃ³gica de mensaje de useQuotes
                 msg = decodeURIComponent(quotes.sendWhatsApp());
@@ -1120,7 +1122,7 @@ createApp({
             finance.showCloseModal.value = true;
         }
 
-        // --- FUNCIÃ“N: PROCESAR VENTA Y ABRIR TICKET ---
+        // --- FUNCIÃ"N: PROCESAR VENTA Y ABRIR TICKET ---
         const finishSale = async () => {
             await pos.processSale(finance)
             // Si el modal de pago se cierra, asumimos Ã©xito
@@ -1343,6 +1345,7 @@ createApp({
                         nextTick(() => renderDashboardCharts(saas.dashboardStats));
                     }
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
+                    if (currentView.value === 'saas_ranking') saas.fetchDashboardStats();
                     if (currentView.value === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
                     if (currentView.value === 'ads') banners.fetchBanners();
                     if (currentView.value === 'media') media.fetchMedia();
@@ -1446,7 +1449,7 @@ createApp({
         });
 
 
-        // 4. MANEJAR BOTÃ“N "ATRÃS" DEL NAVEGADOR
+        // 4. MANEJAR BOTÃ"N "ATRÃS" DEL NAVEGADOR
         window.onpopstate = (event) => {
             if (event.state && event.state.view) {
                 currentView.value = event.state.view;

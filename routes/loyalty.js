@@ -7,6 +7,8 @@ const auth = require('../middleware/auth');
 router.post('/public/status', loyaltyController.getCustomerStatus);
 router.post('/public/register', loyaltyController.registerCustomer);
 router.post('/public/setup-password', loyaltyController.setupPassword);
+router.post('/public/request-reset', loyaltyController.requestPasswordReset);
+router.post('/public/verify-reset', loyaltyController.verifyPasswordReset);
 
 // Privadas (Admin)
 router.get('/config', auth, loyaltyController.getProgramConfig);

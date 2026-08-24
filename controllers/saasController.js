@@ -130,6 +130,38 @@ exports.getDashboardStats = async (req, res) => {
             totalPlatformDebt += Math.max(0, earned - paid);
         });
 
+        // 5. Ranking de Restaurantes por número de pedidos en el periodo seleccionado
+        const businessRankingAgg = await Order.aggregate([
+            { $match: orderQueryFilter },
+            {
+                $group: {
+                    _id: "$businessId",
+                    orderCount: { $sum: 1 },
+                    totalRevenue: { $sum: "$total" }
+                }
+            }
+        ]);
+
+        const rankingMap = {};
+        businessRankingAgg.forEach(r => {
+            if (r._id) {
+                rankingMap[String(r._id)] = r;
+            }
+        });
+
+        const ranking = allBusinesses.map(b => {
+            const found = rankingMap[String(b._id)];
+            return {
+                _id: b._id,
+                name: b.name,
+                slug: b.slug,
+                avatar: b.avatar || '',
+                active: b.active !== false,
+                orderCount: found ? found.orderCount : 0,
+                totalRevenue: found ? parseFloat((found.totalRevenue || 0).toFixed(2)) : 0
+            };
+        }).sort((a, b) => b.orderCount - a.orderCount || b.totalRevenue - a.totalRevenue);
+
         res.json({
             kpis: {
                 todayProfits: parseFloat(todayProfits.toFixed(2)),
@@ -140,7 +172,8 @@ exports.getDashboardStats = async (req, res) => {
                 totalDebt: parseFloat(totalPlatformDebt.toFixed(2))
             },
             visits: Object.keys(visitCountByDate).map(date => ({ date, count: visitCountByDate[date] })).sort((a,b) => a.date.localeCompare(b.date)),
-            profits: Object.keys(profitByDate).map(date => ({ date, amount: profitByDate[date] })).sort((a,b) => a.date.localeCompare(b.date))
+            profits: Object.keys(profitByDate).map(date => ({ date, amount: profitByDate[date] })).sort((a,b) => a.date.localeCompare(b.date)),
+            ranking
         });
 
     } catch(e) {

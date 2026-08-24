@@ -16,10 +16,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir Archivos Estáticos (Frontend)
+// Servir Archivos Estáticos (Frontend cliente)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'views/frontend')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// Servir Panel de Control (Admin + SuperAdmin)
+// El panel vive en la carpeta hermana /panel/ fuera del backend
+app.use('/panel', express.static(path.join(__dirname, '../panel')));
 
 // Rutas de la API (Backend)
 app.use('/api', require('./routes/api'));
@@ -66,9 +70,9 @@ app.get(/.*/, (req, res) => {
        return res.sendFile(path.join(__dirname, 'views','frontend', 'profile.html'));
     }
     
-    // 3. Rutas de Admin
+    // 3. Rutas de Admin → Servir desde el panel/ externo
     if (req.url.startsWith('/admin')) {
-        return res.sendFile(path.join(__dirname, 'views', 'admin', 'index.html'));
+        return res.sendFile(path.join(__dirname, '../panel', 'index.html'));
     }
 
     // 3. Rutas de Admin
