@@ -106,11 +106,11 @@
                         </div>
                         <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Inicia SesiÃ³n' : 'Crea tu Cuenta' }}</h2>
                         <p class="text-slate-500 text-sm mt-1">
-                            {{ isLoginMode ? 'Ingresa para ver tu cuenta' : 'Ãsnete para guardar ubicaciones y tarjetas' }}
+                            {{ isLoginMode ? 'Ingresa para ver tu cuenta' : 'Ãƒsnete para guardar ubicaciones y tarjetas' }}
                         </p>
                     </div>
 
-                    <!-- FORM CONFIGURAR NUEVA CONTRASEÃ'A (Caso de migraciÃ³n de PIN) -->
+                    <!-- FORM CONFIGURAR NUEVA CONTRASEÃƒ'A (Caso de migraciÃ³n de PIN) -->
                     <form v-if="isSetupPasswordMode" @submit.prevent="submitSetupPassword" class="space-y-4">
                         <div class="text-left">
                             <div class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 mb-4 leading-relaxed">
@@ -159,7 +159,7 @@
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ContraseÃ±a</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="â?¢â?¢â?¢â?¢â?¢â?¢â?¢â?¢">
+                                <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢">
                             </div>
                         </div>
 
@@ -308,7 +308,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Nueva ContraseÃ±a (Dejar vacÃ­o para no cambiarla)</label>
-                                    <input v-model="profileForm.password" type="password" class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="â?¢â?¢â?¢â?¢â?¢â?¢â?¢â?¢">
+                                    <input v-model="profileForm.password" type="password" class="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢">
                                 </div>
                                 <button type="submit" class="py-3 px-6 bg-brand hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/20 transition transform active:scale-95 flex items-center justify-center gap-2">
                                     <i class="fa-regular fa-floppy-disk"></i>
@@ -395,7 +395,7 @@
                                             <i v-else class="fa-regular fa-credit-card text-slate-500 text-lg"></i>
                                         </div>
                                         <div>
-                                            <p class="text-sm font-bold text-slate-800 dark:text-white">â?¢â?¢â?¢â?¢ {{ card.card.last4 }}</p>
+                                            <p class="text-sm font-bold text-slate-800 dark:text-white">Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢Ã¢?Â¢ {{ card.card.last4 }}</p>
                                             <p class="text-[10px] text-slate-400 uppercase mt-0.5">Expira: {{ card.card.exp_month }}/{{ card.card.exp_year }}</p>
                                         </div>
                                     </div>
@@ -506,7 +506,7 @@
             </div>
         </main>
 
-        <!-- SUB-MODAL: FORMULARIO DIRECCIÃ"N -->
+        <!-- SUB-MODAL: FORMULARIO DIRECCIÃƒ"N -->
         <div v-if="showAddressFormModal" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="showAddressFormModal = false"></div>
@@ -552,7 +552,7 @@
                                 </button>
                             </div>
 
-                            <!-- Selector Municipio â?' Colonia (cuando NO hay colonia seleccionada) -->
+                            <!-- Selector Municipio Ã¢?' Colonia (cuando NO hay colonia seleccionada) -->
                             <div v-else class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                                 <!-- Header del selector -->
                                 <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
@@ -590,7 +590,7 @@
                                         </button>
                                     </div>
                                     <div v-else class="text-center py-6 text-xs text-slate-400">
-                                        Sin resultados ðY~¢
+                                        Sin resultados Ã°Y~Â¢
                                     </div>
                                 </div>
                             </div>

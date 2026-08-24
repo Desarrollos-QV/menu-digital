@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menú Digital</title><!-- ID para el Favicon Dinámico -->
+    <title>MenÃº Digital</title><!-- ID para el Favicon DinÃ¡mico -->
     <link id="favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>??</text></svg>">
     
     <!-- Tailwind CSS -->
@@ -47,22 +47,22 @@
             <i class="fa-solid fa-store-slash"></i>
         </div>
         <h1 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">Negocio no encontrado</h1>
-        <p class="text-slate-500 dark:text-slate-400 mb-6">Parece que el enlace es incorrecto o el negocio no está disponible.</p>
+        <p class="text-slate-500 dark:text-slate-400 mb-6">Parece que el enlace es incorrecto o el negocio no estÃ¡ disponible.</p>
         <p class="text-xs text-slate-400">Prueba con ?slug=nombre-del-negocio</p>
     </div>
 
     <template v-else>
-        <!-- PANTALLA DE ÉXITO DE COMPRA -->
+        <!-- PANTALLA DE Ã‰XITO DE COMPRA -->
         <div v-if="showSuccessScreen" class="min-h-[85vh] flex items-center justify-center p-4">
             <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800/50 p-6 md:p-8 text-center animate-fade-in">
-                <!-- Icono de éxito -->
+                <!-- Icono de Ã©xito -->
                 <div class="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center text-white text-5xl shadow-lg shadow-emerald-500/30 mb-6 mx-auto animate-pulse">
                     <i class="fa-solid fa-check"></i>
                 </div>
                 
                 <h3 class="text-slate-500 dark:text-slate-400 text-base font-semibold">Gracias por tu compra,</h3>
-                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white mt-1">ha sido realizada con éxito</h2>
-                <p class="text-sm font-medium text-slate-400 mt-2">Número de pedido #{{ lastOrderNumber }}</p>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white mt-1">ha sido realizada con Ã©xito</h2>
+                <p class="text-sm font-medium text-slate-400 mt-2">NÃºmero de pedido #{{ lastOrderNumber }}</p>
                 
                 <!-- Tarjeta informativa de Pago Seguro -->
                 <div class="bg-slate-50 dark:bg-slate-950 rounded-2xl p-5 border border-slate-100 dark:border-slate-800/80 my-6">
@@ -70,7 +70,7 @@
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
                     <p class="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Tu pago es 100% seguro y respaldado por <strong class="text-slate-700 dark:text-slate-350">Tengo Hambre Inc</strong>, en dado caso que no te llegue tu pedido comunícate al
+                        Tu pago es 100% seguro y respaldado por <strong class="text-slate-700 dark:text-slate-350">Tengo Hambre Inc</strong>, en dado caso que no te llegue tu pedido comunÃ­cate al
                     </p>
                     <a href="tel:8181894270" class="text-emerald-500 hover:text-emerald-600 font-extrabold text-2xl block mt-2 mb-1 tracking-wide">
                         81 8189 4270
@@ -78,19 +78,19 @@
                     <span class="text-xs text-slate-400">Y te resolveremos en seguida</span>
                 </div>
                 
-                <!-- Botones de Acción -->
+                <!-- Botones de AcciÃ³n -->
                 <div class="space-y-3">
                     
-                    <!-- Mensaje para Pedidos en Línea (Con seguimiento) -->
+                    <!-- Mensaje para Pedidos en LÃ­nea (Con seguimiento) -->
                     <div v-if="config.allowOnlineOrders" class="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/60 rounded-xl p-3 text-left flex items-start gap-2.5">
                         <i class="fa-solid fa-bell text-blue-500 mt-0.5 shrink-0 text-sm"></i>
-                        <span><strong>¡Todo listo!</strong> Tu pedido ha sido recibido. Puedes darle seguimiento en tiempo real dando clic en el botón de abajo o desde tu cuenta.</span>
+                        <span><strong>Â¡Todo listo!</strong> Tu pedido ha sido recibido. Puedes darle seguimiento en tiempo real dando clic en el botÃ³n de abajo o desde tu cuenta.</span>
                     </div>
 
                     <!-- Mensaje para Pedidos por WhatsApp (Sin seguimiento online) -->
                     <div v-if="!config.allowOnlineOrders" class="text-xs text-slate-600 dark:text-slate-400 mb-2 leading-relaxed bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 text-left flex items-start gap-2.5">
                         <i class="fa-solid fa-circle-info text-amber-500 mt-0.5 shrink-0 text-sm"></i>
-                        <span><strong>Nota:</strong> Si WhatsApp no se abrió automáticamente, por favor presiona el botón verde de abajo para enviar tu pedido y confirmarlo con el negocio.</span>
+                        <span><strong>Nota:</strong> Si WhatsApp no se abriÃ³ automÃ¡ticamente, por favor presiona el botÃ³n verde de abajo para enviar tu pedido y confirmarlo con el negocio.</span>
                     </div>
 
                     <a v-if="!config.allowOnlineOrders && lastWhatsAppUrl" :href="lastWhatsAppUrl" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition active:scale-95 text-base cursor-pointer">
@@ -103,12 +103,12 @@
                         <i class="fa-solid fa-arrow-right"></i>
                     </a>
                     
-                    <!-- Este botón de volver al menú es genérico -->
+                    <!-- Este botÃ³n de volver al menÃº es genÃ©rico -->
                     <button v-if="!config.allowOnlineOrders" @click="goToMenu" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex items-center justify-center transition active:scale-95 text-base cursor-pointer">
-                        <span>Volver al menú</span>
+                        <span>Volver al menÃº</span>
                     </button>
                     <button v-else @click="goToMenu" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl flex items-center justify-center transition active:scale-95 text-sm cursor-pointer mt-2">
-                        <span>Volver al menú</span>
+                        <span>Volver al menÃº</span>
                     </button>
                 </div>
             </div>
@@ -147,7 +147,7 @@
                                         {{ isBusinessOpen ? 'Abierto' : 'Cerrado' }}
                                     </span>
                                 </div>
-                                <!-- Horario del día / Info -->
+                                <!-- Horario del dÃ­a / Info -->
                                 <p v-if="todaySchedule && !isLoading" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1">
                                     <i class="fa-regular fa-clock text-[9px]"></i>
                                     <span v-if="todaySchedule.isOpen">{{ formatTime(todaySchedule.open) }} - {{ formatTime(todaySchedule.close) }}</span>
@@ -155,7 +155,7 @@
                                     <span class="mx-1">&bull;</span>
                                     <i class="fa-solid fa-motorcycle text-[9px]"></i> {{ config.time || '30-45' }} min
                                 </p>
-                                <p v-else-if="!isLoading" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Menú Digital</p>
+                                <p v-else-if="!isLoading" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">MenÃº Digital</p>
                             </div>
                         </div>
 
@@ -183,13 +183,13 @@
                                         <i class="fa-regular fa-user mr-2"></i> Mi Cuenta
                                     </a>
                                     <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold border-t border-slate-100 dark:border-slate-700 mt-1">
-                                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar Sesión
+                                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Cerrar SesiÃ³n
                                     </button>
                                 </div>
                             </div>
                             
                             <!-- ESTADO: NO LOGUEADO -->
-                            <button v-else @click="openModal('login')" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition shadow-sm" title="Iniciar Sesión">
+                            <button v-else @click="openModal('login')" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition shadow-sm" title="Iniciar SesiÃ³n">
                                 <i class="fa-regular fa-user"></i>
                             </button>
                         </div>
@@ -198,7 +198,7 @@
                     <!-- Buscador -->
                     <div class="relative w-full" v-if="!showCartModal">
                         <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400"></i>
-                        <input v-model="searchQuery" type="text" placeholder="¿Qué se te antoja hoy?" 
+                        <input v-model="searchQuery" type="text" placeholder="Â¿QuÃ© se te antoja hoy?" 
                             class="w-full bg-slate-100 dark:bg-slate-800 dark:text-white rounded-xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition shadow-inner dark:placeholder-slate-500">
                     </div>
                 </div>
@@ -302,7 +302,7 @@
                                 <div class="flex-1 overflow-y-auto p-6 space-y-6">
                                     <div v-if="cart.length === 0" class="text-center py-16 text-slate-400">
                                         <i class="fa-solid fa-basket-shopping text-6xl mb-4 opacity-50"></i>
-                                        <p class="text-lg">Tu carrito está vacío.</p>
+                                        <p class="text-lg">Tu carrito estÃ¡ vacÃ­o.</p>
                                     </div>
                                     
                                     <div v-for="(item, idx) in cart" :key="idx" class="flex gap-4 items-center sm:items-start bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -349,7 +349,7 @@
 
                                     <div class="mb-4">
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tu Nombre <span class="text-red-500">*</span></label>
-                                        <input v-model="customerName" type="text" placeholder="Ej: Juan Pérez"
+                                        <input v-model="customerName" type="text" placeholder="Ej: Juan PÃ©rez"
                                             :class="['w-full px-4 py-3 rounded-xl border bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm', !customerName.trim() ? 'border-slate-200 dark:border-slate-700' : 'border-slate-200 dark:border-slate-700']">
                                     </div>
 
@@ -358,13 +358,13 @@
                                         <input v-model="customerPhone" type="tel" placeholder="Ej: 1234567890" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                     </div>
     
-                                    <!-- Selector de Dirección Guardada -->
+                                    <!-- Selector de DirecciÃ³n Guardada -->
                                     <div v-if="sharedCust.token.value && sharedCust.addresses.value.length > 0 && deliveryType === 'delivery'" class="mb-4 animate-fade-in">
                                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">
-                                            <i class="fa-solid fa-map-pin text-brand"></i> Dirección Guardada
+                                            <i class="fa-solid fa-map-pin text-brand"></i> DirecciÃ³n Guardada
                                         </label>
                                         <select v-model="selectedAddressId" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm font-semibold">
-                                            <option value="">-- Usar otra dirección / Escribir manual --</option>
+                                            <option value="">-- Usar otra direcciÃ³n / Escribir manual --</option>
                                             <option v-for="addr in sharedCust.addresses.value" :key="addr._id" :value="addr._id">
                                                 {{ addr.alias }} ({{ addr.street }} #{{ addr.number }}, Col. {{ addr.colony }})
                                             </option>
@@ -397,23 +397,23 @@
                                                             : 'border-slate-200 dark:border-slate-700 focus:border-primary']">
                                                     <option :value="null">?? -- Selecciona tu colonia (Requerido) --</option>
                                                     <option v-for="zone in config.deliveryZones" :key="zone.coloniaId" :value="zone">
-                                                        {{ zone.name }} - {{ (zone.deliveryCost || 0) > 0 ? 'Envío $' + (zone.deliveryCost||0).toFixed(2) : 'Envío Gratis' }}
+                                                        {{ zone.name }} - {{ (zone.deliveryCost || 0) > 0 ? 'EnvÃ­o $' + (zone.deliveryCost||0).toFixed(2) : 'EnvÃ­o Gratis' }}
                                                     </option>
                                                 </select>
-                                                <!-- Aviso cuando no está seleccionada -->
+                                                <!-- Aviso cuando no estÃ¡ seleccionada -->
                                                 <p v-if="!selectedColonia" class="text-red-500 dark:text-red-400 text-[10px] font-bold mt-1 flex items-center gap-1">
                                                     <i class="fa-solid fa-triangle-exclamation"></i>
-                                                    Selecciona tu colonia para calcular el costo de envío
+                                                    Selecciona tu colonia para calcular el costo de envÃ­o
                                                 </p>
                                             </div>
-                                            <!-- Preview del costo de envío -->
+                                            <!-- Preview del costo de envÃ­o -->
                                             <div v-if="selectedColonia" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold"
                                                 :class="(selectedColonia.deliveryCost || 0) > 0
                                                     ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
                                                     : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'">
                                                 <i class="fa-solid fa-motorcycle"></i>
-                                                <span v-if="(selectedColonia.deliveryCost || 0) > 0">Costo de envío: <strong>${{ (selectedColonia.deliveryCost||0).toFixed(2) }}</strong></span>
-                                                <span v-else>¡Envío gratuito en {{ selectedColonia.name }}!</span>
+                                                <span v-if="(selectedColonia.deliveryCost || 0) > 0">Costo de envÃ­o: <strong>${{ (selectedColonia.deliveryCost||0).toFixed(2) }}</strong></span>
+                                                <span v-else>Â¡EnvÃ­o gratuito en {{ selectedColonia.name }}!</span>
                                             </div>
                                         </div>
 
@@ -435,10 +435,10 @@
                                             </div>
     
                                             <div>
-                                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
+                                                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">MÃ©todo de pago</label>
                                                 <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                                     <option v-if="config.acceptCash" value="cash">Efectivo</option>
-                                                    <option v-if="config.acceptCard && stripeEnabled" value="stripe">?? Pagar en línea (Stripe)</option>
+                                                    <option v-if="config.acceptCard && stripeEnabled" value="stripe">?? Pagar en lÃ­nea (Stripe)</option>
                                                 </select>
                                             </div>
                                             
@@ -459,30 +459,30 @@
 
                                         <!-- Opcion de efectivo -->
                                         <div v-if="paymentMethod === 'cash'" class="mb-4 animate-fade-in">
-                                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">¿Con cuanto paga?</label>
+                                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Â¿Con cuanto paga?</label>
                                             <input v-model="customerHowToPay" type="number" placeholder="Ej: 500" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm" required>
                                         </div>
                                     </template>
                                     
-                                    <!-- Método de Pago para Recoger en tienda (Solo el select y pago) -->
+                                    <!-- MÃ©todo de Pago para Recoger en tienda (Solo el select y pago) -->
                                     <template v-else>
                                         <div class="mb-4">
-                                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Método de pago</label>
+                                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">MÃ©todo de pago</label>
                                             <select v-model="paymentMethod" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm">
                                                 <option v-if="config.acceptCash" value="cash">Efectivo</option>
-                                                <option v-if="config.acceptCard && stripeEnabled" value="stripe">?? Pagar en línea (Stripe)</option>
+                                                <option v-if="config.acceptCard && stripeEnabled" value="stripe">?? Pagar en lÃ­nea (Stripe)</option>
                                             </select>
                                         </div>
 
                                         <div v-if="paymentMethod === 'cash'" class="mb-4 animate-fade-in">
-                                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">¿Con cuanto paga?</label>
+                                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Â¿Con cuanto paga?</label>
                                             <input v-model="customerHowToPay" type="number" placeholder="Ej: 500" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm" required>
                                         </div>
                                     </template>
                                     
-                                    <!-- CUPÓN DE DESCUENTO -->
+                                    <!-- CUPÃ“N DE DESCUENTO -->
                                     <div class="mb-4 bg-gray-50 dark:bg-slate-700/50 p-3 rounded-xl border border-gray-100 dark:border-slate-700">
-                                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">¿Tienes un código de descuento?</label>
+                                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Â¿Tienes un cÃ³digo de descuento?</label>
                                         <div class="flex gap-2" v-if="!appliedCoupon">
                                             <input v-model="couponCodeInput" type="text" placeholder="Ej: VERANO20" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 dark:text-white focus:outline-none focus:border-primary text-sm uppercase">
                                             <button @click="applyCoupon" :disabled="isApplyingCoupon" class="px-4 py-2 bg-black dark:bg-primary text-white rounded-lg text-sm font-bold disabled:opacity-50 transition-colors">
@@ -515,28 +515,28 @@
                                             <span class="text-sm font-bold">-${{ appliedCoupon.discountAmount?.toFixed(2) }}</span>
                                         </div>
                                         <div v-if="commissionWebAmountCmp > 0" class="flex justify-between items-center text-orange-500">
-                                            <span class="text-sm font-medium">Comisión de plataforma </span> <!-- ({{ config.commissionWebType === 'percent' ? config.commissionWebAmount + '%' : '$' + config.commissionWebAmount }}) -->
+                                            <span class="text-sm font-medium">ComisiÃ³n de plataforma </span> <!-- ({{ config.commissionWebType === 'percent' ? config.commissionWebAmount + '%' : '$' + config.commissionWebAmount }}) -->
                                             <span class="text-sm font-bold">+${{ commissionWebAmountCmp?.toFixed(2) }}</span>
                                         </div>
-                                        <!-- Costo de Envío por Zona -->
+                                        <!-- Costo de EnvÃ­o por Zona -->
                                         <div v-if="deliveryType === 'delivery' && deliveryCostCmp > 0" class="flex justify-between items-center text-blue-600 dark:text-blue-400">
                                             <span class="text-sm font-medium flex items-center gap-1.5">
                                                 <i class="fa-solid fa-motorcycle text-xs"></i>
-                                                Costo de envío{{ selectedColonia ? ' (' + selectedColonia.name + ')' : '' }}
+                                                Costo de envÃ­o{{ selectedColonia ? ' (' + selectedColonia.name + ')' : '' }}
                                             </span>
                                             <span class="text-sm font-bold">+${{ deliveryCostCmp?.toFixed(2) }}</span>
                                         </div>
                                         <div v-else-if="deliveryType === 'delivery' && selectedColonia && (selectedColonia.deliveryCost || 0) === 0" class="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
                                             <span class="text-sm font-medium flex items-center gap-1.5">
                                                 <i class="fa-solid fa-motorcycle text-xs"></i>
-                                                Costo de envío
+                                                Costo de envÃ­o
                                             </span>
-                                            <span class="text-sm font-bold">¡Gratis!</span>
+                                            <span class="text-sm font-bold">Â¡Gratis!</span>
                                         </div>
                                         <div v-if="paymentMethod === 'stripe' && paymentFeeCmp > 0" class="flex justify-between items-center text-purple-600 dark:text-purple-400 animate-fade-in">
                                             <span class="text-sm font-medium flex items-center gap-1.5">
                                                 <i class="fa-brands fa-stripe text-xs"></i>
-                                                Comisión por pago con tarjeta
+                                                ComisiÃ³n por pago con tarjeta
                                             </span>
                                             <span class="text-sm font-bold">+${{ paymentFeeCmp?.toFixed(2) }}</span>
                                         </div>
@@ -636,7 +636,7 @@
             </div>
         </template>
 
-        <!-- MODAL INICIAR SESIÓN / REGISTRO -->
+        <!-- MODAL INICIAR SESIÃ“N / REGISTRO -->
         <div v-if="showUserModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
             <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative border border-slate-100 dark:border-slate-800">
                 <!-- Modal Header with Brand Logo -->
@@ -648,39 +648,39 @@
                         {{ isLoginMode ? 'Bienvenido de nuevo' : 'Crea tu Cuenta' }}
                     </h3>
                     <p class="text-xs text-slate-400 mt-1">
-                        {{ isLoginMode ? 'Ingresa para gestionar tus pedidos y direcciones' : 'Únete y guarda tus métodos de pago y ubicaciones' }}
+                        {{ isLoginMode ? 'Ingresa para gestionar tus pedidos y direcciones' : 'Ãšnete y guarda tus mÃ©todos de pago y ubicaciones' }}
                     </p>
                 </div>
 
                 <!-- Modal Body -->
                 <div class="p-6 pt-2 overflow-y-auto">
                     
-                    <!-- FORM CONFIGURAR NUEVA CONTRASEÑA (Caso de migración de PIN) -->
+                    <!-- FORM CONFIGURAR NUEVA CONTRASEÃ‘A (Caso de migraciÃ³n de PIN) -->
                     <form v-if="isSetupPasswordMode" @submit.prevent="submitSetupPassword" class="space-y-4">
                         <div class="text-left">
                             <div class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 mb-4 leading-relaxed">
                                 <i class="fa-solid fa-circle-info mr-1"></i>
-                                <strong>Actualización de seguridad obligatoria:</strong> Tu PIN es correcto. Por favor ingresa tu correo y crea una contraseña para acceder a tu cuenta.
+                                <strong>ActualizaciÃ³n de seguridad obligatoria:</strong> Tu PIN es correcto. Por favor ingresa tu correo y crea una contraseÃ±a para acceder a tu cuenta.
                             </div>
                             
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo ElectrÃ³nico</label>
                             <div class="relative mb-3">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
                                 <input v-model="setupPasswordForm.email" type="email" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
                             </div>
 
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nueva Contraseña</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nueva ContraseÃ±a</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="setupPasswordForm.password" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                                <input v-model="setupPasswordForm.password" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="MÃ­nimo 4 caracteres">
                             </div>
                         </div>
                         
                         <div class="text-left">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Confirmar Contraseña</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Confirmar ContraseÃ±a</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="setupPasswordForm.confirmPassword" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                                <input v-model="setupPasswordForm.confirmPassword" type="password" required minlength="4" class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="MÃ­nimo 4 caracteres">
                             </div>
                         </div>
 
@@ -693,7 +693,7 @@
                     <!-- FORMULARIO DE LOGIN -->
                     <form v-else-if="isLoginMode" @submit.prevent="loginCustomer" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">TelÃ©fono (WhatsApp)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-brands fa-whatsapp"></i></span>
                                 <input v-model="loginForm.phone" type="tel" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="55 1234 5678">
@@ -701,7 +701,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ContraseÃ±a</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
                                 <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="........">
@@ -709,7 +709,7 @@
                         </div>
 
                         <button type="submit" class="w-full py-4 bg-primary hover:bg-brandDark text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-95 flex items-center justify-center gap-2">
-                            <span>Iniciar Sesión</span>
+                            <span>Iniciar SesiÃ³n</span>
                             <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </form>
@@ -725,7 +725,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Teléfono (WhatsApp)</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">TelÃ©fono (WhatsApp)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-brands fa-whatsapp"></i></span>
                                 <input v-model="customerForm.phone" type="tel" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="55 1234 5678">
@@ -733,7 +733,7 @@
                         </div>
                         
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Electrónico</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo ElectrÃ³nico</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
                                 <input v-model="customerForm.email" type="email" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="tu@correo.com">
@@ -741,10 +741,10 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Crea una Contraseña</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Crea una ContraseÃ±a</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="customerForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="Mínimo 4 caracteres">
+                                <input v-model="customerForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="MÃ­nimo 4 caracteres">
                             </div>
                         </div>
 
@@ -757,12 +757,12 @@
                     <!-- Toggle Mode -->
                     <div class="text-center mt-6 pt-4 border-t border-slate-105 dark:border-slate-800">
                         <p v-if="isLoginMode" class="text-sm text-slate-500">
-                            ¿Aún no tienes cuenta? 
-                            <button @click="isLoginMode = false" class="text-brand font-bold hover:underline">Regístrate aquí</button>
+                            Â¿AÃºn no tienes cuenta? 
+                            <button @click="isLoginMode = false" class="text-brand font-bold hover:underline">RegÃ­strate aquÃ­</button>
                         </p>
                         <p v-else class="text-sm text-slate-500">
-                            ¿Ya tienes cuenta? 
-                            <button @click="isLoginMode = true" class="text-brand font-bold hover:underline">Inicia Sesión</button>
+                            Â¿Ya tienes cuenta? 
+                            <button @click="isLoginMode = true" class="text-brand font-bold hover:underline">Inicia SesiÃ³n</button>
                         </p>
                     </div>
                 </div>
@@ -773,13 +773,13 @@
             </div>
         </div>
  
-        <!-- SUB-MODAL: FORMULARIO DIRECCIÓN -->
+        <!-- SUB-MODAL: FORMULARIO DIRECCIÃ“N -->
         <div v-if="showAddressFormModal" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" @click="showAddressFormModal = false"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
                 <div class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-100 dark:border-slate-800 p-6 relative">
-                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mb-4">{{ isEditingAddress ? 'Editar Dirección' : 'Agregar Dirección' }}</h4>
+                    <h4 class="text-lg font-bold text-slate-800 dark:text-white mb-4">{{ isEditingAddress ? 'Editar DirecciÃ³n' : 'Agregar DirecciÃ³n' }}</h4>
                     
                     <form @submit.prevent="saveAddressForm" class="space-y-4">
                         <div>
@@ -792,11 +792,11 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Número</label>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">NÃºmero</label>
                                 <input v-model="addressForm.number" type="text" required class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código Postal</label>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">CÃ³digo Postal</label>
                                 <input v-model="addressForm.zipCode" type="text" required class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition">
                             </div>
                         </div>
@@ -810,7 +810,7 @@
                         </div>
                         <div class="flex items-center gap-2 py-2">
                             <input v-model="addressForm.isDefault" type="checkbox" id="addr-default-menu" class="w-4 h-4 rounded text-brand border-slate-300 focus:ring-brand">
-                            <label for="addr-default-menu" class="text-xs font-bold text-slate-600 dark:text-slate-350 cursor-pointer">Establecer como dirección predeterminada</label>
+                            <label for="addr-default-menu" class="text-xs font-bold text-slate-600 dark:text-slate-350 cursor-pointer">Establecer como direcciÃ³n predeterminada</label>
                         </div>
                         <div class="flex justify-end gap-3 mt-6">
                             <button type="button" @click="showAddressFormModal = false" class="py-2.5 px-5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-xs transition">Cancelar</button>
@@ -884,20 +884,20 @@
                 <div class="flex-1 overflow-y-auto w-full flex flex-col hide-scroll">
                     <!-- Nav Tabs (Static for now) -->
                     <div class="bg-white dark:bg-slate-900 px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex gap-6 text-sm font-bold sticky top-0 z-10">
-                        <span class="text-primary border-b-2 border-primary pb-1">Información</span>
+                        <span class="text-primary border-b-2 border-primary pb-1">InformaciÃ³n</span>
                     </div>
 
                     <div class="p-6 space-y-8 bg-slate-50 dark:bg-slate-900 flex-1">
                         
-                        <!-- Descripción -->
+                        <!-- DescripciÃ³n -->
                         <div v-if="config.description">
                             <h3 class="font-bold text-slate-800 dark:text-white mb-2 text-lg">Acerca de nosotros</h3>
                             <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{{ config.description }}</p>
                         </div>
 
-                        <!-- Mapa y Dirección -->
+                        <!-- Mapa y DirecciÃ³n -->
                         <div>
-                            <h3 class="font-bold text-slate-800 dark:text-white mb-3 text-lg">Ubicación</h3>
+                            <h3 class="font-bold text-slate-800 dark:text-white mb-3 text-lg">UbicaciÃ³n</h3>
                             <div class="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700">
                                 <div class="h-40 bg-slate-200 dark:bg-slate-700 w-full relative">
                                     <iframe v-if="config.lat && config.lng" 
@@ -912,7 +912,7 @@
                                 <div class="p-4 flex items-start gap-3">
                                     <i class="fa-solid fa-location-dot text-primary mt-1"></i>
                                     <div>
-                                        <p class="text-sm font-bold text-slate-800 dark:text-white">{{ config.address || 'Dirección no especificada' }}</p>
+                                        <p class="text-sm font-bold text-slate-800 dark:text-white">{{ config.address || 'DirecciÃ³n no especificada' }}</p>
                                         <p class="text-xs text-slate-500 mt-1" v-if="config.address">Abre tu app de mapas preferida</p>
                                     </div>
                                 </div>
@@ -921,7 +921,7 @@
 
                         <!-- Horarios -->
                         <div v-if="config.schedule && config.schedule.length > 0">
-                            <h3 class="font-bold text-slate-800 dark:text-white mb-3 text-lg">Horarios de atención</h3>
+                            <h3 class="font-bold text-slate-800 dark:text-white mb-3 text-lg">Horarios de atenciÃ³n</h3>
                             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 divide-y divide-slate-50 dark:divide-slate-700/50">
                                 <div v-for="day in config.schedule" :key="day.day" class="p-4 flex justify-between items-center text-sm">
                                     <span class="font-medium text-slate-700 dark:text-slate-200">{{ day.day }}</span>
@@ -931,10 +931,10 @@
                             </div>
                         </div>
 
-                        <!-- Reseñas -->
+                        <!-- ReseÃ±as -->
                         <div>
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-bold text-slate-800 dark:text-white text-lg">Reseñas y Comentarios</h3>
+                                <h3 class="font-bold text-slate-800 dark:text-white text-lg">ReseÃ±as y Comentarios</h3>
                                 <span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-3 py-1 rounded-full font-bold text-sm flex items-center gap-1">
                                     <i class="fa-solid fa-star"></i> {{ config.calculatedRating }}
                                 </span>
@@ -944,7 +944,7 @@
                             <div class="space-y-4 mb-6">
                                 <div v-if="reviews.length === 0" class="text-center py-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
                                     <i class="fa-regular fa-comment-dots text-3xl text-slate-300 dark:text-slate-600 mb-2"></i>
-                                    <p class="text-sm text-slate-500">Sé el primero en dejar una reseña.</p>
+                                    <p class="text-sm text-slate-500">SÃ© el primero en dejar una reseÃ±a.</p>
                                 </div>
                                 <div v-else-if="reviews.length > 0" v-for="rev in reviews" :key="rev._id" class="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                                     <div class="flex justify-between items-start mb-2">
@@ -959,22 +959,22 @@
                                 </div>
                             </div>
 
-                            <!-- Formulario de Reseña -->
+                            <!-- Formulario de ReseÃ±a -->
                             <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                                <h4 class="font-bold text-slate-800 dark:text-white mb-3 text-sm">Deja tu reseña</h4>
+                                <h4 class="font-bold text-slate-800 dark:text-white mb-3 text-sm">Deja tu reseÃ±a</h4>
                                 <input v-model="newReview.customerName" type="text" placeholder="Tu Nombre" class="w-full mb-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm focus:outline-none focus:border-primary">
                                 <div class="flex items-center gap-2 mb-3">
-                                    <span class="text-sm text-slate-500">Calificación:</span>
+                                    <span class="text-sm text-slate-500">CalificaciÃ³n:</span>
                                     <div class="flex gap-1 text-2xl text-slate-300 dark:text-slate-600 cursor-pointer">
                                         <i v-for="i in 5" :key="i" class="fa-solid fa-star hover:scale-110 transition-transform" 
                                         :class="i <= newReview.rating ? 'text-yellow-400' : ''" 
                                         @click="newReview.rating = i"></i>
                                     </div>
                                 </div>
-                                <textarea v-model="newReview.comment" placeholder="'Excelente servicio, la comida llegó caliente...'" class="w-full mb-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm focus:outline-none focus:border-primary resize-none h-20"></textarea>
+                                <textarea v-model="newReview.comment" placeholder="'Excelente servicio, la comida llegÃ³ caliente...'" class="w-full mb-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-white text-sm focus:outline-none focus:border-primary resize-none h-20"></textarea>
                                 <button @click="submitReview" :disabled="submittingReview" class="w-full bg-slate-900 dark:bg-primary text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50">
                                     <i v-if="submittingReview" class="fa-solid fa-circle-notch fa-spin"></i>
-                                    <span v-else>Publicar Reseña</span>
+                                    <span v-else>Publicar ReseÃ±a</span>
                                 </button>
                             </div>
                         </div>
@@ -1017,13 +1017,13 @@
                     <!-- Campo de Entrada de Correo Obligatorio -->
                     <div class="mb-4 text-left">
                         <h4 class="text-sm font-bold text-slate-800 dark:text-white mb-1">Para enviarte tu recibo de pago</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Ingresa tu correo electrónico. Es obligatorio para que recibas tu comprobante.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Ingresa tu correo electrÃ³nico. Es obligatorio para que recibas tu comprobante.</p>
                         
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                                 <i class="fa-regular fa-envelope"></i>
                             </div>
-                            <input type="email" v-model="customerEmail" placeholder="Correo electrónico *" required
+                            <input type="email" v-model="customerEmail" placeholder="Correo electrÃ³nico *" required
                                 class="block w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent text-sm">
                         </div>
                     </div>
@@ -1031,7 +1031,7 @@
                     <!-- Leyenda de Seguridad -->
                     <div class="flex items-center gap-1.5 justify-center text-slate-400 dark:text-slate-500 text-xs mt-5">
                         <i class="fa-solid fa-lock text-[10px]"></i>
-                        <span>Tu información está segura y protegida.</span>
+                        <span>Tu informaciÃ³n estÃ¡ segura y protegida.</span>
                     </div>
                 </div>
             </div>
@@ -1047,8 +1047,8 @@
                     <i class="fa-solid fa-lock text-lg"></i>
                 </div>
                 <div class="flex-1 text-center sm:text-left">
-                    <h4 class="text-white font-bold text-sm">Guarda esta dirección para tus próximos pedidos</h4>
-                    <p class="text-slate-400 text-xs mt-0.5">Inicia sesión o crea una cuenta y nunca vuelvas a escribir tu dirección.</p>
+                    <h4 class="text-white font-bold text-sm">Guarda esta direcciÃ³n para tus prÃ³ximos pedidos</h4>
+                    <p class="text-slate-400 text-xs mt-0.5">Inicia sesiÃ³n o crea una cuenta y nunca vuelvas a escribir tu direcciÃ³n.</p>
                 </div>
             </div>
 
@@ -1076,13 +1076,13 @@
 
                 <h2 class="text-2xl font-black text-white mb-2">Crea tu cuenta en 30 segundos</h2>
                 <p class="text-slate-400 text-sm mb-8 leading-relaxed px-2">
-                    Guarda tus direcciones, consulta tus pedidos y ordena mucho más rápido.
+                    Guarda tus direcciones, consulta tus pedidos y ordena mucho mÃ¡s rÃ¡pido.
                 </p>
 
                 <div class="flex flex-col gap-3">
                     <button @click="showAuthPromptModal = false; openModal('login')" class="w-full py-3.5 bg-[#E30613] hover:brightness-90 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 text-sm">
                         <i class="fa-solid fa-user"></i>
-                        <span>Iniciar sesión</span>
+                        <span>Iniciar sesiÃ³n</span>
                     </button>
                     
                     <button @click="showAuthPromptModal = false; openModal('register')" class="w-full py-3.5 bg-[#FFC800] hover:brightness-95 text-[#111111] font-black rounded-xl transition flex items-center justify-center gap-2 text-sm">
