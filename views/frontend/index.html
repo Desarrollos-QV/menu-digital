@@ -16,8 +16,8 @@
     <!-- JQUERY (Requerido para Toastr) -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <!-- TOASTR (Notificaciones) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- SWEETALERT2 (Alertas Modales) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../assets/css/front.css">
@@ -131,7 +131,7 @@
                         </a>
                     </div>
 
-                    <!-- Lado Medio: Selector Ubicación (Pin Rojo + Nombre Colonia + Caret �^�) -->
+                    <!-- Lado Medio: Selector Ubicación (Pin Rojo + Nombre Colonia + Caret ∨) -->
                     <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition py-1.5 px-3 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700" @click="showLocationModal = true">
                         <i class="fa-solid fa-location-dot text-brand text-sm md:text-base animate-bounce-slow"></i>
                         <span class="text-slate-800 dark:text-white font-bold text-xs md:text-sm truncate max-w-[150px] md:max-w-[400px]">
@@ -243,7 +243,7 @@
                         <div class="flex justify-between items-center mb-6">
                             <div>
                                 <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    �Y"� PROMOS DE HOY
+                                    🔥 PROMOS DE HOY
                                 </h5>
                             </div>
                         </div>
@@ -297,7 +297,7 @@
                         <div class="flex justify-between items-center mb-6">
                             <div>
                                 <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    �Y'� ¡MENOS DE $100 PESOS!
+                                    💸 ¡MENOS DE $100 PESOS!
                                 </h5>
                             </div>
                         </div>
@@ -397,6 +397,7 @@
                         <div v-else class="relative rounded-3xl overflow-hidden h-48 md:h-64 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
                     </div>
 
+
                     <!-- CATEGORÍAS (Sticky Wrapper) -->
                     <div v-show="deliveryMode === 'delivery'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
                         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -418,8 +419,8 @@
                         <div class="flex justify-between items-center mt-5 mb-6">
                             <div>
                                 <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    <span v-if="searchQuery">�Y"� RESULTADOS DE "{{ searchQuery.toUpperCase() }}"</span>
-                                    <span v-else>�Y"� RESTAURANTES CERCA DE TI</span>
+                                    <span v-if="searchQuery">🔍 RESULTADOS DE "{{ searchQuery.toUpperCase() }}"</span>
+                                    <span v-else>📍 RESTAURANTES CERCA DE TI</span>
                                     <span class="text-sm font-bold text-slate-400 ml-2">({{ filteredBusinesses.length }})</span>
                                 </h5>
                             </div>
@@ -487,9 +488,9 @@
                                         
                                         <!-- Details: Tags, delivery, time -->
                                         <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold line-clamp-1 leading-normal">
-                                            {{ biz.tags ? biz.tags.join(' �?� ') : 'Restaurante' }} 
-                                            �?� {{ biz.time }} min 
-                                            �?� Envío: {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
+                                            {{ biz.tags ? biz.tags.join(' • ') : 'Restaurante' }} 
+                                            • {{ biz.time }} min 
+                                            • Envío: {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
                                         </p>
                                     </div>
                                 </div>
@@ -526,13 +527,13 @@
                         <div class="w-full lg:w-1/2 overflow-y-auto thin-scroll lg:h-full">
                             <!-- Header del panel -->
                             <div class="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
-                                <h2 class="text-lg font-bold dark:text-white">�Y��️ Restaurantes cerca de ti</h2>
+                                <h2 class="text-lg font-bold dark:text-white">🍽️ Restaurantes cerca de ti</h2>
                                 <p class="text-xs text-slate-400 mt-0.5">Haz clic en un restaurante para verlo en el mapa</p>
                             </div>
 
                             <!-- Sin negocios con pickup -->
                             <div v-if="pickupBusinesses.length === 0" class="flex flex-col items-center justify-center py-20 text-center px-6">
-                                <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl mb-4">�Y>�️</div>
+                                <div class="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-3xl mb-4">🛍️</div>
                                 <h3 class="font-bold text-lg dark:text-white">Sin resultados</h3>
                                 <p class="text-slate-500 text-sm mt-1">Ningún restaurante ofrece recolección en tu zona aún.</p>
                             </div>
@@ -651,7 +652,7 @@
             </div>
         </footer>
 
-        <!-- MODAL SELECCI�"N DE COLONIA -->
+        <!-- MODAL SELECCIÓN DE COLONIA -->
         <div v-if="showLocationModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity"></div>
             <div class="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in flex flex-col max-h-[85vh]">
@@ -699,7 +700,7 @@
 
                     </div>
                     <div v-else class="text-center py-10 text-slate-500">
-                        <p>No encontramos resultados �Y~�</p>
+                        <p>No encontramos resultados 😢</p>
                     </div>
                 </div>
                 
@@ -720,7 +721,7 @@
                     <div class="w-12 h-12 bg-brand/10 text-brand rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
                         <img src="assets/images/icon.jpg" alt="" class="w-full h-full object-cover rounded-full border-2 border-brand">
                     </div>
-                    <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Bienvenido de nuevo' : '�snete a Tengo Hambre' }}</h2>
+                    <h2 class="text-2xl font-black dark:text-white">{{ isLoginMode ? 'Bienvenido de nuevo' : 'Únete a Tengo Hambre' }}</h2>
                     <p class="text-slate-500 text-sm mt-1">
                         {{ isLoginMode ? 'Ingresa tus datos para continuar.' : 'Regístrate para guardar favoritos y pedir.' }}
                     </p>
@@ -729,7 +730,7 @@
                 <!-- Modal Body -->
                 <div class="p-6 pt-2 overflow-y-auto">
                     
-                    <!-- FORM CONFIGURAR NUEVA CONTRASE�'A (Caso de migración de PIN) -->
+                    <!-- FORM CONFIGURAR NUEVA CONTRASEÑA (Caso de migración de PIN) -->
                     <form v-if="isSetupPasswordMode" @submit.prevent="submitSetupPassword" class="space-y-4">
                         <div class="text-left">
                             <div class="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl p-3 mb-4 leading-relaxed">
@@ -778,7 +779,7 @@
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Contraseña</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
-                                <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="�?��?��?��?��?��?��?��?�">
+                                <input v-model="loginForm.password" type="password" required class="w-full pl-9 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none dark:text-white font-medium focus:ring-2 focus:ring-brand/50 transition" placeholder="••••••••">
                             </div>
                         </div>
 

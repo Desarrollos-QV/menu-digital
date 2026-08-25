@@ -24,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // Servir Panel de Control (Admin + SuperAdmin)
 // El panel vive en backend/panel/
 app.use('/panel', express.static(path.join(__dirname, 'panel')));
+app.use('/admin', express.static(path.join(__dirname, 'panel'))); // Para que carguen los assets en /admin/...
 
 // Rutas de la API (Backend)
 app.use('/api', require('./routes/api'));

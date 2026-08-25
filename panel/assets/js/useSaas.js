@@ -287,6 +287,7 @@ export function useSaas() {
             const res = await authFetch(`/api/saas/dashboard-stats?month=${dashboardMonthFilter.value}&tzOffset=${tzOffset}`);
             if (res.ok) {
                 const data = await res.json();
+                console.log(data);
                 dashboardStats.value = data;
                 setTimeout(() => { if (window.renderDashboardCharts) window.renderDashboardCharts(dashboardStats); }, 50);
             }
