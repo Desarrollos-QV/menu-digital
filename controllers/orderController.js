@@ -117,17 +117,21 @@ exports.updateOrder = async (req, res) => {
                 };
 
                 try {
-                    // Soporte para modular (v12+) y objeto tradicional
-                    let response;
-                    if (firebaseAdmin && typeof firebaseAdmin.messaging === 'function') {
-                        response = await firebaseAdmin.messaging().sendMulticast(message);
-                    } else if (firebaseAdmin && firebaseAdmin.default && typeof firebaseAdmin.default.messaging === 'function') {
-                        response = await firebaseAdmin.default.messaging().sendMulticast(message);
+                    // Solo intentar enviar si Firebase se inicializó correctamente
+                    if (firebaseAdmin && firebaseAdmin.apps && firebaseAdmin.apps.length > 0) {
+                        let response;
+                        if (typeof firebaseAdmin.messaging === 'function') {
+                            response = await firebaseAdmin.messaging().sendMulticast(message);
+                        } else if (firebaseAdmin.default && typeof firebaseAdmin.default.messaging === 'function') {
+                            response = await firebaseAdmin.default.messaging().sendMulticast(message);
+                        } else {
+                            const { getMessaging } = require('firebase-admin/messaging');
+                            response = await getMessaging().sendMulticast(message);
+                        }
+                        console.log('Firebase Push Notification sent successfully:', response.successCount, 'success,', response.failureCount, 'failed');
                     } else {
-                        const { getMessaging } = require('firebase-admin/messaging');
-                        response = await getMessaging().sendMulticast(message);
+                        console.warn('Cannot send push notification: Firebase app is not initialized. Check if firebase-service-account.json exists on the server.');
                     }
-                    console.log('Firebase Push Notification sent successfully:', response.successCount, 'success,', response.failureCount, 'failed');
                 } catch (pushErr) {
                     console.error('Error sending Firebase Push Notification:', pushErr.message);
                 }
