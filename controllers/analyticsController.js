@@ -207,20 +207,9 @@ exports.registerOrder = async (req, res) => {
                         tokens: customerData.fcmTokens
                     };
                     
-                    if (firebaseAdmin && firebaseAdmin.apps && firebaseAdmin.apps.length > 0) {
-                        let response;
-                        if (typeof firebaseAdmin.messaging === 'function') {
-                            response = await firebaseAdmin.messaging().sendMulticast(message);
-                        } else if (firebaseAdmin.default && typeof firebaseAdmin.default.messaging === 'function') {
-                            response = await firebaseAdmin.default.messaging().sendMulticast(message);
-                        } else {
-                            const { getMessaging } = require('firebase-admin/messaging');
-                            response = await getMessaging().sendMulticast(message);
-                        }
-                        console.log('Push notification sent to customer for new order');
-                    } else {
-                        console.warn('Cannot send push notification: Firebase app is not initialized. Check if firebase-service-account.json exists on the server.');
-                    }
+                    const { getMessaging } = require('firebase-admin/messaging');
+                    const response = await getMessaging().sendMulticast(message);
+                    console.log('Push notification sent to customer for new order');
                 }
             } catch (pushErr) {
                 console.error('Error sending push notification on new order:', pushErr.message);
