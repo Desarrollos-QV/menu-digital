@@ -109,7 +109,7 @@ exports.updateOrder = async (req, res) => {
                     break;
             }
 
-            if (title && body && firebaseAdmin) {
+            if (title && body) {
                 const message = {
                     notification: { title, body },
                     data: { orderId: updatedOrder._id.toString(), status },
@@ -117,10 +117,19 @@ exports.updateOrder = async (req, res) => {
                 };
 
                 try {
-                    const response = await firebaseAdmin.messaging().sendMulticast(message);
+                    // Soporte para modular (v12+) y objeto tradicional
+                    let response;
+                    if (firebaseAdmin && typeof firebaseAdmin.messaging === 'function') {
+                        response = await firebaseAdmin.messaging().sendMulticast(message);
+                    } else if (firebaseAdmin && firebaseAdmin.default && typeof firebaseAdmin.default.messaging === 'function') {
+                        response = await firebaseAdmin.default.messaging().sendMulticast(message);
+                    } else {
+                        const { getMessaging } = require('firebase-admin/messaging');
+                        response = await getMessaging().sendMulticast(message);
+                    }
                     console.log('Firebase Push Notification sent successfully:', response.successCount, 'success,', response.failureCount, 'failed');
                 } catch (pushErr) {
-                    console.error('Error sending Firebase Push Notification:', pushErr);
+                    console.error('Error sending Firebase Push Notification:', pushErr.message);
                 }
             }
         }

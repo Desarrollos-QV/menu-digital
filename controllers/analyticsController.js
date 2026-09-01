@@ -197,8 +197,7 @@ exports.registerOrder = async (req, res) => {
                 const Customer = require('../models/Customer');
                 const firebaseAdmin = require('../config/firebase');
                 const customerData = await Customer.findById(customerId);
-                
-                if (customerData && customerData.fcmTokens && customerData.fcmTokens.length > 0 && firebaseAdmin) {
+                if (customerData && customerData.fcmTokens && customerData.fcmTokens.length > 0) {
                     const message = {
                         notification: { 
                             title: '✅ Pedido Recibido', 
@@ -207,11 +206,20 @@ exports.registerOrder = async (req, res) => {
                         data: { orderId: newOrder._id.toString(), status: 'pending' },
                         tokens: customerData.fcmTokens
                     };
-                    await firebaseAdmin.messaging().sendMulticast(message);
+                    
+                    let response;
+                    if (firebaseAdmin && typeof firebaseAdmin.messaging === 'function') {
+                        response = await firebaseAdmin.messaging().sendMulticast(message);
+                    } else if (firebaseAdmin && firebaseAdmin.default && typeof firebaseAdmin.default.messaging === 'function') {
+                        response = await firebaseAdmin.default.messaging().sendMulticast(message);
+                    } else {
+                        const { getMessaging } = require('firebase-admin/messaging');
+                        response = await getMessaging().sendMulticast(message);
+                    }
                     console.log('Push notification sent to customer for new order');
                 }
             } catch (pushErr) {
-                console.error('Error sending push notification on new order:', pushErr);
+                console.error('Error sending push notification on new order:', pushErr.message);
             }
         }
 
