@@ -208,7 +208,7 @@ exports.registerOrder = async (req, res) => {
                     };
                     
                     const { getMessaging } = require('firebase-admin/messaging');
-                    const response = await getMessaging().sendMulticast(message);
+                    const response = await getMessaging().sendEachForMulticast(message);
                     console.log('Push notification sent to customer for new order');
                 }
             } catch (pushErr) {

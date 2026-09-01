@@ -118,7 +118,7 @@ exports.updateOrder = async (req, res) => {
 
                 try {
                     const { getMessaging } = require('firebase-admin/messaging');
-                    const response = await getMessaging().sendMulticast(message);
+                    const response = await getMessaging().sendEachForMulticast(message);
                     console.log('Firebase Push Notification sent successfully:', response.successCount, 'success,', response.failureCount, 'failed');
                 } catch (pushErr) {
                     console.error('Error sending Firebase Push Notification:', pushErr.message);
