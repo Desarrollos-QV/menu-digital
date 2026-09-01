@@ -4,6 +4,8 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+// Inicializar servicios externos
+require('./config/firebase');
 const app = express();
 
 // --- STRIPE WEBHOOK (DEBE IR ANTES DE express.json()) ---
