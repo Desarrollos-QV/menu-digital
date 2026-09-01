@@ -256,12 +256,32 @@ exports.createSetupIntent = async (req, res) => {
         }
 
         // 2. Crear SetupIntent
-        const setupIntent = await stripe.setupIntents.create({
-            customer: customer.stripeCustomerId,
-            payment_method_types: ['card'],
-        });
+        try {
+            const setupIntent = await stripe.setupIntents.create({
+                customer: customer.stripeCustomerId,
+                payment_method_types: ['card'],
+            });
+            res.json({ clientSecret: setupIntent.client_secret });
+        } catch (stripeErr) {
+            // Si el cliente fue borrado en el dashboard de Stripe o estamos en un entorno diferente
+            if (stripeErr.message && stripeErr.message.includes('No such customer')) {
+                const stripeCustomer = await stripe.customers.create({
+                    email: customer.email,
+                    name: customer.name,
+                    phone: customer.phone,
+                    metadata: { customerId: customer._id.toString() }
+                });
+                customer.stripeCustomerId = stripeCustomer.id;
+                await customer.save();
 
-        res.json({ clientSecret: setupIntent.client_secret });
+                const setupIntent = await stripe.setupIntents.create({
+                    customer: customer.stripeCustomerId,
+                    payment_method_types: ['card'],
+                });
+                return res.json({ clientSecret: setupIntent.client_secret });
+            }
+            throw stripeErr;
+        }
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -276,12 +296,20 @@ exports.getCards = async (req, res) => {
             return res.json([]); // Si no tiene cliente de Stripe aún no tiene tarjetas
         }
 
-        const paymentMethods = await stripe.paymentMethods.list({
-            customer: customer.stripeCustomerId,
-            type: 'card',
-        });
-
-        res.json(paymentMethods.data);
+        try {
+            const paymentMethods = await stripe.paymentMethods.list({
+                customer: customer.stripeCustomerId,
+                type: 'card',
+            });
+            res.json(paymentMethods.data);
+        } catch (stripeErr) {
+            if (stripeErr.message && stripeErr.message.includes('No such customer')) {
+                customer.stripeCustomerId = undefined;
+                await customer.save();
+                return res.json([]);
+            }
+            throw stripeErr;
+        }
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
