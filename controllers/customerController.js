@@ -343,6 +343,7 @@ exports.getOrders = async (req, res) => {
         };
 
         const orders = await Order.find(query)
+            .populate('businessId', 'name logo slug')
             .sort({ createdAt: -1 })
             .limit(100);
 
