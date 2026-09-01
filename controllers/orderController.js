@@ -114,7 +114,7 @@ exports.updateOrder = async (req, res) => {
                     notification: { 
                         title, 
                         body,
-                        imageUrl: 'https://tengo-hambre.com/favicon.ico'
+                        imageUrl: 'https://tengo-hambre.com/assets/images/icon.jpg'
                     },
                     android: {
                         notification: {

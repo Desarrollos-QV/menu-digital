@@ -202,7 +202,7 @@ exports.registerOrder = async (req, res) => {
                         notification: { 
                             title: '✅ Pedido Recibido', 
                             body: `¡Hola ${customerName}! Tu pedido ha sido recibido y está pendiente de confirmación.`,
-                            imageUrl: 'https://tengo-hambre.com/favicon.ico'
+                            imageUrl: 'https://tengo-hambre.com/assets/images/icon.jpg'
                         },
                         android: {
                             notification: {
