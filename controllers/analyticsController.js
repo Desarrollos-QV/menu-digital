@@ -201,7 +201,14 @@ exports.registerOrder = async (req, res) => {
                     const message = {
                         notification: { 
                             title: '✅ Pedido Recibido', 
-                            body: `¡Hola ${customerName}! Tu pedido ha sido recibido y está pendiente de confirmación.`
+                            body: `¡Hola ${customerName}! Tu pedido ha sido recibido y está pendiente de confirmación.`,
+                            imageUrl: 'https://tengo-hambre.com/favicon.ico'
+                        },
+                        android: {
+                            notification: {
+                                icon: 'ic_notification',
+                                color: '#f97316'
+                            }
                         },
                         data: { orderId: newOrder._id.toString(), status: 'pending' },
                         tokens: customerData.fcmTokens

@@ -41,7 +41,7 @@ exports.updateQuote = async (req, res) => {
         const updatedQuote = await Quotes.findByIdAndUpdate(
             req.params.id, 
             req.body, 
-            { new: true }
+            { returnDocument: 'after' }
         );
         res.json(updatedQuote);
     } catch (error) {

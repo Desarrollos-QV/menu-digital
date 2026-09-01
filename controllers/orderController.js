@@ -46,7 +46,7 @@ exports.updateOrder = async (req, res) => {
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.id,
             { $set: req.body },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).populate('customerId');
 
         if (!updatedOrder) {
@@ -111,7 +111,17 @@ exports.updateOrder = async (req, res) => {
 
             if (title && body) {
                 const message = {
-                    notification: { title, body },
+                    notification: { 
+                        title, 
+                        body,
+                        imageUrl: 'https://tengo-hambre.com/favicon.ico'
+                    },
+                    android: {
+                        notification: {
+                            icon: 'ic_notification',
+                            color: '#f97316'
+                        }
+                    },
                     data: { orderId: updatedOrder._id.toString(), status },
                     tokens: updatedOrder.customerId.fcmTokens // Array of tokens
                 };

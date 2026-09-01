@@ -21,7 +21,7 @@ exports.createCategoryStore = async (req, res) => {
 
 exports.updateCategoryStore = async (req, res) => {
     try {
-        const updatedCategory = await CategoryStore.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedCategory = await CategoryStore.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         if (!updatedCategory) return res.status(404).json({ message: 'Categoría no encontrada' });
         res.json(updatedCategory);
     } catch (error) {

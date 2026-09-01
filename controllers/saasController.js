@@ -328,7 +328,7 @@ exports.updateBusiness = async (req, res) => {
         const updatedBusiness = await Business.findByIdAndUpdate(
             req.params.id,
             updateData,
-            { new: true }
+            { returnDocument: 'after' }
         );
         res.json(updatedBusiness);
     } catch (error) {

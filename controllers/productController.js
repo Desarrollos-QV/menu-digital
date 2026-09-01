@@ -41,7 +41,7 @@ exports.updateProduct = async (req, res) => {
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id, 
             req.body, 
-            { new: true }
+            { returnDocument: 'after' }
         );
         res.json(updatedProduct);
     } catch (error) {

@@ -48,7 +48,7 @@ exports.createBanner = async (req, res) => {
 // Update y Delete funcionan igual, solo asegúrate de validar permisos si quieres ser estricto
 exports.updateBanner = async (req, res) => {
     try {
-        const updatedBanner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedBanner = await Banner.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.json(updatedBanner);
     } catch (error) { res.status(400).json({ message: error.message }); }
 };

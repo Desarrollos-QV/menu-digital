@@ -410,7 +410,7 @@ exports.getProgramConfig = async (req, res) => {
 
 exports.updateProgramConfig = async (req, res) => { 
     try {
-        const program = await LoyaltyProgram.findOneAndUpdate({ businessId: req.user.businessId }, req.body, { new: true, upsert: true });
+        const program = await LoyaltyProgram.findOneAndUpdate({ businessId: req.user.businessId }, req.body, { returnDocument: 'after', upsert: true });
         res.json(program);
     } catch (e) { res.status(500).json({ error: e.message }); }
 };

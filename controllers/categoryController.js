@@ -29,7 +29,7 @@ exports.createCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
     try {
-        const updatedCategory = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedCategory = await Category.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.json(updatedCategory);
     } catch (error) {
         res.status(400).json({ message: error.message });

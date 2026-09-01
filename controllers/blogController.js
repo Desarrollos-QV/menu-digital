@@ -50,7 +50,7 @@ exports.updateBlog = async (req, res) => {
         const { id } = req.params;
         const updates = req.body;
 
-        const updatedBlog = await Blog.findByIdAndUpdate(id, updates, { new: true });
+        const updatedBlog = await Blog.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
         
         if (!updatedBlog) {
             return res.status(404).json({ message: 'Noticia no encontrada' });

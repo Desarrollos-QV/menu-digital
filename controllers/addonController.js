@@ -29,7 +29,7 @@ exports.createAddon = async (req, res) => {
 
 exports.updateAddon = async (req, res) => {
     try {
-        const updatedAddon = await Addon.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedAddon = await Addon.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
         res.json(updatedAddon);
     } catch (error) {
         res.status(400).json({ message: error.message });

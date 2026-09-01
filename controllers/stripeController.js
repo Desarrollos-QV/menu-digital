@@ -58,7 +58,7 @@ exports.handleWebhook = async (req, res) => {
                         stripePaymentStatus: 'succeeded',
                         status: 'preparing'
                     },
-                    { new: true }
+                    { returnDocument: 'after' }
                 );
                 
             } catch (err) {

@@ -24,7 +24,7 @@ exports.createMunicipio = async (req, res) => {
 // Actualizar un municipio
 exports.updateMunicipio = async (req, res) => {
     try {
-        const municipio = await Municipio.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        const municipio = await Municipio.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
         if (!municipio) return res.status(404).json({ message: 'Municipio no encontrado' });
         res.json(municipio);
     } catch (error) {
