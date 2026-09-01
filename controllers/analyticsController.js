@@ -191,6 +191,29 @@ exports.registerOrder = async (req, res) => {
             }
         }
 
+        // 5. Enviar Notificación Push al Cliente confirmando que el pedido fue recibido
+        if (customerId) {
+            try {
+                const Customer = require('../models/Customer');
+                const firebaseAdmin = require('../config/firebase');
+                const customerData = await Customer.findById(customerId);
+                
+                if (customerData && customerData.fcmTokens && customerData.fcmTokens.length > 0 && firebaseAdmin) {
+                    const message = {
+                        notification: { 
+                            title: '✅ Pedido Recibido', 
+                            body: `¡Hola ${customerName}! Tu pedido ha sido recibido y está pendiente de confirmación.`
+                        },
+                        data: { orderId: newOrder._id.toString(), status: 'pending' },
+                        tokens: customerData.fcmTokens
+                    };
+                    await firebaseAdmin.messaging().sendMulticast(message);
+                    console.log('Push notification sent to customer for new order');
+                }
+            } catch (pushErr) {
+                console.error('Error sending push notification on new order:', pushErr);
+            }
+        }
 
         res.json({ status: 'ok', orderId: newOrder._id });
     } catch (e) { res.status(500).json({ error: e.message }); }
