@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const firebaseAdmin = require('../config/firebase');
 
 // Listado de Ventas (Últimas 200 para rendimiento)
 exports.getOrders = async (req, res) => {
@@ -46,7 +47,7 @@ exports.updateOrder = async (req, res) => {
             req.params.id,
             { $set: req.body },
             { new: true, runValidators: true }
-        );
+        ).populate('customerId');
 
         if (!updatedOrder) {
             return res.status(404).json({ message: 'Orden no encontrada' });
@@ -82,6 +83,48 @@ exports.updateOrder = async (req, res) => {
             }
         }
         // -------------------------------------
+
+        // --- LÓGICA DE NOTIFICACIÓN PUSH (FIREBASE) ---
+        if (status && updatedOrder.customerId && updatedOrder.customerId.fcmTokens && updatedOrder.customerId.fcmTokens.length > 0) {
+            const customerName = updatedOrder.customerId.name || 'Cliente';
+            let title = '';
+            let body = '';
+
+            switch (status) {
+                case 'preparing':
+                    title = '👨‍🍳 Pedido en preparación';
+                    body = `Hola ${customerName}, estamos preparando tu pedido.`;
+                    break;
+                case 'ready':
+                    title = '🚀 Pedido Listo/En camino';
+                    body = `¡Tu pedido está listo o va en camino hacia ti!`;
+                    break;
+                case 'completed':
+                    title = '✅ Pedido Completado';
+                    body = `Gracias por tu compra. ¡Buen provecho!`;
+                    break;
+                case 'cancelled':
+                    title = '❌ Pedido Cancelado';
+                    body = `Lo sentimos, tu pedido ha sido cancelado.`;
+                    break;
+            }
+
+            if (title && body && firebaseAdmin) {
+                const message = {
+                    notification: { title, body },
+                    data: { orderId: updatedOrder._id.toString(), status },
+                    tokens: updatedOrder.customerId.fcmTokens // Array of tokens
+                };
+
+                try {
+                    const response = await firebaseAdmin.messaging().sendMulticast(message);
+                    console.log('Firebase Push Notification sent successfully:', response.successCount, 'success,', response.failureCount, 'failed');
+                } catch (pushErr) {
+                    console.error('Error sending Firebase Push Notification:', pushErr);
+                }
+            }
+        }
+        // ----------------------------------------------
 
         res.json(updatedOrder);
     } catch (err) {

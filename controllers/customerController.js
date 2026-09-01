@@ -383,4 +383,5 @@ exports.chargeSavedCard = async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-};
+};e x p o r t s . s a v e F c m T o k e n   =   a s y n c   ( r e q ,   r e s )   = >   {   t r y   {   c o n s t   {   t o k e n   }   =   r e q . b o d y ;   i f   ( ! t o k e n )   r e t u r n   r e s . s t a t u s ( 4 0 0 ) . j s o n ( {   e r r o r :   ' T o k e n   i s   r e q u i r e d '   } ) ;   c o n s t   c u s t o m e r   =   a w a i t   C u s t o m e r . f i n d B y I d ( r e q . c u s t o m e r . i d ) ;   i f   ( ! c u s t o m e r )   r e t u r n   r e s . s t a t u s ( 4 0 4 ) . j s o n ( {   e r r o r :   ' C u s t o m e r   n o t   f o u n d '   } ) ;   i f   ( ! c u s t o m e r . f c m T o k e n s )   c u s t o m e r . f c m T o k e n s   =   [ ] ;   i f   ( ! c u s t o m e r . f c m T o k e n s . i n c l u d e s ( t o k e n ) )   {   c u s t o m e r . f c m T o k e n s . p u s h ( t o k e n ) ;   a w a i t   c u s t o m e r . s a v e ( ) ;   }   r e s . j s o n ( {   s u c c e s s :   t r u e   } ) ;   }   c a t c h   ( e r r o r )   {   c o n s o l e . e r r o r ( ' E r r o r   s a v i n g   F C M   t o k e n : ' ,   e r r o r ) ;   r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   e r r o r :   e r r o r . m e s s a g e   } ) ;   }   } ;  
+ 

@@ -12,7 +12,8 @@ const customerSchema = new mongoose.Schema({
     visits: { type: Number, default: 0 },
     lastVisit: { type: Date, default: Date.now },
     resetOtp: { type: String, default: null },
-    resetOtpExpires: { type: Date, default: null }
+    resetOtpExpires: { type: Date, default: null },
+    fcmTokens: [{ type: String }] // Tokens de dispositivos para notificaciones push
 });
 
 // Nota: Para clientes del Marketplace global, businessId puede ser opcional o nulo.

@@ -54,6 +54,9 @@ router.get('/cards', customerController.getCards);
 router.delete('/cards/:paymentMethodId', customerController.deleteCard);
 router.post('/cards/charge', customerController.chargeSavedCard);
 
+// Push Notifications
+router.post('/fcm-token', customerController.saveFcmToken);
+
 // --- HISTORIAL DE PEDIDOS ---
 router.get('/orders', customerController.getOrders);
 
