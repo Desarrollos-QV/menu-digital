@@ -210,6 +210,12 @@ exports.registerOrder = async (req, res) => {
                                 color: '#f97316'
                             }
                         },
+                        android: {
+                            notification: {
+                                icon: 'ic_notification',
+                                color: '#f97316'
+                            }
+                        },
                         data: { orderId: newOrder._id.toString(), status: 'pending' },
                         tokens: customerData.fcmTokens
                     };

@@ -128,7 +128,7 @@ exports.updateOrder = async (req, res) => {
                     },
                     android: {
                         notification: {
-                            icon: 'ic_launcher_foreground',
+                            icon: 'ic_notification',
                             color: '#f97316',
                             imageUrl
                         }
