@@ -110,16 +110,27 @@ exports.updateOrder = async (req, res) => {
             }
 
             if (title && body) {
+                // Imagen dinámica según el estado del pedido
+                const statusImageMap = {
+                    'pending':    'https://tengo-hambre.com/assets/images/step1.png',
+                    'preparing':  'https://tengo-hambre.com/assets/images/step2.png',
+                    'ready':      'https://tengo-hambre.com/assets/images/step3.png',
+                    'completed':  'https://tengo-hambre.com/assets/images/step4.png',
+                    'cancelled':  'https://tengo-hambre.com/assets/images/icon.jpg'
+                };
+                const imageUrl = statusImageMap[status] || 'https://tengo-hambre.com/assets/images/icon.jpg';
+
                 const message = {
                     notification: { 
                         title, 
                         body,
-                        imageUrl: 'https://tengo-hambre.com/assets/images/icon.jpg'
+                        imageUrl
                     },
                     android: {
                         notification: {
-                            icon: 'ic_notification',
-                            color: '#f97316'
+                            icon: 'ic_launcher_foreground',
+                            color: '#f97316',
+                            imageUrl
                         }
                     },
                     data: { orderId: updatedOrder._id.toString(), status },
