@@ -237,6 +237,41 @@
 
                 <!-- ========================= MODO ENTREGA (default) ========================= -->
                 <div v-else-if="deliveryMode === 'delivery'">
+                    <!-- 🔥 TOP TREND PRODUCTS -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && topProducts.length > 0" class="lg:mt-5 mb-5">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
+                                    🏆 LO MÁS PEDIDO
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="flex overflow-x-auto gap-4 pb-4 px-4 snap-x no-scrollbar">
+                            <div v-for="product in topProducts" :key="product.id"
+                                class="relative snap-start flex-shrink-0 w-36 md:w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden cursor-pointer hover:shadow-lg hover:scale-[0.98] transition-transform"
+                                @click="goToBusiness(product.business)">
+                                <!-- TOP Badge -->
+                                <div class="absolute top-2 left-2 z-10 bg-amber-400 text-white text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shadow flex items-center gap-0.5">
+                                    🏆 TOP
+                                </div>
+                                <!-- Image -->
+                                <div class="w-full h-24 md:h-32 bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                    <img loading="lazy" :src="product.image" :alt="product.title" class="w-full h-full object-cover" />
+                                </div>
+                                <!-- Info -->
+                                <div class="p-2.5 md:p-3">
+                                    <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{{ product.title }}</p>
+                                    <p class="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ product.business?.name }}</p>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <p class="text-sm md:text-base font-black text-brand">${{ product.price?.toFixed(2) }}</p>
+                                        <button @click.stop="goToBusiness(product.business)" class="w-6 h-6 md:w-7 md:h-7 bg-brand text-white rounded-full flex items-center justify-center text-xs md:text-sm font-bold shadow-sm active:scale-90 transition-transform shrink-0">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- PROMOS DE HOY (Carrusel Horizontal) -->
                     <div v-if="!searchQuery && selectedCategory === 'all' && promos.length > 0" class="lg:mt-5 mb-5">
@@ -396,7 +431,6 @@
                         <!-- Skeleton Loader para Banners -->
                         <div v-else class="relative rounded-3xl overflow-hidden h-48 md:h-64 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
                     </div>
-
 
                     <!-- CATEGORÍAS (Sticky Wrapper) -->
                     <div v-show="deliveryMode === 'delivery'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">

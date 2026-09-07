@@ -87,6 +87,7 @@ createApp({
         const froods = ref([]);
         const promos = ref([]);
         const cheapProducts = ref([]);
+        const topProducts = ref([]);
 
         // --- THEME LOGIC ---
         const theme = ref(localStorage.getItem('theme') || 'light');
@@ -970,6 +971,28 @@ createApp({
                         cheapProducts.value = [];
                     }
 
+                    // Fetch de lo más pedido (Top products)
+                    try {
+                        const topRes = await fetch('api/public/top-products');
+                        if (topRes.ok) {
+                            const dbTop = await topRes.json();
+                            topProducts.value = dbTop.map(p => {
+                                return {
+                                    id: p._id,
+                                    title: p.name,
+                                    price: p.price,
+                                    image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
+                                    business: p.businessId
+                                };
+                            }).filter(p => p.business);
+                        } else {
+                            topProducts.value = [];
+                        }
+                    } catch (e) {
+                        console.error("Error fetching top products:", e);
+                        topProducts.value = [];
+                    }
+
                     froods.value = [
                         {
                             id: 1,
@@ -1174,7 +1197,7 @@ createApp({
             theme, toggleTheme,
             searchQuery, selectedCategory, categories,
             trendingBusinesses, filteredBusinesses,
-            froods, promos, cheapProducts,
+            froods, promos, cheapProducts, topProducts,
             loading, error, scrolled, goToBusiness, fetchBusinesses,
             // Loc
             showLocationModal, locationSearch, filteredItems, currentLag, selectLocation,
