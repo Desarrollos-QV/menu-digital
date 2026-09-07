@@ -116,3 +116,17 @@ exports.getCheapProducts = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener productos' });
     }
 };
+
+// Obtener productos TOP (salesCount > 10), ordenados por popularidad
+exports.getTopProducts = async (req, res) => {
+    try {
+        const products = await Product.find({ salesCount: { $gt: 10 }, active: true })
+            .populate('businessId')
+            .sort({ salesCount: -1 })
+            .limit(20);
+        res.json(products);
+    } catch (error) {
+        console.error('Error al obtener productos TOP:', error);
+        res.status(500).json({ message: 'Error al obtener productos TOP' });
+    }
+};

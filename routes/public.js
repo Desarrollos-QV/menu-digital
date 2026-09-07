@@ -14,6 +14,7 @@ router.get('/maps-key', (req, res) => {
 router.get('/list', marketplaceController.getAllBusinesses);
 router.get('/promos', marketplaceController.getPromos);
 router.get('/cheap-products', marketplaceController.getCheapProducts);
+router.get('/top-products', marketplaceController.getTopProducts);
 router.post('/customers', marketplaceController.registerCustomer);
 router.post('/customers/login', marketplaceController.getCustomerStatus);
 // Ruta pública para obtener Categorías Globales (Para registro)
