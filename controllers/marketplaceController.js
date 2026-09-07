@@ -134,9 +134,16 @@ exports.getTopProducts = async (req, res) => {
 
 exports.getFroods = async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10; // Default to 10 for the web panel but mobile will request 5
+        const skip = (page - 1) * limit;
+
         const froods = await Frood.find({ active: true })
             .populate('businessId')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
         res.json(froods);
     } catch (error) {
         console.error('Error al obtener froods:', error);
