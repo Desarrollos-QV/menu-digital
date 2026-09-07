@@ -1709,20 +1709,66 @@
                 </div>
 
                 <!-- =====================  ADS VIEW (PUBLICIDAD) ===================== -->
-                <div v-if="currentView === 'ads'" class="space-y-6 animate-fade-in">
-                    <div class="flex justify-between items-center">
-                        <div><h2 class="text-2xl font-bold text-slate-800 dark:text-white">Publicidad y Banners</h2><p class="text-slate-500 dark:text-slate-400">Promociones visibles en el menú</p></div>
-                        <button @click="openBannerModal(null, mediaFiles.length)" class="bg-secondary hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl shadow-lg transition flex items-center"><i class="fa-solid fa-plus mr-2"></i> Crear Banner</button>
+                <div v-if="currentView === 'ads'" class="space-y-6 animate-fade-in pb-10">
+                    <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Publicidad Global</h2>
+                            <p class="text-slate-500 dark:text-slate-400">Promociones visibles en el menú y Froods</p>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                        <div v-for="banner in banners" :key="banner._id" class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden group hover:shadow-md transition">
-                            <div class="h-40 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
-                                <img :src="banner.imageUrl" class="w-full h-full object-cover">
-                                <div class="absolute top-4 right-4 text-xs font-bold px-2 py-1 rounded-md shadow-sm" :class="banner.active ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'">{{ banner.active ? 'ACTIVO' : 'INACTIVO' }}</div>
+
+                    <!-- BANNERS SECTION -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mb-6">
+                        <div class="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700 dark:text-slate-300">Banners</h3>
+                            <button @click="openBannerModal(null, mediaFiles.length)" class="bg-secondary hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl shadow-lg transition flex items-center"><i class="fa-solid fa-plus mr-2"></i> Crear Banner</button>
+                        </div>
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div v-for="banner in banners" :key="banner._id" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden group hover:shadow-md transition">
+                                <div class="h-40 bg-slate-200 dark:bg-slate-700 relative overflow-hidden">
+                                    <img :src="banner.imageUrl" class="w-full h-full object-cover">
+                                    <div class="absolute top-4 right-4 text-xs font-bold px-2 py-1 rounded-md shadow-sm" :class="banner.active ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'">{{ banner.active ? 'ACTIVO' : 'INACTIVO' }}</div>
+                                </div>
+                                <div class="p-6">
+                                    <div class="flex justify-between items-start mb-2"><h3 class="text-lg font-bold text-slate-800 dark:text-white">{{ banner.title }}</h3><div class="flex space-x-2"><button @click="openBannerModal(banner, mediaFiles.length)" class="text-slate-400 hover:text-primary"><i class="fa-solid fa-pen"></i></button><button @click="deleteBanner(banner._id)" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></div></div>
+                                    <p class="text-slate-500 dark:text-slate-400 text-sm mb-4 line-clamp-2">{{ banner.description }}</p>
+                                </div>
                             </div>
-                            <div class="p-6">
-                                <div class="flex justify-between items-start mb-2"><h3 class="text-lg font-bold text-slate-800 dark:text-white">{{ banner.title }}</h3><div class="flex space-x-2"><button @click="openBannerModal(banner, mediaFiles.length)" class="text-slate-400 hover:text-primary"><i class="fa-solid fa-pen"></i></button><button @click="deleteBanner(banner._id)" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></div></div>
-                                <p class="text-slate-500 dark:text-slate-400 text-sm mb-4 line-clamp-2">{{ banner.description }}</p>
+                            <div v-if="!banners.length" class="col-span-full text-center py-8 text-slate-400">No hay banners configurados</div>
+                        </div>
+                    </div>
+
+                    <!-- FROODS (REELS) SECTION -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div class="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700 dark:text-slate-300">Froods (Reels)</h3>
+                            <button @click="openFroodModal()" class="bg-primary hover:bg-primaryDark text-white px-6 py-2.5 rounded-xl shadow-lg transition flex items-center"><i class="fa-solid fa-video mr-2"></i> Subir Frood</button>
+                        </div>
+                        <div class="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            <div v-for="frood in froods" :key="frood._id" class="border dark:border-slate-700 rounded-xl overflow-hidden shadow-sm relative group flex flex-col">
+                                <div class="relative aspect-[9/16] bg-black">
+                                    <img v-if="frood.thumbnailUrl" :src="frood.thumbnailUrl" class="w-full h-full object-cover">
+                                    <div v-else class="w-full h-full flex items-center justify-center text-slate-500"><i class="fa-solid fa-video text-3xl"></i></div>
+                                    
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center gap-2">
+                                        <button @click="openFroodModal(frood)" class="bg-white text-slate-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fa-solid fa-pen"></i></button>
+                                        <button @click="deleteFrood(frood._id)" class="bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                    
+                                    <div class="absolute top-2 right-2 flex gap-1">
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm" :class="frood.active ? 'bg-emerald-500 text-white' : 'bg-slate-500 text-white'">
+                                            {{ frood.active ? 'Activo' : 'Oculto' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-white dark:bg-slate-900 flex-1 flex flex-col">
+                                    <h4 class="font-bold text-xs text-slate-800 dark:text-white line-clamp-2" :title="frood.title">{{ frood.title }}</h4>
+                                    <p class="text-[10px] text-slate-500 mt-1 line-clamp-1">{{ frood.description }}</p>
+                                </div>
+                            </div>
+                            <div v-if="froods.length === 0" class="col-span-full text-center py-8 text-slate-400">
+                                <div class="mb-3 text-slate-300 dark:text-slate-600"><i class="fa-solid fa-film text-4xl"></i></div>
+                                No hay Froods (Reels) configurados
                             </div>
                         </div>
                     </div>
@@ -5269,9 +5315,86 @@
                 <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Imagen</label><div class="flex flex-col gap-3"><div v-if="bannerForm.imageUrl" class="h-40 w-full rounded-lg bg-slate-100 overflow-hidden relative group"><img :src="bannerForm.imageUrl" class="w-full h-full object-cover"><button @click="bannerForm.imageUrl = ''" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div><div v-else class="h-40 w-full rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400"><span class="text-sm">Sin imagen</span></div><div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center flex-wrap"><button @click="showMediaSelector = !showMediaSelector" class="text-sm text-primary hover:underline font-medium flex items-center"><i class="fa-solid fa-images mr-2"></i> Librería</button><div class="relative"><input type="file" ref="bannerFileInput" @change="uploadBannerImage" class="hidden" accept="image/*"><button @click="$refs.bannerFileInput.click()" class="text-sm text-secondary hover:underline font-medium flex items-center"><i class="fa-solid fa-cloud-arrow-up mr-2"></i> <span v-if="isUploadingBanner">Subiendo...</span><span v-else>Subir nueva</span></button></div></div><div v-if="showMediaSelector" class="border rounded-lg p-2 h-40 overflow-y-auto bg-slate-50 dark:bg-slate-900 grid grid-cols-3 sm:grid-cols-4 gap-2"><div v-for="img in mediaFiles.filter(f => !isVideo(f.name))" :key="img.name" @click="selectBannerImage(img.url)" class="aspect-square rounded overflow-hidden cursor-pointer border border-transparent hover:border-primary"><img :src="img.url" class="w-full h-full object-cover"></div></div></div></div>
                 <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Título</label><input v-model="bannerForm.title" type="text" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
                 <div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Descripción</label><textarea v-model="bannerForm.description" rows="2" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></textarea></div>
-                <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Caducidad</label><input v-model="bannerForm.expiresAt" type="date" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div><div class="flex items-center pt-6"><label class="inline-flex items-center cursor-pointer"><input type="checkbox" v-model="bannerForm.active" class="sr-only peer"><div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div><span class="ms-3 text-sm font-medium text-slate-700">Activo</span></label></div></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Caducidad</label><input v-model="bannerForm.expiresAt" type="date" class="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div><div class="flex items-center pt-6"><label class="inline-flex items-center cursor-pointer"><input type="checkbox" v-model="bannerForm.active" class="sr-only peer"><div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div><span class="ms-3 text-sm font-medium text-slate-700 dark:text-slate-300">Activo</span></label></div></div>
             </div>
             <div class="p-6 bg-slate-50 dark:bg-slate-700/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 mt-auto"><button @click="showBannerModal = false" class="px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg">Cancelar</button><button @click="saveBanner" class="px-5 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primaryDark">Guardar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL FROODS -->
+    <div v-if="showFroodModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in border dark:border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                <h3 class="text-xl font-bold dark:text-white">{{ froodForm._id ? 'Editar' : 'Nuevo' }} Frood</h3>
+                <button @click="showFroodModal = false" class="text-slate-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 space-y-5 thin-scroll">
+                
+                <!-- Video / Thumbnail -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Thumbnail -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Miniatura (Thumbnail)</label>
+                        <div class="relative group aspect-[9/16] rounded-xl overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition" @click="$refs.froodThumbInput.click()">
+                            <input type="file" ref="froodThumbInput" @change="uploadFroodMedia($event, 'image')" class="hidden" accept="image/*">
+                            <img v-if="froodForm.thumbnailUrl" :src="froodForm.thumbnailUrl" class="w-full h-full object-cover">
+                            <div v-else class="text-slate-400 flex flex-col items-center text-center p-2">
+                                <i class="fa-regular fa-image text-2xl mb-2"></i>
+                                <span class="text-xs">Subir imagen</span>
+                            </div>
+                            <div v-if="isUploadingFroodMedia && mediaTypeUploading === 'image'" class="absolute inset-0 bg-white/90 dark:bg-slate-800/90 flex flex-col items-center justify-center z-10">
+                                <i class="fa-solid fa-circle-notch fa-spin text-primary text-xl mb-2"></i>
+                                <span class="text-[10px] font-bold">Subiendo...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Video -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Video (Reel)</label>
+                        <div class="relative group aspect-[9/16] rounded-xl overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition bg-black" @click="$refs.froodVideoInput.click()">
+                            <input type="file" ref="froodVideoInput" @change="uploadFroodMedia($event, 'video')" class="hidden" accept="video/mp4,video/webm">
+                            <video v-if="froodForm.videoUrl" :src="froodForm.videoUrl" class="w-full h-full object-cover" muted></video>
+                            <div v-else class="text-slate-400 flex flex-col items-center text-center p-2">
+                                <i class="fa-solid fa-film text-2xl mb-2"></i>
+                                <span class="text-xs">Subir video (MP4)</span>
+                            </div>
+                            <div v-if="isUploadingFroodMedia && mediaTypeUploading === 'video'" class="absolute inset-0 bg-white/90 dark:bg-slate-800/90 flex flex-col items-center justify-center z-10">
+                                <i class="fa-solid fa-circle-notch fa-spin text-primary text-xl mb-2"></i>
+                                <span class="text-[10px] font-bold">Subiendo video...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles -->
+                <div class="space-y-4 pt-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Título</label>
+                        <input v-model="froodForm.title" type="text" class="w-full p-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none dark:text-white" placeholder="Ej: Nueva Hamburguesa Doble">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Descripción</label>
+                        <textarea v-model="froodForm.description" rows="2" class="w-full p-3 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary outline-none dark:text-white resize-none" placeholder="Descripción breve para tu Reel..."></textarea>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 pt-2">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" v-model="froodForm.active" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                            <span class="ml-3 text-sm font-medium text-slate-600 dark:text-slate-400">Frood Visible</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3 rounded-b-3xl">
+                <button @click="showFroodModal = false" class="px-4 py-2.5 text-slate-500 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition text-sm">Cancelar</button>
+                <button @click="saveFrood" :disabled="!froodForm.videoUrl || !froodForm.thumbnailUrl" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-primaryDark transition disabled:opacity-50 flex items-center gap-2 text-sm">
+                    <span>{{ froodForm._id ? 'Actualizar Frood' : 'Publicar Frood' }}</span>
+                </button>
+            </div>
         </div>
     </div>
 

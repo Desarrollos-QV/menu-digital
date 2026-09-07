@@ -37,6 +37,7 @@ app.use('/api/categoriesStore', require('./routes/categoriesStore')); // <-- Cat
 app.use('/api/auth', require('./routes/auth')); // <-- Autenticacion
 app.use('/api/media', require('./routes/media')); // <-- Subida de medios
 app.use('/api/banners', require('./routes/banners')); // <-- Publicidad
+app.use('/api/froods', require('./routes/froods')); // <-- Reels/Froods
 app.use('/api/products', require('./routes/products')); // <-- Productos
 app.use('/api/categories', require('./routes/categories')); // <-- Categorias
 app.use('/api/addons', require('./routes/addons')); // <-- Complementos

@@ -4,6 +4,7 @@ const Swal = window.Swal;
 import { useAuth } from './useAuth.js';
 import { useMedia } from './useMedia.js';
 import { useBanners } from './useBanners.js';
+import { useFroods } from './useFroods.js';
 import { useProducts } from './useProducts.js';
 import { useCategories } from './useCategories.js';
 import { useAddons } from './useAddons.js';
@@ -86,6 +87,7 @@ createApp({
         const auth = useAuth();
         const media = useMedia(auth.isDark);
         const banners = useBanners(auth.isDark, media.fetchMedia);
+        const froods = useFroods(auth.isDark, media.fetchMedia);
         const products = useProducts(auth.isDark, media.fetchMedia);
         const categories = useCategories(auth.isDark, media.fetchMedia);
         const addons = useAddons(auth.isDark);
@@ -1347,7 +1349,7 @@ createApp({
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
                     if (currentView.value === 'saas_ranking') saas.fetchDashboardStats();
                     if (currentView.value === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
-                    if (currentView.value === 'ads') banners.fetchBanners();
+                    if (currentView.value === 'ads') { banners.fetchBanners(); froods.fetchFroods(); }
                     if (currentView.value === 'media') media.fetchMedia();
                     if (currentView.value === 'settings') settings.fetchSettings();
                     if (currentView.value === 'municipios') municipios.fetchMunicipios();
@@ -1411,7 +1413,7 @@ createApp({
                         }
                         if (currentView.value === 'dashboard') analytics.fetchDashboardStats();
                         if (currentView.value === 'media') media.fetchMedia();
-                        if (currentView.value === 'ads') { banners.isUploadingBanner.value = false; banners.fetchBanners(); }
+                        if (currentView.value === 'ads') { banners.isUploadingBanner.value = false; banners.fetchBanners(); froods.isUploadingFroodMedia.value = false; froods.fetchFroods(); }
                         if (currentView.value === 'loyalty') useloyalty.fetchProgram();
                         if (currentView.value === 'products') products.isUploadingProductImg.value = false; products.fetchProducts();
                         if (currentView.value === 'addons') addons.fetchAddons();
@@ -1479,6 +1481,7 @@ createApp({
             ...auth,   // isAuthenticated, username, login, logout, Theme...
             ...media,  // mediaFiles, uploadFile, deleteFile...
             ...banners, // banners, saveBanner...
+            ...froods,
             ...products, // products, saveProduct...
             ...categories, // categoriesList, saveCategory...
             ...addons, // addonsList, saveAddon, addOptionRow...

@@ -2,6 +2,7 @@ const Business = require('../models/Business');
 const Banner = require('../models/Banner');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const Frood = require('../models/Frood');
 
 // Obtener todos los negocios para el directorio
 exports.getAllBusinesses = async (req, res) => {
@@ -120,13 +121,25 @@ exports.getCheapProducts = async (req, res) => {
 // Obtener productos TOP (salesCount > 10), ordenados por popularidad
 exports.getTopProducts = async (req, res) => {
     try {
-        const products = await Product.find({ salesCount: { $gt: 10 }, active: true })
+        const topProducts = await Product.find({ active: true, salesCount: { $gt: 10 } })
             .populate('businessId')
             .sort({ salesCount: -1 })
-            .limit(20);
-        res.json(products);
+            .limit(10);
+        res.json(topProducts);
     } catch (error) {
-        console.error('Error al obtener productos TOP:', error);
-        res.status(500).json({ message: 'Error al obtener productos TOP' });
+        console.error('Error al obtener lo más pedido:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+exports.getFroods = async (req, res) => {
+    try {
+        const froods = await Frood.find({ active: true })
+            .populate('businessId')
+            .sort({ createdAt: -1 });
+        res.json(froods);
+    } catch (error) {
+        console.error('Error al obtener froods:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
