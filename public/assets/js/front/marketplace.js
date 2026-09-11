@@ -430,6 +430,16 @@ createApp({
             password: ''
         });
 
+        const isForgotPasswordMode = ref(false);
+        const forgotPasswordStep = ref(1); // 1: Pedir identifier, 2: OTP y Nueva Contraseña
+        
+        const forgotPasswordForm = reactive({
+            identifier: '',
+            otp: '',
+            newPassword: '',
+            confirmPassword: ''
+        });
+
         // Formulario Registro
         const customerForm = reactive({
             name: '',
@@ -451,6 +461,8 @@ createApp({
         const openModal = (mode = 'login') => {
             isLoginMode.value = (mode === 'login');
             isSetupPasswordMode.value = false;
+            isForgotPasswordMode.value = false;
+            forgotPasswordStep.value = 1;
             setupPasswordForm.email = '';
             setupPasswordForm.password = '';
             setupPasswordForm.confirmPassword = '';
@@ -577,6 +589,75 @@ createApp({
                     text: err.message || 'No se pudo crear la cuenta.',
                     confirmButtonColor: '#6366f1'
                 });
+            }
+        };
+
+        const handleRequestReset = async () => {
+            if (!forgotPasswordForm.identifier || !forgotPasswordForm.identifier.trim()) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Ingresa tu teléfono o correo.', confirmButtonColor: '#E30613' });
+                return;
+            }
+            try {
+                const result = await sharedCust.requestPasswordReset(forgotPasswordForm.identifier);
+                if (result.emailSent) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Código enviado',
+                        text: result.message,
+                        confirmButtonColor: '#E30613'
+                    });
+                    forgotPasswordStep.value = 2; // Pasar a paso de OTP
+                } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Enviado',
+                        text: result.message,
+                        confirmButtonColor: '#E30613'
+                    });
+                    forgotPasswordStep.value = 2; // También pasamos al paso 2
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message, confirmButtonColor: '#E30613' });
+            }
+        };
+
+        const handleVerifyReset = async () => {
+            if (!forgotPasswordForm.otp || forgotPasswordForm.otp.length !== 6) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Ingresa el código de 6 dígitos.', confirmButtonColor: '#E30613' });
+                return;
+            }
+            if (forgotPasswordForm.newPassword !== forgotPasswordForm.confirmPassword) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Las contraseñas no coinciden.', confirmButtonColor: '#E30613' });
+                return;
+            }
+            if (forgotPasswordForm.newPassword.length < 4) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'La contraseña debe tener al menos 4 caracteres.', confirmButtonColor: '#E30613' });
+                return;
+            }
+            try {
+                await sharedCust.verifyPasswordReset(
+                    forgotPasswordForm.identifier,
+                    forgotPasswordForm.otp,
+                    forgotPasswordForm.newPassword
+                );
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Contraseña recuperada!',
+                    text: 'Tu contraseña ha sido actualizada con éxito.',
+                    confirmButtonColor: '#E30613'
+                });
+                // Volver a login e iniciar sesión con los datos (opcionalmente rellenamos el phone)
+                isForgotPasswordMode.value = false;
+                isLoginMode.value = true;
+                loginForm.phone = forgotPasswordForm.identifier;
+                
+                // Limpiar form
+                forgotPasswordForm.identifier = '';
+                forgotPasswordForm.otp = '';
+                forgotPasswordForm.newPassword = '';
+                forgotPasswordForm.confirmPassword = '';
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message, confirmButtonColor: '#E30613' });
             }
         };
 
@@ -1206,8 +1287,8 @@ createApp({
             banners, activeBanner, nextBanner, prevBanner, setActiveBanner, handleBannerClick,
             // Auth y Perfil
             sharedCust, currentUser, firstName, userInitial, userAvatarUrl, logout,
-            showUserModal, isLoginMode, isSetupPasswordMode, showUserDropdown,
-            showAuthPromptModal, authPromptContext, openModal, customerForm, loginForm, setupPasswordForm, registerCustomer, loginCustomer, submitSetupPassword,
+            showUserModal, isLoginMode, isSetupPasswordMode, isForgotPasswordMode, forgotPasswordStep, showUserDropdown,
+            showAuthPromptModal, authPromptContext, openModal, customerForm, loginForm, setupPasswordForm, forgotPasswordForm, registerCustomer, loginCustomer, submitSetupPassword, handleRequestReset, handleVerifyReset,
             // Gestión Perfil, Direcciones e Historial
             sharedCust, activeProfileTab, profileForm, addressForm, showAddressFormModal, isEditingAddress,
             openProfileEdit, saveProfile, handleAvatarChange, openAddAddress, openEditAddress, saveAddressForm, deleteAddressForm,

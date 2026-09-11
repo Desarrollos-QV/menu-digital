@@ -110,6 +110,28 @@ window.createSharedCustomer = function() {
         return data;
     };
     
+    const requestPasswordReset = async (identifier) => {
+        const res = await fetch('/api/loyalty/public/request-reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error al solicitar recuperación');
+        return data;
+    };
+
+    const verifyPasswordReset = async (identifier, otp, newPassword) => {
+        const res = await fetch('/api/loyalty/public/verify-reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier, otp, newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error al verificar OTP');
+        return data;
+    };
+    
     const fetchProfile = async () => {
         if (!token.value) return;
         const res = await apiFetch('/api/customer/profile');
@@ -238,6 +260,8 @@ window.createSharedCustomer = function() {
         login,
         setupPassword,
         register,
+        requestPasswordReset,
+        verifyPasswordReset,
         logout: clearSession,
         fetchProfile,
         updateProfile,
