@@ -247,7 +247,7 @@ exports.getCustomerStatus = async (req, res) => {
         const token = jwt.sign(
             { id: customer._id, phone: customer.phone, email: customer.email, name: customer.name },
             SECRET_KEY,
-            { expiresIn: '7d' }
+            { expiresIn: '365d' }
         );
 
         // Login Exitoso
@@ -315,7 +315,7 @@ exports.setupPassword = async (req, res) => {
         const token = jwt.sign(
             { id: customer._id, phone: customer.phone, email: customer.email, name: customer.name },
             SECRET_KEY,
-            { expiresIn: '7d' }
+            { expiresIn: '365d' }
         );
 
         res.json({
@@ -380,7 +380,7 @@ exports.registerCustomer = async (req, res) => {
         const token = jwt.sign(
             { id: newCustomer._id, phone: newCustomer.phone, email: newCustomer.email, name: newCustomer.name },
             SECRET_KEY,
-            { expiresIn: '7d' }
+            { expiresIn: '365d' }
         );
 
         res.json({ 

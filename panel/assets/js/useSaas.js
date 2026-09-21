@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { authFetch } from './api.js';
 
 export function useSaas() {
@@ -542,6 +542,131 @@ export function useSaas() {
         fetchFrequentCustomers(1);
     };
 
+    // ─── DISPERSIONES (SuperAdmin) ──────────────────────────────────────────
+    const dispersions = ref([]);
+    const dispersionsLoading = ref(false);
+    const showCreateDispersionModal = ref(false);
+
+    // Filtros de la vista de dispersiones (SuperAdmin)
+    const dispersionFilterBiz = ref('');
+    const dispersionFilterStatus = ref('');
+    const dispersionFilterFrom = ref('');
+    const dispersionFilterTo = ref('');
+
+    const filteredDispersions = computed(() => {
+        return dispersions.value.filter(d => {
+            const bizName = d.businessId?.name || '';
+            const matchBiz = !dispersionFilterBiz.value || bizName.toLowerCase().includes(dispersionFilterBiz.value.toLowerCase());
+            const matchStatus = !dispersionFilterStatus.value || d.status === dispersionFilterStatus.value;
+            const created = new Date(d.createdAt);
+            const matchFrom = !dispersionFilterFrom.value || created >= new Date(dispersionFilterFrom.value);
+            const matchTo = !dispersionFilterTo.value || created <= new Date(dispersionFilterTo.value + 'T23:59:59');
+            return matchBiz && matchStatus && matchFrom && matchTo;
+        });
+    });
+
+    const clearDispersionFilters = () => {
+        dispersionFilterBiz.value = '';
+        dispersionFilterStatus.value = '';
+        dispersionFilterFrom.value = '';
+        dispersionFilterTo.value = '';
+    };
+    
+    // Variables para el form de crear dispersion
+    const dispersionForm = ref({
+        businessId: '',
+        periodStart: today,
+        periodEnd: today
+    });
+    const dispersionPreview = ref(null);
+
+    const fetchDispersionsAdmin = async (businessId = '') => {
+        dispersionsLoading.value = true;
+        try {
+            const url = businessId ? `/api/saas/dispersions?businessId=${businessId}` : '/api/saas/dispersions';
+            const res = await authFetch(url);
+            if (res.ok) {
+                dispersions.value = await res.json();
+            }
+        } catch (e) {
+            toastr.error('Error cargando dispersiones');
+        } finally {
+            dispersionsLoading.value = false;
+        }
+    };
+
+    const fetchMyDispersions = async () => {
+        dispersionsLoading.value = true;
+        try {
+            const res = await authFetch('/api/saas/dispersions/me');
+            if (res.ok) {
+                dispersions.value = await res.json();
+            } else {
+                toastr.error('Error cargando tu billetera');
+            }
+        } catch(e) {
+            toastr.error('Error de red al cargar billetera');
+        } finally {
+            dispersionsLoading.value = false;
+        }
+    };
+
+    const previewDispersion = async () => {
+        if (!dispersionForm.value.businessId || !dispersionForm.value.periodStart || !dispersionForm.value.periodEnd) {
+            return toastr.warning('Faltan datos para la previsualización');
+        }
+        try {
+            const res = await authFetch('/api/saas/dispersions/preview', {
+                method: 'POST',
+                body: JSON.stringify(dispersionForm.value)
+            });
+            if (res.ok) {
+                dispersionPreview.value = await res.json();
+            } else {
+                const err = await res.json();
+                toastr.error(err.message || 'Error en previsualización');
+                dispersionPreview.value = null;
+            }
+        } catch(e) {
+            toastr.error('Error de conexión');
+        }
+    };
+
+    const submitCreateDispersion = async () => {
+        try {
+            const res = await authFetch('/api/saas/dispersions', {
+                method: 'POST',
+                body: JSON.stringify(dispersionForm.value)
+            });
+            if (res.ok) {
+                toastr.success('Corte de dispersión generado exitosamente');
+                showCreateDispersionModal.value = false;
+                dispersionPreview.value = null;
+                fetchDispersionsAdmin();
+            } else {
+                const err = await res.json();
+                toastr.error(err.message || 'Error al generar dispersión');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        }
+    };
+
+    const payDispersion = async (id, reference) => {
+        try {
+            const res = await authFetch(`/api/saas/dispersions/${id}/pay`, {
+                method: 'PUT',
+                body: JSON.stringify({ reference })
+            });
+            if (res.ok) {
+                toastr.success('Dispersión marcada como pagada');
+                fetchDispersionsAdmin();
+            }
+        } catch (e) {
+            toastr.error('Error al pagar dispersión');
+        }
+    };
+
     return {
         businesses,
         showSaasModal,
@@ -614,6 +739,25 @@ export function useSaas() {
         customerOrdersLoading,
         fetchFrequentCustomers,
         fetchCustomerOrders,
-        clearFrequentCustomersFilters
+        clearFrequentCustomersFilters,
+
+        // Dispersiones
+        dispersions,
+        dispersionsLoading,
+        showCreateDispersionModal,
+        dispersionForm,
+        dispersionPreview,
+        fetchDispersionsAdmin,
+        fetchMyDispersions,
+        previewDispersion,
+        submitCreateDispersion,
+        payDispersion,
+        // Filtros de dispersiones
+        dispersionFilterBiz,
+        dispersionFilterStatus,
+        dispersionFilterFrom,
+        dispersionFilterTo,
+        filteredDispersions,
+        clearDispersionFilters
     };
 }

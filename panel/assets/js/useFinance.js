@@ -93,11 +93,31 @@ export function useFinance() {
         } catch (e) { toastr.error('Error al cerrar caja'); }
     };
 
+    // Billetera / Dispersiones del Negocio
+    const myDispersions = ref([]);
+    const myDispersionsLoading = ref(false);
+
+    const fetchMyDispersions = async () => {
+        myDispersionsLoading.value = true;
+        try {
+            const res = await authFetch('/api/finance/my-dispersions');
+            if (res.ok) {
+                myDispersions.value = await res.json();
+            }
+        } catch (e) {
+            toastr.error('Error al cargar dispersiones');
+        } finally {
+            myDispersionsLoading.value = false;
+        }
+    };
+
     return {
         shiftStatus, currentData, historyList,
         openAmount, movementForm, closeAmount, closeRecounts,
         showOpenModal, showMovementModal, showCloseModal,
         fetchCurrentStatus, fetchHistory,
-        openRegister, registerMovement, closeRegister
+        openRegister, registerMovement, closeRegister,
+        
+        myDispersions, myDispersionsLoading, fetchMyDispersions
     };
 }

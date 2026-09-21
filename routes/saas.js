@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const saasController = require('../controllers/saasController');
+const dispersionController = require('../controllers/dispersionController');
+const auth = require('../middleware/auth');
 
 // En producción, aquí agregaríamos un middleware para verificar que sea "superadmin"
 router.get('/dashboard-stats', saasController.getDashboardStats);
@@ -22,6 +24,14 @@ router.get('/businesses/:id/orders', saasController.getBusinessOrders);
 
 // Ventas globales de toda la plataforma (SuperAdmin)
 router.get('/global-orders', saasController.getGlobalOrders);
+
+// Dispersiones (Wallet & Pagos)
+router.post('/dispersions/preview', dispersionController.previewDispersion);
+router.post('/dispersions', dispersionController.createDispersion);
+// IMPORTANTE: /dispersions/me debe ir ANTES de /dispersions/:id para evitar conflicto de rutas
+router.get('/dispersions/me', auth, dispersionController.listMyDispersions);
+router.get('/dispersions', dispersionController.listDispersionsAdmin);
+router.put('/dispersions/:id/pay', dispersionController.payDispersion);
 
 // Clientes frecuentes e historial de recompra (SuperAdmin)
 router.get('/frequent-customers', saasController.getFrequentCustomers);

@@ -55,6 +55,7 @@ const orderSchema = new mongoose.Schema({
     },
     stripePaymentIntentId: { type: String }, // ID del intent de pago
     stripePaymentStatus: { type: String }, // 'succeeded', 'pending', etc.
+    dispersionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Dispersion' }, // Corte o dispersión a la que pertenece esta orden
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now }
 

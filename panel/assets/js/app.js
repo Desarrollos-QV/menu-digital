@@ -111,6 +111,7 @@ createApp({
         const saasMenu = ref([
             { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
+            { id: 101, label: 'Dispersiones', icon: 'fa-solid fa-money-bill-transfer', view: 'saas_dispersions' },
             { id: 108, label: 'Ranking Restaurantes', icon: 'fa-solid fa-trophy', view: 'saas_ranking' },
             { id: 106, label: 'Usuarios Frecuentes', icon: 'fa-solid fa-users', view: 'saas_frequent_customers' },
             { id: 107, label: 'Cupones', icon: 'fa-solid fa-ticket', view: 'coupons' },
@@ -169,6 +170,7 @@ createApp({
             },
             { id: 3, label: 'KDS Cocina', icon: 'fa-solid fa-fire-burner', view: 'kds' }, // Nuevo Item
             { id: 12, label: 'Caja', icon: 'fa-solid fa-box', view: 'finance', get locked() { return (settings.settings.value.plan == 'free') ? true : false; } },
+            { id: 18, label: 'Mi Billetera', icon: 'fa-solid fa-wallet', view: 'wallet', get locked() { return (settings.settings.value.plan == 'free') ? true : false; } },
             { id: 13, label: 'Usuarios', icon: 'fa-solid fa-user-group', view: 'users' },
             { id: 14, label: 'Configuración', icon: 'fa-solid fa-gear', view: 'settings' }
         ]);
@@ -593,6 +595,10 @@ createApp({
                 if (item.view === 'saas_clients') saas.fetchBusinesses();
                 if (item.view === 'saas_ranking') saas.fetchDashboardStats();
                 if (item.view === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
+                if (item.view === 'saas_dispersions') {
+                    saas.fetchBusinesses();
+                    saas.fetchDispersionsAdmin();
+                }
                 if (item.view === 'saas_dashboard') {
                     saas.fetchDashboardStats();
                     saas.fetchGlobalOrders();
@@ -606,6 +612,7 @@ createApp({
                     analytics.fetchDashboardStats();
                 }
                 if (item.view === 'users') users.fetchUsers();
+                if (item.view === 'wallet') saas.fetchMyDispersions();
                 if (item.view === 'finance') {
                     finance.fetchCurrentStatus();
                     finance.fetchHistory();
@@ -1349,6 +1356,10 @@ createApp({
                     if (currentView.value === 'saas_clients') saas.fetchBusinesses();
                     if (currentView.value === 'saas_ranking') saas.fetchDashboardStats();
                     if (currentView.value === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
+                    if (currentView.value === 'saas_dispersions') {
+                        saas.fetchBusinesses();
+                        saas.fetchDispersionsAdmin();
+                    }
                     if (currentView.value === 'ads') { banners.fetchBanners(); froods.fetchFroods(); }
                     if (currentView.value === 'media') media.fetchMedia();
                     if (currentView.value === 'settings') settings.fetchSettings();
@@ -1424,6 +1435,7 @@ createApp({
                             finance.fetchHistory();
                         }
                         if (currentView.value === 'users') users.fetchUsers();
+                        if (currentView.value === 'wallet') saas.fetchMyDispersions();
                         if (currentView.value === 'settings') {
                             settings.fetchSettings(); // <-- Obenemos configuracion
                             municipios.fetchMunicipios(); // <-- Obtenemos Colonias

@@ -1169,6 +1169,198 @@
                     </div>
                 </div>
 
+                <!-- ===================== VISTA DISPERSIONES (SUPERADMIN) ===================== -->
+                <div v-if="currentView === 'saas_dispersions'" class="space-y-6 animate-fade-in">
+                    <!-- Header -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-money-bill-transfer text-primary"></i> Control de Dispersiones
+                            </h2>
+                            <p class="text-slate-500 text-sm">Gestiona los pagos y cortes a los negocios afiliados.</p>
+                        </div>
+                        <button @click="saas.showCreateDispersionModal.value = true" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primaryDark transition flex items-center gap-2">
+                            <i class="fa-solid fa-scissors"></i> Generar Corte
+                        </button>
+                    </div>
+
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Total dispersado -->
+                        <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-500/20">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-emerald-100 text-xs font-bold uppercase tracking-wider">Total Dispersado</span>
+                                <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-arrow-up-right-dots"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-black">${{ saas.dispersions.value.filter(d=>d.status==='paid').reduce((s,d)=>s+(d.netToPay||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-emerald-200 text-xs mt-1">{{ saas.dispersions.value.filter(d=>d.status==='paid').length }} cortes pagados</p>
+                        </div>
+                        <!-- Pendiente de pago -->
+                        <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg shadow-amber-500/20">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-amber-100 text-xs font-bold uppercase tracking-wider">Por Dispersar</span>
+                                <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-clock"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-black">${{ saas.dispersions.value.filter(d=>d.status!=='paid').reduce((s,d)=>s+(d.netToPay||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-amber-200 text-xs mt-1">{{ saas.dispersions.value.filter(d=>d.status!=='paid').length }} cortes pendientes</p>
+                        </div>
+                        <!-- Comisiones ganadas -->
+                        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-500/20">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider">Comisiones Cobradas</span>
+                                <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-percent"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-black">${{ saas.dispersions.value.reduce((s,d)=>s+(d.commissionTotal||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-indigo-200 text-xs mt-1">de {{ saas.dispersions.value.length }} cortes totales</p>
+                        </div>
+                        <!-- Ventas totales procesadas -->
+                        <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-5 text-white shadow-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Ventas Procesadas</span>
+                                <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </div>
+                            </div>
+                            <p class="text-2xl font-black">${{ saas.dispersions.value.reduce((s,d)=>s+(d.totalSales||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-slate-400 text-xs mt-1">{{ saas.dispersions.value.reduce((s,d)=>s+(d.totalOrders||0),0) }} órdenes en total</p>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
+                        <div class="flex flex-wrap items-end gap-3">
+                            <!-- Búsqueda por negocio -->
+                            <div class="flex-1 min-w-[200px]">
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-building mr-1"></i>Negocio</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <input v-model="saas.dispersionFilterBiz.value" type="text" placeholder="Buscar negocio..." class="w-full pl-8 pr-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                                </div>
+                            </div>
+                            <!-- Filtro Estatus -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-filter mr-1"></i>Estatus</label>
+                                <select v-model="saas.dispersionFilterStatus.value" class="px-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                                    <option value="">Todos</option>
+                                    <option value="pending">Pendientes</option>
+                                    <option value="paid">Pagados</option>
+                                </select>
+                            </div>
+                            <!-- Fecha desde -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-calendar-day mr-1"></i>Desde</label>
+                                <input type="date" v-model="saas.dispersionFilterFrom.value" class="px-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                            </div>
+                            <!-- Fecha hasta -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-calendar-check mr-1"></i>Hasta</label>
+                                <input type="date" v-model="saas.dispersionFilterTo.value" class="px-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                            </div>
+                            <!-- Botones -->
+                            <button @click="saas.fetchDispersionsAdmin()" class="px-4 py-2.5 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primaryDark transition flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                            </button>
+                            <button @click="saas.clearDispersionFilters()" class="px-4 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 font-bold rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                                <i class="fa-solid fa-xmark"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Dispersiones -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                            <p class="font-bold text-slate-700 dark:text-white text-sm">
+                                <i class="fa-solid fa-list-check text-primary mr-2"></i>
+                                {{ saas.filteredDispersions.value.length }} corte(s) encontrados
+                            </p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold">
+                                    <tr>
+                                        <th class="p-4 pl-6">ID / Fecha</th>
+                                        <th class="p-4">Negocio</th>
+                                        <th class="p-4">Periodo</th>
+                                        <th class="p-4 text-right">Ventas Totales</th>
+                                        <th class="p-4 text-right">Comisión</th>
+                                        <th class="p-4 text-right">Neto a Pagar</th>
+                                        <th class="p-4 text-center">Estatus</th>
+                                        <th class="p-4 text-right pr-6">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    <tr v-if="saas.dispersionsLoading.value">
+                                        <td colspan="8" class="p-10 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2 text-primary"></i> Cargando dispersiones...</td>
+                                    </tr>
+                                    <tr v-else-if="saas.filteredDispersions.value.length === 0">
+                                        <td colspan="8" class="p-10 text-center text-slate-400">
+                                            <i class="fa-solid fa-money-bill-transfer text-4xl mb-3 text-slate-200 dark:text-slate-600 block"></i>
+                                            No hay cortes que coincidan con tu búsqueda.
+                                        </td>
+                                    </tr>
+                                    <tr v-else v-for="disp in saas.filteredDispersions.value" :key="disp._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition group">
+                                        <td class="p-4 pl-6">
+                                            <div class="font-black text-slate-800 dark:text-white font-mono text-sm">#{{ disp._id.slice(-6).toUpperCase() }}</div>
+                                            <div class="text-xs text-slate-400 mt-0.5">{{ new Date(disp.createdAt).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) }}</div>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                                    <i class="fa-solid fa-store text-primary text-xs"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-bold text-slate-800 dark:text-white text-sm">{{ disp.businessId?.name || 'Desconocido' }}</p>
+                                                    <p class="text-[10px] text-slate-400">{{ disp.totalOrders || 0 }} pedidos procesados</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="p-4">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300">
+                                                <i class="fa-regular fa-calendar text-primary"></i>
+                                                {{ new Date(disp.periodStart).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) }} — {{ new Date(disp.periodEnd).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) }}
+                                            </span>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <span class="font-bold text-slate-700 dark:text-slate-200">${{ (disp.totalSales||0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</span>
+                                            <div class="text-[10px] text-slate-400">Tarjeta: ${{ (disp.cardSales||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</div>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <span class="font-bold text-red-500">-${{ (disp.commissionTotal||0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</span>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <span class="font-black text-emerald-600 dark:text-emerald-400 text-base">${{ (disp.netToPay||0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</span>
+                                            <div v-if="disp.status === 'paid' && disp.reference" class="text-[10px] text-slate-400 truncate max-w-[120px] ml-auto">Ref: {{ disp.reference }}</div>
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            <span v-if="disp.status === 'paid'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black border border-emerald-200 dark:border-emerald-800">
+                                                <i class="fa-solid fa-circle-check"></i> PAGADO
+                                            </span>
+                                            <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-[10px] font-black border border-amber-200 dark:border-amber-800">
+                                                <i class="fa-solid fa-clock"></i> PENDIENTE
+                                            </span>
+                                        </td>
+                                        <td class="p-4 text-right pr-6">
+                                            <button v-if="disp.status !== 'paid'" @click="saas.payDispersion(disp._id, 'TRANSFERENCIA MANUAL')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs font-black rounded-lg border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-1.5 ml-auto">
+                                                <i class="fa-solid fa-check"></i> Marcar Pagado
+                                            </button>
+                                            <span v-else class="text-xs text-slate-400 italic flex items-center gap-1 justify-end">
+                                                <i class="fa-solid fa-lock text-slate-300"></i> Liquidado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
                 <!-- VISTA MUNICIPIOS (NUEVA FUNCIONALIDAD) -->
                 <div v-if="currentView === 'municipios'" class="animate-fade-in ">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -2455,6 +2647,73 @@
                 </div>
 
                 <!-- =====================  VIEW LISTADO DE USUARIOS ===================== -->
+                <!-- ===================== VISTA BILLETERA / DISPERSIONES (BUSINESS) ===================== -->
+                <div v-if="currentView === 'wallet'" class="space-y-6 animate-fade-in">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-wallet text-primary"></i> Mi Billetera
+                            </h2>
+                            <p class="text-slate-500 text-sm">Consulta el historial de tus ventas y dispersiones realizadas por la plataforma.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Dispersiones del Negocio -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold">
+                                    <tr>
+                                        <th class="p-4 pl-6">ID / Fecha de Corte</th>
+                                        <th class="p-4">Periodo</th>
+                                        <th class="p-4 text-right">Ventas Totales</th>
+                                        <th class="p-4 text-right">Comisión Plataforma</th>
+                                        <th class="p-4 text-right">Monto a Recibir</th>
+                                        <th class="p-4 text-center pr-6">Estatus de Pago</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    <tr v-if="saas.dispersionsLoading.value">
+                                        <td colspan="6" class="p-8 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Cargando billetera...</td>
+                                    </tr>
+                                    <tr v-else-if="saas.dispersions.value.length === 0">
+                                        <td colspan="6" class="p-8 text-center text-slate-500">
+                                            <i class="fa-solid fa-wallet text-3xl mb-3 text-slate-300"></i><br>
+                                            No tienes cortes de dispersión registrados aún.
+                                        </td>
+                                    </tr>
+                                    <tr v-else v-for="disp in saas.dispersions.value" :key="disp._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                        <td class="p-4 pl-6">
+                                            <div class="font-bold text-slate-800 dark:text-white">{{ disp._id.slice(-6).toUpperCase() }}</div>
+                                            <div class="text-xs text-slate-500">{{ new Date(disp.createdAt).toLocaleDateString() }}</div>
+                                        </td>
+                                        <td class="p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            {{ new Date(disp.periodStart).toLocaleDateString() }} - {{ new Date(disp.periodEnd).toLocaleDateString() }}
+                                        </td>
+                                        <td class="p-4 text-right font-bold text-slate-700 dark:text-slate-300">
+                                            ${{ disp.totalSales.toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                        </td>
+                                        <td class="p-4 text-right text-red-500 font-medium">
+                                            -${{ disp.commissionTotal.toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                        </td>
+                                        <td class="p-4 text-right font-black text-emerald-600 dark:text-emerald-400">
+                                            ${{ disp.netToPay.toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                        </td>
+                                        <td class="p-4 text-center pr-6">
+                                            <span v-if="disp.status === 'paid'" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
+                                                <i class="fa-solid fa-check mr-1"></i> PAGADO
+                                            </span>
+                                            <span v-else class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold border border-amber-200">
+                                                <i class="fa-solid fa-clock mr-1"></i> PENDIENTE
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-if="currentView === 'users'" class="space-y-6 animate-fade-in">
                     <div class="flex justify-between items-center">
                         <div>
@@ -3557,6 +3816,77 @@
                 <button @click="couponsModule.showCouponModal = false" class="px-4 py-2 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition">Cancelar</button>
                 <button @click="couponsModule.saveCoupon" class="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-orange-600 transition">
                     Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR CORTE DE DISPERSIÓN (SuperAdmin) -->
+    <div v-if="saas.showCreateDispersionModal.value" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="saas.showCreateDispersionModal.value = false">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+            <!-- Encabezado -->
+            <div class="flex justify-between items-center p-6 border-b dark:border-slate-700">
+                <div>
+                    <h3 class="text-xl font-bold dark:text-white">Generar Corte de Dispersión</h3>
+                    <p class="text-xs text-slate-500">Calcula las ventas y comisiones para liquidar a un negocio.</p>
+                </div>
+                <button @click="saas.showCreateDispersionModal.value = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <!-- Cuerpo -->
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Negocio</label>
+                        <select v-model="saas.dispersionForm.value.businessId" class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                            <option value="">Selecciona un negocio...</option>
+                            <option v-for="b in saas.businesses.value" :key="b._id" :value="b._id">{{ b.name }}</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Desde</label>
+                            <input type="date" v-model="saas.dispersionForm.value.periodStart" class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Hasta</label>
+                            <input type="date" v-model="saas.dispersionForm.value.periodEnd" class="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                        </div>
+                    </div>
+                    <button @click="saas.previewDispersion()" class="w-full py-2 bg-indigo-50 text-indigo-600 font-bold text-sm rounded-lg hover:bg-indigo-100 transition border border-indigo-200 mt-2">
+                        Previsualizar Cálculo
+                    </button>
+                </div>
+
+                <!-- Resumen de Previsualización -->
+                <div v-if="saas.dispersionPreview.value" class="mt-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <h4 class="text-sm font-black text-slate-800 dark:text-white mb-3">Resumen del Corte</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex justify-between">
+                            <span class="text-slate-500">Total Ingresos:</span>
+                            <span class="font-bold text-slate-800 dark:text-white">${{ saas.dispersionPreview.value.totalSales.toFixed(2) }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-slate-500">Pedidos Procesados:</span>
+                            <span class="font-bold text-slate-800 dark:text-white">{{ saas.dispersionPreview.value.totalOrders }}</span>
+                        </li>
+                        <li class="flex justify-between text-red-500">
+                            <span>Comisión Plataforma:</span>
+                            <span class="font-bold">-${{ saas.dispersionPreview.value.commissionTotal.toFixed(2) }}</span>
+                        </li>
+                        <li class="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
+                            <span class="font-bold text-slate-800 dark:text-white">Monto Neto a Pagar al Negocio:</span>
+                            <span class="font-black text-emerald-600 dark:text-emerald-400 text-lg">${{ saas.dispersionPreview.value.netToPay.toFixed(2) }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!-- Botonera -->
+            <div class="p-6 border-t dark:border-slate-700 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/80 rounded-b-2xl">
+                <button @click="saas.showCreateDispersionModal.value = false" class="px-5 py-2 rounded-xl border font-bold text-slate-500 hover:bg-slate-100 transition">Cancelar</button>
+                <button @click="saas.submitCreateDispersion()" :disabled="!saas.dispersionPreview.value" class="px-5 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primaryDark transition shadow-md disabled:opacity-50">
+                    Generar y Guardar Corte
                 </button>
             </div>
         </div>

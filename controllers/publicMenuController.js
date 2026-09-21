@@ -209,7 +209,7 @@ exports.registerBusiness = async (req, res) => {
                 businessId: newUser.businessId 
             }, 
             SECRET_KEY, 
-            { expiresIn: '7d' }
+            { expiresIn: '365d' }
         );
 
         res.status(201).json({ 
