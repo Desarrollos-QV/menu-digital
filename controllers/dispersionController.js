@@ -17,8 +17,11 @@ exports.previewDispersion = async (req, res) => {
         const orders = await Order.find({
             businessId,
             createdAt: { $gte: start, $lte: end },
-            dispersionId: { $exists: false },
-            status: { $in: ['completed', 'delivered', 'ready'] } // Asumiendo estados validos
+            dispersionId: null, // null matches both null and missing in MongoDB
+            $or: [
+                { status: { $in: ['completed', 'delivered', 'ready'] } },
+                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+            ]
         });
 
         const business = await Business.findById(businessId);
@@ -29,6 +32,7 @@ exports.previewDispersion = async (req, res) => {
         let cashSales = 0;
         let deliveryFees = 0;
         let commissionTotal = 0;
+        let stripeFees = 0;
 
         orders.forEach(o => {
             let orderSubtotal = o.subtotal || 0; 
@@ -42,22 +46,34 @@ exports.previewDispersion = async (req, res) => {
                 cashSales += o.total;
             }
 
-            // Comisión Interna (nueva): se descuenta al negocio en el corte, NO al cliente
-            if (business.commissionInternalAmount > 0) {
-                if (business.commissionInternalType === 'percent') {
-                    commissionTotal += (orderSubtotal * (business.commissionInternalAmount / 100));
-                } else {
-                    commissionTotal += business.commissionInternalAmount;
-                }
-            // Fallback: si no hay interna, usar la WebApp (comportamiento anterior)
-            } else if (o.commission && o.commission.amount) {
-                commissionTotal += o.commission.amount;
+            // Comisión Web (Cobrada al cliente, la retenemos)
+            let webComm = 0;
+            if (o.commission && o.commission.amount) {
+                webComm = o.commission.amount;
             } else {
                 if (business.commissionWebType === 'percent') {
-                    commissionTotal += (orderSubtotal * (business.commissionWebAmount / 100));
+                    webComm = (orderSubtotal * (business.commissionWebAmount / 100));
                 } else {
-                    commissionTotal += (business.commissionWebAmount || 0);
+                    webComm = (business.commissionWebAmount || 0);
                 }
+            }
+
+            // Comisión Interna (Cobrada al negocio)
+            let intComm = 0;
+            if (business.commissionInternalAmount > 0) {
+                if (business.commissionInternalType === 'percent') {
+                    intComm = (orderSubtotal * (business.commissionInternalAmount / 100));
+                } else {
+                    intComm = business.commissionInternalAmount;
+                }
+            }
+            
+            commissionTotal += (webComm + intComm);
+
+            if (o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded') {
+                const sPct = parseFloat(process.env.STRIPE_FEE_PERCENT) || 0;
+                const sFix = parseFloat(process.env.STRIPE_FEE_FIXED) || 0;
+                stripeFees += (o.total * (sPct / 100)) + sFix;
             }
         });
 
@@ -73,6 +89,7 @@ exports.previewDispersion = async (req, res) => {
             cashSales,
             deliveryFees,
             commissionTotal,
+            stripeFees,
             netToPay
         });
     } catch (e) {
@@ -92,8 +109,11 @@ exports.createDispersion = async (req, res) => {
         const orders = await Order.find({
             businessId,
             createdAt: { $gte: start, $lte: end },
-            dispersionId: { $exists: false },
-            status: { $in: ['completed', 'delivered', 'ready'] } 
+            dispersionId: null,
+            $or: [
+                { status: { $in: ['completed', 'delivered', 'ready'] } },
+                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+            ]
         });
 
         if (orders.length === 0) {
@@ -120,21 +140,33 @@ exports.createDispersion = async (req, res) => {
                 cashSales += o.total;
             }
 
-            // Comisión Interna: si está configurada, tiene prioridad en el corte
-            if (business.commissionInternalAmount > 0) {
-                if (business.commissionInternalType === 'percent') {
-                    commissionTotal += (orderSubtotal * (business.commissionInternalAmount / 100));
-                } else {
-                    commissionTotal += business.commissionInternalAmount;
-                }
-            } else if (o.commission && o.commission.amount) {
-                commissionTotal += o.commission.amount;
+            // Comisión Web (Cobrada al cliente, la retenemos)
+            let webComm = 0;
+            if (o.commission && o.commission.amount) {
+                webComm = o.commission.amount;
             } else {
                 if (business.commissionWebType === 'percent') {
-                    commissionTotal += (orderSubtotal * (business.commissionWebAmount / 100));
+                    webComm = (orderSubtotal * (business.commissionWebAmount / 100));
                 } else {
-                    commissionTotal += (business.commissionWebAmount || 0);
+                    webComm = (business.commissionWebAmount || 0);
                 }
+            }
+
+            // Comisión Interna (Cobrada al negocio)
+            let intComm = 0;
+            if (business.commissionInternalAmount > 0) {
+                if (business.commissionInternalType === 'percent') {
+                    intComm = (orderSubtotal * (business.commissionInternalAmount / 100));
+                } else {
+                    intComm = business.commissionInternalAmount;
+                }
+            }
+            commissionTotal += (webComm + intComm);
+
+            if (o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded') {
+                const sPct = parseFloat(process.env.STRIPE_FEE_PERCENT) || 0;
+                const sFix = parseFloat(process.env.STRIPE_FEE_FIXED) || 0;
+                stripeFees += (o.total * (sPct / 100)) + sFix;
             }
         });
 
@@ -150,6 +182,7 @@ exports.createDispersion = async (req, res) => {
             cashSales,
             deliveryFees,
             commissionTotal,
+            stripeFees,
             netToPay,
             status: 'pending',
             createdBy: req.user ? req.user.id : null
@@ -259,8 +292,11 @@ exports.getDispersionSummary = async (req, res) => {
         // 2. Negocios con órdenes listas para corte (SIN DISPERSIÓN)
         const Order = require('../models/Order');
         const uncutOrders = await Order.find({ 
-            dispersionId: { $exists: false }, 
-            status: { $in: ['completed', 'delivered', 'ready'] } 
+            dispersionId: null, 
+            $or: [
+                { status: { $in: ['completed', 'delivered', 'ready'] } },
+                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+            ]
         }).populate('businessId', 'name avatar slug commissionInternalAmount commissionInternalType commissionWebType commissionWebAmount');
 
         const byBusiness = {};
@@ -271,11 +307,17 @@ exports.getDispersionSummary = async (req, res) => {
             const bizId = String(biz._id);
 
             if (!byBusiness[bizId]) {
+                let rateStr = 'Sin Comisión';
+                if (biz.commissionInternalAmount > 0) {
+                    rateStr = biz.commissionInternalType === 'percent' ? `${biz.commissionInternalAmount}%` : `$${biz.commissionInternalAmount}`;
+                }
+
                 byBusiness[bizId] = {
                     businessId: bizId,
                     name:       biz.name   || 'Desconocido',
                     avatar:     biz.avatar || '',
                     slug:       biz.slug   || '',
+                    commissionRate: rateStr,
                     totalSales:      0,
                     commissionTotal: 0,
                     netToPay:        0, // Aqui sumaremos temporalmente las ventas por tarjeta
@@ -294,23 +336,29 @@ exports.getDispersionSummary = async (req, res) => {
             if (new Date(o.createdAt) < new Date(b.oldestOrderDate)) b.oldestOrderDate = o.createdAt;
             if (new Date(o.createdAt) > new Date(b.newestOrderDate)) b.newestOrderDate = o.createdAt;
 
-            let commissionAmount = 0;
-            if (biz.commissionInternalAmount > 0) {
-                if (biz.commissionInternalType === 'percent') {
-                    commissionAmount = (orderSubtotal * (biz.commissionInternalAmount / 100));
-                } else {
-                    commissionAmount = biz.commissionInternalAmount;
-                }
-            } else if (o.commission && o.commission.amount) {
-                commissionAmount = o.commission.amount;
+            // Comisión Web
+            let webComm = 0;
+            if (o.commission && o.commission.amount) {
+                webComm = o.commission.amount;
             } else {
                 if (biz.commissionWebType === 'percent') {
-                    commissionAmount = (orderSubtotal * (biz.commissionWebAmount / 100));
+                    webComm = (orderSubtotal * (biz.commissionWebAmount / 100));
                 } else {
-                    commissionAmount = (biz.commissionWebAmount || 0);
+                    webComm = (biz.commissionWebAmount || 0);
                 }
             }
-            b.commissionTotal += commissionAmount;
+
+            // Comisión Interna
+            let intComm = 0;
+            if (biz.commissionInternalAmount > 0) {
+                if (biz.commissionInternalType === 'percent') {
+                    intComm = (orderSubtotal * (biz.commissionInternalAmount / 100));
+                } else {
+                    intComm = biz.commissionInternalAmount;
+                }
+            }
+
+            b.commissionTotal += (webComm + intComm);
 
             const isCard = ['card', 'credit_card', 'debit_card', 'online', 'stripe'].includes(o.paymentMethod);
             if (isCard) {

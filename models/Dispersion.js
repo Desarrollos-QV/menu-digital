@@ -16,6 +16,7 @@ const dispersionSchema = new mongoose.Schema({
 
     // Comisiones 
     commissionTotal: { type: Number, default: 0 }, // Comisión de la plataforma sobre totalSales
+    stripeFees: { type: Number, default: 0 }, // Costo de comisión de Stripe
 
     // Lo que realmente se le va a pagar o cobrar al restaurante
     // (cardSales - commissionTotal)

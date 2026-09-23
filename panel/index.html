@@ -1404,6 +1404,7 @@
                                         </td>
                                         <td class="p-4 text-right">
                                             <span class="font-bold text-rose-500">-${{ (biz.commissionTotal||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
+                                            <p class="text-[9px] text-slate-400 mt-1 font-bold">TARIFA: {{ biz.commissionRate }}</p>
                                         </td>
                                         <td class="p-4 text-right">
                                             <span class="font-black text-emerald-600 dark:text-emerald-400">${{ (biz.netToPay||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
@@ -1509,6 +1510,9 @@
                                         </td>
                                         <td class="p-4 text-right">
                                             <span class="font-semibold text-red-500 text-sm">-${{ (disp.commissionTotal||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
+                                            <div v-if="disp.stripeFees > 0" class="text-[9px] text-slate-400 mt-1 font-bold">
+                                                STRIPE: -${{ disp.stripeFees.toLocaleString('en-US',{minimumFractionDigits:2}) }}
+                                            </div>
                                         </td>
                                         <td class="p-4 text-right">
                                             <span class="font-black text-emerald-600 dark:text-emerald-400">${{ (disp.netToPay||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
