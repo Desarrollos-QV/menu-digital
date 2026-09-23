@@ -28,7 +28,8 @@ router.get('/global-orders', saasController.getGlobalOrders);
 // Dispersiones (Wallet & Pagos)
 router.post('/dispersions/preview', dispersionController.previewDispersion);
 router.post('/dispersions', dispersionController.createDispersion);
-// IMPORTANTE: /dispersions/me debe ir ANTES de /dispersions/:id para evitar conflicto de rutas
+// IMPORTANTE: rutas fijas ANTES de /:id para evitar conflictos
+router.get('/dispersions/summary', dispersionController.getDispersionSummary);
 router.get('/dispersions/me', auth, dispersionController.listMyDispersions);
 router.get('/dispersions', dispersionController.listDispersionsAdmin);
 router.put('/dispersions/:id/pay', dispersionController.payDispersion);

@@ -598,7 +598,9 @@ createApp({
                 if (item.view === 'saas_dispersions') {
                     saas.fetchBusinesses();
                     saas.fetchDispersionsAdmin();
+                    saas.fetchDispersionSummary();
                 }
+
                 if (item.view === 'saas_dashboard') {
                     saas.fetchDashboardStats();
                     saas.fetchGlobalOrders();

@@ -1171,21 +1171,32 @@
 
                 <!-- ===================== VISTA DISPERSIONES (SUPERADMIN) ===================== -->
                 <div v-if="currentView === 'saas_dispersions'" class="space-y-6 animate-fade-in">
-                    <!-- Header -->
+
+                    <!-- ══ HEADER ══ -->
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h2 class="text-2xl font-bold dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-money-bill-transfer text-primary"></i> Control de Dispersiones
-                            </h2>
-                            <p class="text-slate-500 text-sm">Gestiona los pagos y cortes a los negocios afiliados.</p>
+                            <h1 class="text-2xl md:text-3xl font-black dark:text-white flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                    <i class="fa-solid fa-wallet text-primary"></i>
+                                </div>
+                                Mi Billetera
+                            </h1>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Control de pagos, dispersiones y comisiones de todos los negocios.</p>
                         </div>
-                        <button @click="saas.showCreateDispersionModal.value = true" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primaryDark transition flex items-center gap-2">
-                            <i class="fa-solid fa-scissors"></i> Generar Corte
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button @click="saas.fetchDispersionSummary(); saas.fetchDispersionsAdmin();"
+                                class="px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-500 dark:text-slate-300 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-2">
+                                <i class="fa-solid fa-rotate-right"></i> Actualizar
+                            </button>
+                            <button @click="saas.showCreateDispersionModal.value = true"
+                                class="px-5 py-2.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:opacity-90 transition flex items-center gap-2">
+                                <i class="fa-solid fa-scissors"></i> Generar Corte
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- KPI Cards -->
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- ══ KPI CARDS (Mes en curso) ══ -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <!-- Total dispersado -->
                         <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-500/20">
                             <div class="flex items-center justify-between mb-3">
@@ -1194,8 +1205,8 @@
                                     <i class="fa-solid fa-arrow-up-right-dots"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-black">${{ saas.dispersions.value.filter(d=>d.status==='paid').reduce((s,d)=>s+(d.netToPay||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
-                            <p class="text-emerald-200 text-xs mt-1">{{ saas.dispersions.value.filter(d=>d.status==='paid').length }} cortes pagados</p>
+                            <p class="text-2xl font-black">${{ (saas.dispersionSummary.value?.kpis?.monthPaid || 0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-emerald-200 text-xs mt-1">Pagos realizados este mes</p>
                         </div>
                         <!-- Pendiente de pago -->
                         <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg shadow-amber-500/20">
@@ -1205,148 +1216,314 @@
                                     <i class="fa-solid fa-clock"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-black">${{ saas.dispersions.value.filter(d=>d.status!=='paid').reduce((s,d)=>s+(d.netToPay||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
-                            <p class="text-amber-200 text-xs mt-1">{{ saas.dispersions.value.filter(d=>d.status!=='paid').length }} cortes pendientes</p>
+                            <p class="text-2xl font-black">${{ (saas.dispersionSummary.value?.kpis?.monthPending || 0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-amber-200 text-xs mt-1">Cortes pendientes este mes</p>
                         </div>
                         <!-- Comisiones ganadas -->
                         <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-indigo-500/20">
                             <div class="flex items-center justify-between mb-3">
-                                <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider">Comisiones Cobradas</span>
+                                <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider">Comisiones</span>
                                 <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
                                     <i class="fa-solid fa-percent"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-black">${{ saas.dispersions.value.reduce((s,d)=>s+(d.commissionTotal||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
-                            <p class="text-indigo-200 text-xs mt-1">de {{ saas.dispersions.value.length }} cortes totales</p>
+                            <p class="text-2xl font-black">${{ (saas.dispersionSummary.value?.kpis?.monthCommissions || 0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-indigo-200 text-xs mt-1">Generadas este mes</p>
                         </div>
                         <!-- Ventas totales procesadas -->
                         <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-5 text-white shadow-lg">
                             <div class="flex items-center justify-between mb-3">
-                                <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Ventas Procesadas</span>
+                                <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Ventas</span>
                                 <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
                                     <i class="fa-solid fa-receipt"></i>
                                 </div>
                             </div>
-                            <p class="text-2xl font-black">${{ saas.dispersions.value.reduce((s,d)=>s+(d.totalSales||0),0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
-                            <p class="text-slate-400 text-xs mt-1">{{ saas.dispersions.value.reduce((s,d)=>s+(d.totalOrders||0),0) }} órdenes en total</p>
+                            <p class="text-2xl font-black">${{ (saas.dispersionSummary.value?.kpis?.monthSales || 0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</p>
+                            <p class="text-slate-400 text-xs mt-1">Ventas procesadas este mes</p>
                         </div>
                     </div>
 
-                    <!-- Filtros -->
-                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
-                        <div class="flex flex-wrap items-end gap-3">
-                            <!-- Búsqueda por negocio -->
-                            <div class="flex-1 min-w-[200px]">
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-building mr-1"></i>Negocio</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                    <input v-model="saas.dispersionFilterBiz.value" type="text" placeholder="Buscar negocio..." class="w-full pl-8 pr-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                    <!-- ══ KPI CARDS (Histórico - TODO) ══ -->
+                    <h3 class="text-lg font-bold dark:text-white mt-8 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-primary"></i> Resumen Histórico Global
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <!-- Ventas Totales -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-2 relative overflow-hidden">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ventas Procesadas</p>
+                                <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-receipt text-blue-500 text-sm"></i>
                                 </div>
                             </div>
-                            <!-- Filtro Estatus -->
                             <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-filter mr-1"></i>Estatus</label>
-                                <select v-model="saas.dispersionFilterStatus.value" class="px-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                                <p class="text-xl font-black text-slate-800 dark:text-white leading-none">
+                                    ${{ (saas.dispersionSummary.value?.kpis?.totalSalesAll || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">En <span class="text-blue-500 font-bold">{{ saas.dispersionSummary.value?.kpis?.uniqueBusinessesCount || 0 }}</span> negocios</p>
+                            </div>
+                        </div>
+
+                        <!-- Comisiones Generadas -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-2 relative overflow-hidden">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comisiones</p>
+                                <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-percent text-indigo-500 text-sm"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xl font-black text-slate-800 dark:text-white leading-none">
+                                    ${{ (saas.dispersionSummary.value?.kpis?.totalCommissions || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">Histórico total.</p>
+                            </div>
+                        </div>
+
+                        <!-- Total Dispersado -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-2 relative overflow-hidden">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Dispersado</p>
+                                <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xl font-black text-slate-800 dark:text-white leading-none">
+                                    ${{ (saas.dispersionSummary.value?.kpis?.totalPaid || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">Monto histórico pagado.</p>
+                            </div>
+                        </div>
+
+                        <!-- Por Dispersar -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-2 relative overflow-hidden">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Por Dispersar</p>
+                                <div class="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-arrow-up-from-bracket text-red-500 text-sm"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xl font-black text-slate-800 dark:text-white leading-none">
+                                    ${{ (saas.dispersionSummary.value?.kpis?.totalPending || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">Saldo pendiente actual.</p>
+                            </div>
+                        </div>
+
+                        <!-- Próximo Corte -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-2 relative overflow-hidden">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Próximo Corte</p>
+                                <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-calendar-day text-amber-500 text-sm"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[17px] font-black text-slate-800 dark:text-white leading-none">
+                                    {{ new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('es-MX', {day: '2-digit', month: 'short', year: 'numeric'}) }}
+                                </p>
+                                <p class="text-[9px] text-amber-500 mt-2 font-bold leading-tight">Se generará el corte de ventas y comisiones del mes.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ TABLA: Negocios listos para corte ══ -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mt-8">
+                        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h2 class="font-black text-slate-800 dark:text-white flex items-center gap-2 text-lg">
+                                    <i class="fa-solid fa-scissors text-primary"></i>
+                                    Negocios listos para corte
+                                </h2>
+                                <p class="text-xs text-slate-400 mt-0.5">Negocios con ventas entregadas/completadas que aún no han sido asignadas a un corte de dispersión.</p>
+                            </div>
+                            <div class="relative">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input v-model="saas.dispersionSummarySearch.value" type="text" placeholder="Buscar negocio..."
+                                    class="w-56 pl-8 pr-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition shadow-sm">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                                    <tr>
+                                        <th class="p-4 pl-6 w-10">#</th>
+                                        <th class="p-4">Negocio</th>
+                                        <th class="p-4">Periodo de Ventas</th>
+                                        <th class="p-4 text-center">Órdenes</th>
+                                        <th class="p-4 text-right">Ventas Totales</th>
+                                        <th class="p-4 text-right">Comisión a Cobrar</th>
+                                        <th class="p-4 text-right">Total a Dispersar</th>
+                                        <th class="p-4 text-center pr-6">Acción Rápida</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    <!-- Loading -->
+                                    <tr v-if="saas.dispersionSummaryLoading.value">
+                                        <td colspan="8" class="p-10 text-center text-slate-400">
+                                            <i class="fa-solid fa-circle-notch fa-spin mr-2 text-primary"></i> Analizando órdenes...
+                                        </td>
+                                    </tr>
+                                    <!-- Vacío -->
+                                    <tr v-else-if="saas.filteredSummaryBusinesses.value.length === 0">
+                                        <td colspan="8" class="p-12 text-center">
+                                            <div class="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mx-auto mb-3 shadow-sm border border-emerald-100">
+                                                <i class="fa-solid fa-check-double text-emerald-500 text-2xl"></i>
+                                            </div>
+                                            <p class="text-slate-700 dark:text-slate-300 font-bold text-lg">¡Todos los cortes al día!</p>
+                                            <p class="text-sm text-slate-400 mt-1">No hay ventas entregadas sin corte generado.</p>
+                                        </td>
+                                    </tr>
+                                    <!-- Filas -->
+                                    <tr v-else v-for="(biz, idx) in saas.filteredSummaryBusinesses.value" :key="biz.businessId"
+                                        class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                                        <td class="p-4 pl-6 text-slate-400 font-bold text-sm">{{ idx + 1 }}</td>
+                                        <td class="p-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 shrink-0 flex items-center justify-center shadow-sm">
+                                                    <img v-if="biz.avatar" :src="biz.avatar" class="w-full h-full object-cover">
+                                                    <i v-else class="fa-solid fa-store text-primary text-sm"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-bold text-slate-800 dark:text-white text-sm leading-tight">{{ biz.name }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="p-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                            {{ biz.oldestOrderDate ? new Date(biz.oldestOrderDate).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—' }}
+                                            a 
+                                            {{ biz.newestOrderDate ? new Date(biz.newestOrderDate).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—' }}
+                                        </td>
+                                        <td class="p-4 text-center">
+                                            <span class="font-bold text-slate-700 dark:text-slate-300">{{ biz.totalOrders }}</span>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <span class="font-bold text-slate-700 dark:text-slate-300">${{ (biz.totalSales||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <span class="font-bold text-rose-500">-${{ (biz.commissionTotal||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
+                                        </td>
+                                        <td class="p-4 text-right">
+                                            <span class="font-black text-emerald-600 dark:text-emerald-400">${{ (biz.netToPay||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
+                                        </td>
+                                        <td class="p-4 text-center pr-6">
+                                            <button @click="saas.quickCut(biz.businessId, biz.oldestOrderDate, biz.newestOrderDate)"
+                                                class="px-4 py-2 bg-primary hover:bg-primaryDark text-white text-[11px] font-bold uppercase tracking-wide rounded-xl transition shadow-sm flex items-center gap-2 mx-auto w-full justify-center">
+                                                <i class="fa-solid fa-scissors"></i> Hacer Corte
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div v-if="saas.filteredSummaryBusinesses.value.length > 0" class="px-6 py-3 text-right text-xs text-slate-400">
+                                Mostrando {{ saas.filteredSummaryBusinesses.value.length }} negocio(s) por cortar
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ HISTORIAL COMPLETO DE CORTES ══ -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h2 class="font-black text-slate-800 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-indigo-500"></i>
+                                    Historial de Cortes
+                                </h2>
+                                <p class="text-xs text-slate-400 mt-0.5">Todos los cortes generados, con filtros de búsqueda.</p>
+                            </div>
+                            <div class="flex flex-wrap items-end gap-2">
+                                <div class="relative">
+                                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <input v-model="saas.dispersionFilterBiz.value" type="text" placeholder="Negocio..."
+                                        class="w-40 pl-8 pr-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                                </div>
+                                <select v-model="saas.dispersionFilterStatus.value"
+                                    class="px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
                                     <option value="">Todos</option>
                                     <option value="pending">Pendientes</option>
                                     <option value="paid">Pagados</option>
                                 </select>
+                                <input type="date" v-model="saas.dispersionFilterFrom.value"
+                                    class="px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                                <input type="date" v-model="saas.dispersionFilterTo.value"
+                                    class="px-3 py-2 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
+                                <button @click="saas.clearDispersionFilters()"
+                                    class="px-3 py-2 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-slate-600 rounded-xl text-sm transition" title="Limpiar filtros">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                             </div>
-                            <!-- Fecha desde -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-calendar-day mr-1"></i>Desde</label>
-                                <input type="date" v-model="saas.dispersionFilterFrom.value" class="px-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
-                            </div>
-                            <!-- Fecha hasta -->
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1.5"><i class="fa-solid fa-calendar-check mr-1"></i>Hasta</label>
-                                <input type="date" v-model="saas.dispersionFilterTo.value" class="px-3 py-2.5 border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition">
-                            </div>
-                            <!-- Botones -->
-                            <button @click="saas.fetchDispersionsAdmin()" class="px-4 py-2.5 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primaryDark transition flex items-center gap-2">
-                                <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                            </button>
-                            <button @click="saas.clearDispersionFilters()" class="px-4 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 font-bold rounded-xl text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">
-                                <i class="fa-solid fa-xmark"></i> Limpiar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tabla de Dispersiones -->
-                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                            <p class="font-bold text-slate-700 dark:text-white text-sm">
-                                <i class="fa-solid fa-list-check text-primary mr-2"></i>
-                                {{ saas.filteredDispersions.value.length }} corte(s) encontrados
-                            </p>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
-                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-400 uppercase text-[11px] font-bold tracking-wider">
                                     <tr>
                                         <th class="p-4 pl-6">ID / Fecha</th>
                                         <th class="p-4">Negocio</th>
                                         <th class="p-4">Periodo</th>
-                                        <th class="p-4 text-right">Ventas Totales</th>
+                                        <th class="p-4 text-right">Ventas</th>
                                         <th class="p-4 text-right">Comisión</th>
                                         <th class="p-4 text-right">Neto a Pagar</th>
-                                        <th class="p-4 text-center">Estatus</th>
-                                        <th class="p-4 text-right pr-6">Acciones</th>
+                                        <th class="p-4 text-center">Estado</th>
+                                        <th class="p-4 text-right pr-6">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                                     <tr v-if="saas.dispersionsLoading.value">
-                                        <td colspan="8" class="p-10 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2 text-primary"></i> Cargando dispersiones...</td>
+                                        <td colspan="8" class="p-10 text-center text-slate-400">
+                                            <i class="fa-solid fa-circle-notch fa-spin mr-2 text-primary"></i> Cargando historial...
+                                        </td>
                                     </tr>
                                     <tr v-else-if="saas.filteredDispersions.value.length === 0">
                                         <td colspan="8" class="p-10 text-center text-slate-400">
-                                            <i class="fa-solid fa-money-bill-transfer text-4xl mb-3 text-slate-200 dark:text-slate-600 block"></i>
-                                            No hay cortes que coincidan con tu búsqueda.
+                                            <i class="fa-solid fa-receipt text-3xl mb-2 text-slate-200 dark:text-slate-600 block"></i>
+                                            No hay cortes que coincidan con los filtros.
                                         </td>
                                     </tr>
-                                    <tr v-else v-for="disp in saas.filteredDispersions.value" :key="disp._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition group">
+                                    <tr v-else v-for="disp in saas.filteredDispersions.value" :key="disp._id"
+                                        class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
                                         <td class="p-4 pl-6">
-                                            <div class="font-black text-slate-800 dark:text-white font-mono text-sm">#{{ disp._id.slice(-6).toUpperCase() }}</div>
-                                            <div class="text-xs text-slate-400 mt-0.5">{{ new Date(disp.createdAt).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) }}</div>
+                                            <div class="font-black text-slate-800 dark:text-white font-mono text-xs">#{{ disp._id.slice(-6).toUpperCase() }}</div>
+                                            <div class="text-[11px] text-slate-400">{{ new Date(disp.createdAt).toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'}) }}</div>
                                         </td>
                                         <td class="p-4">
                                             <div class="flex items-center gap-2">
-                                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                                    <i class="fa-solid fa-store text-primary text-xs"></i>
+                                                <div class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                                    <i class="fa-solid fa-store text-primary text-[10px]"></i>
                                                 </div>
                                                 <div>
                                                     <p class="font-bold text-slate-800 dark:text-white text-sm">{{ disp.businessId?.name || 'Desconocido' }}</p>
-                                                    <p class="text-[10px] text-slate-400">{{ disp.totalOrders || 0 }} pedidos procesados</p>
+                                                    <p class="text-[10px] text-slate-400">{{ disp.totalOrders || 0 }} pedidos</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="p-4">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300">
-                                                <i class="fa-regular fa-calendar text-primary"></i>
-                                                {{ new Date(disp.periodStart).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) }} — {{ new Date(disp.periodEnd).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) }}
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs text-slate-500 dark:text-slate-300 font-semibold">
+                                                <i class="fa-regular fa-calendar text-primary text-[10px]"></i>
+                                                {{ new Date(disp.periodStart).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) }} — {{ new Date(disp.periodEnd).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'2-digit'}) }}
                                             </span>
                                         </td>
                                         <td class="p-4 text-right">
-                                            <span class="font-bold text-slate-700 dark:text-slate-200">${{ (disp.totalSales||0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</span>
-                                            <div class="text-[10px] text-slate-400">Tarjeta: ${{ (disp.cardSales||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</div>
+                                            <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">${{ (disp.totalSales||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
                                         </td>
                                         <td class="p-4 text-right">
-                                            <span class="font-bold text-red-500">-${{ (disp.commissionTotal||0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</span>
+                                            <span class="font-semibold text-red-500 text-sm">-${{ (disp.commissionTotal||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
                                         </td>
                                         <td class="p-4 text-right">
-                                            <span class="font-black text-emerald-600 dark:text-emerald-400 text-base">${{ (disp.netToPay||0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</span>
-                                            <div v-if="disp.status === 'paid' && disp.reference" class="text-[10px] text-slate-400 truncate max-w-[120px] ml-auto">Ref: {{ disp.reference }}</div>
+                                            <span class="font-black text-emerald-600 dark:text-emerald-400">${{ (disp.netToPay||0).toLocaleString('en-US',{minimumFractionDigits:2}) }}</span>
                                         </td>
                                         <td class="p-4 text-center">
-                                            <span v-if="disp.status === 'paid'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black border border-emerald-200 dark:border-emerald-800">
+                                            <span v-if="disp.status === 'paid'" class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black border border-emerald-200 dark:border-emerald-800">
                                                 <i class="fa-solid fa-circle-check"></i> PAGADO
                                             </span>
-                                            <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-[10px] font-black border border-amber-200 dark:border-amber-800">
+                                            <span v-else class="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-black border border-amber-200 dark:border-amber-800">
                                                 <i class="fa-solid fa-clock"></i> PENDIENTE
                                             </span>
                                         </td>
                                         <td class="p-4 text-right pr-6">
-                                            <button v-if="disp.status !== 'paid'" @click="saas.payDispersion(disp._id, 'TRANSFERENCIA MANUAL')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs font-black rounded-lg border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-1.5 ml-auto">
+                                            <button v-if="disp.status !== 'paid'" @click="saas.payDispersion(disp._id, 'TRANSFERENCIA MANUAL')"
+                                                class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 text-xs font-black rounded-lg border border-emerald-200 dark:border-emerald-800 transition flex items-center gap-1.5 ml-auto">
                                                 <i class="fa-solid fa-check"></i> Marcar Pagado
                                             </button>
                                             <span v-else class="text-xs text-slate-400 italic flex items-center gap-1 justify-end">
@@ -1359,7 +1536,6 @@
                         </div>
                     </div>
                 </div>
-
 
                 <!-- VISTA MUNICIPIOS (NUEVA FUNCIONALIDAD) -->
                 <div v-if="currentView === 'municipios'" class="animate-fade-in ">
@@ -2648,44 +2824,200 @@
 
                 <!-- =====================  VIEW LISTADO DE USUARIOS ===================== -->
                 <!-- ===================== VISTA BILLETERA / DISPERSIONES (BUSINESS) ===================== -->
-                <div v-if="currentView === 'wallet'" class="space-y-6 animate-fade-in">
+                <div v-if="currentView === 'wallet'" class="space-y-6 animate-fade-in text-slate-800 dark:text-slate-200">
+                    <!-- Header -->
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h2 class="text-2xl font-bold dark:text-white flex items-center gap-2">
-                                <i class="fa-solid fa-wallet text-primary"></i> Mi Billetera
+                                <i class="fa-solid fa-bars text-xl mr-2"></i> Mi Billetera
                             </h2>
-                            <p class="text-slate-500 text-sm">Consulta el historial de tus ventas y dispersiones realizadas por la plataforma.</p>
+                            <p class="text-slate-500 text-sm mt-1">Consulta el historial de tus ventas, comisiones y pagos realizados por la plataforma.</p>
+                        </div>
+                        <div>
+                            <button class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-sm font-medium shadow-sm hover:bg-slate-50 transition">
+                                <i class="fa-regular fa-calendar text-slate-400"></i>
+                                <span>30/06/2026 - 21/09/2026</span>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-2"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Tabla de Dispersiones del Negocio -->
-                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <!-- 4 KPI Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <!-- Saldo disponible -->
+                        <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-2xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
+                                    <i class="fa-solid fa-wallet text-sm"></i>
+                                </div>
+                                <span class="text-sm font-bold text-emerald-900 dark:text-emerald-100">Saldo disponible</span>
+                                <i class="fa-solid fa-circle-info text-emerald-400 text-xs cursor-pointer"></i>
+                            </div>
+                            <p class="text-3xl font-black text-emerald-900 dark:text-white mb-1">$0.00</p>
+                            <p class="text-xs text-emerald-700 dark:text-emerald-400">Listo para ser transferido</p>
+                        </div>
+
+                        <!-- Saldo pendiente -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                                    <i class="fa-regular fa-clock text-sm"></i>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Saldo pendiente</span>
+                                <i class="fa-solid fa-circle-info text-slate-400 text-xs cursor-pointer"></i>
+                            </div>
+                            <p class="text-3xl font-black text-slate-800 dark:text-white mb-1">
+                                ${{ (saas.walletStats.value?.saldoPendiente || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                            </p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-0.5">Corte actual: {{ new Date().toLocaleDateString('es-MX', {day: '2-digit', month: 'short', year: 'numeric'}) }}</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                Pago estimado: {{ saas.walletStats.value?.nextPaymentDate ? saas.walletStats.value.nextPaymentDate.toLocaleDateString('es-MX', {day: '2-digit', month: 'short', year: 'numeric'}) : 'Pronto' }}
+                            </p>
+                        </div>
+
+                        <!-- Ventas totales -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                                    <i class="fa-solid fa-chart-simple text-sm"></i>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Ventas totales</span>
+                            </div>
+                            <p class="text-3xl font-black text-slate-800 dark:text-white mb-1">
+                                ${{ (saas.walletStats.value?.ventasTotales || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">{{ saas.walletStats.value?.pedidos || 0 }} pedidos</p>
+                            <p class="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-up"></i> +18% vs. periodo anterior
+                            </p>
+                        </div>
+
+                        <!-- Comisión plataforma -->
+                        <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm relative">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-500">
+                                    <i class="fa-solid fa-percent text-sm"></i>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Comisión plataforma</span>
+                            </div>
+                            <p class="text-3xl font-black text-slate-800 dark:text-white mb-1">
+                                ${{ (saas.walletStats.value?.comisionPlataforma || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                            </p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Comisiones cobradas</p>
+                            <span v-if="(saas.walletStats.value?.comisionPlataforma || 0) === 0" class="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold">
+                                Sin comisión
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Resumen del periodo -->
+                    <div class="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm mt-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4 mb-4 gap-3">
+                            <h3 class="font-bold flex items-center gap-2 text-lg">
+                                <i class="fa-solid fa-chart-bar text-slate-400"></i> Resumen del periodo
+                            </h3>
+                            <button class="px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2">
+                                Ver desglose <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Ventas totales</p>
+                                <p class="text-xl font-bold">${{ (saas.walletStats.value?.ventasTotales || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Pedidos</p>
+                                <p class="text-xl font-bold">{{ saas.walletStats.value?.pedidos || 0 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Comisión plataforma</p>
+                                <p class="text-xl font-bold">${{ (saas.walletStats.value?.comisionPlataforma || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Pagos ya entregados</p>
+                                <p class="text-xl font-bold">${{ (saas.walletStats.value?.pagosEntregados || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</p>
+                            </div>
+                            <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-3 flex flex-col justify-center md:-mt-2">
+                                <p class="text-[11px] text-rose-500 dark:text-rose-400 font-bold mb-1">Monto a recibir</p>
+                                <p class="text-xl md:text-2xl font-black text-rose-600 dark:text-rose-300">
+                                    ${{ (saas.walletStats.value?.montoARecibir || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Banner Pago Pendiente -->
+                    <div v-if="(saas.walletStats.value?.montoARecibir || 0) > 0" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 mt-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0 shadow-sm">
+                                <i class="fa-regular fa-calendar-check"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-amber-900 dark:text-amber-500 text-lg leading-tight">Pago pendiente</h4>
+                                <p class="text-sm text-amber-700/80 dark:text-amber-400/80 mt-0.5">Tu próximo pago se realizará el {{ saas.walletStats.value?.nextPaymentDate ? saas.walletStats.value.nextPaymentDate.toLocaleDateString('es-MX', {day: 'numeric', month: 'long', year: 'numeric'}) : 'Pronto' }}.</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-center gap-6">
+                            <div>
+                                <p class="text-[11px] text-amber-700/70 font-medium uppercase tracking-widest">Monto:</p>
+                                <p class="text-xl font-black text-amber-900 dark:text-amber-400">${{ (saas.walletStats.value?.montoARecibir || 0).toLocaleString('en-US', {minimumFractionDigits:2}) }}</p>
+                            </div>
+                            <button class="bg-amber-400 hover:bg-amber-500 text-amber-900 font-bold px-6 py-2.5 rounded-xl shadow-sm transition whitespace-nowrap">
+                                Ver detalles
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros y Tabla -->
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-8">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button v-for="tab in ['Todo', 'Hoy', 'Esta semana', 'Este mes', 'Últimos 3 meses', 'Personalizado']" 
+                                :key="tab"
+                                @click="saas.walletFilterTab.value = tab"
+                                :class="saas.walletFilterTab.value === tab 
+                                    ? 'bg-rose-600 text-white font-bold border-rose-600' 
+                                    : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-50'"
+                                class="px-4 py-1.5 rounded-xl border text-sm transition shadow-sm">
+                                {{ tab }}
+                            </button>
+                        </div>
+                        <div class="relative w-full md:w-64">
+                            <span class="absolute left-3 top-2 text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input v-model="saas.walletSearch.value" type="text" placeholder="Buscar movimiento o pedido..." 
+                                class="w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none bg-white dark:bg-slate-800 shadow-sm transition">
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden mt-4">
+                        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-slate-400"></i>
+                            <h3 class="font-bold text-lg">Movimientos</h3>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
-                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-xs font-bold">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase text-[10px] font-bold">
                                     <tr>
                                         <th class="p-4 pl-6">ID / Fecha de Corte</th>
                                         <th class="p-4">Periodo</th>
                                         <th class="p-4 text-right">Ventas Totales</th>
                                         <th class="p-4 text-right">Comisión Plataforma</th>
                                         <th class="p-4 text-right">Monto a Recibir</th>
-                                        <th class="p-4 text-center pr-6">Estatus de Pago</th>
+                                        <th class="p-4 text-center pr-6">Estatus</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
                                     <tr v-if="saas.dispersionsLoading.value">
-                                        <td colspan="6" class="p-8 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Cargando billetera...</td>
+                                        <td colspan="6" class="p-8 text-center text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Cargando movimientos...</td>
                                     </tr>
-                                    <tr v-else-if="saas.dispersions.value.length === 0">
+                                    <tr v-else-if="saas.filteredWalletDispersions.value.length === 0">
                                         <td colspan="6" class="p-8 text-center text-slate-500">
-                                            <i class="fa-solid fa-wallet text-3xl mb-3 text-slate-300"></i><br>
-                                            No tienes cortes de dispersión registrados aún.
+                                            No se encontraron movimientos para los filtros seleccionados.
                                         </td>
                                     </tr>
-                                    <tr v-else v-for="disp in saas.dispersions.value" :key="disp._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                                    <tr v-else v-for="disp in saas.filteredWalletDispersions.value" :key="disp._id" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                                         <td class="p-4 pl-6">
                                             <div class="font-bold text-slate-800 dark:text-white">{{ disp._id.slice(-6).toUpperCase() }}</div>
-                                            <div class="text-xs text-slate-500">{{ new Date(disp.createdAt).toLocaleDateString() }}</div>
+                                            <div class="text-[11px] text-slate-500">{{ new Date(disp.createdAt).toLocaleDateString() }}</div>
                                         </td>
                                         <td class="p-4 text-sm font-medium text-slate-700 dark:text-slate-300">
                                             {{ new Date(disp.periodStart).toLocaleDateString() }} - {{ new Date(disp.periodEnd).toLocaleDateString() }}
@@ -2693,18 +3025,18 @@
                                         <td class="p-4 text-right font-bold text-slate-700 dark:text-slate-300">
                                             ${{ disp.totalSales.toLocaleString('en-US', {minimumFractionDigits:2}) }}
                                         </td>
-                                        <td class="p-4 text-right text-red-500 font-medium">
+                                        <td class="p-4 text-right text-rose-500 font-medium">
                                             -${{ disp.commissionTotal.toLocaleString('en-US', {minimumFractionDigits:2}) }}
                                         </td>
-                                        <td class="p-4 text-right font-black text-emerald-600 dark:text-emerald-400">
+                                        <td class="p-4 text-right font-black text-slate-800 dark:text-white">
                                             ${{ disp.netToPay.toLocaleString('en-US', {minimumFractionDigits:2}) }}
                                         </td>
                                         <td class="p-4 text-center pr-6">
-                                            <span v-if="disp.status === 'paid'" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold border border-emerald-200">
-                                                <i class="fa-solid fa-check mr-1"></i> PAGADO
+                                            <span v-if="disp.status === 'paid'" class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-md text-[10px] font-bold border border-emerald-200">
+                                                PAGADO
                                             </span>
-                                            <span v-else class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold border border-amber-200">
-                                                <i class="fa-solid fa-clock mr-1"></i> PENDIENTE
+                                            <span v-else class="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-md text-[10px] font-bold border border-amber-200">
+                                                PENDIENTE
                                             </span>
                                         </td>
                                     </tr>
@@ -4838,11 +5170,53 @@
                                 <span v-else>Comisión POS inactiva (valor = 0)</span>
                             </div>
                         </div>
+
+                        <!-- #3 Comisión Interna (se descuenta al negocio en el corte, NO al cliente) -->
+                        <div class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/50 rounded-2xl p-4 sm:col-span-2">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-300 flex-shrink-0">
+                                    <i class="fa-solid fa-building-columns text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">Comisión Interna <span class="text-[10px] font-normal text-rose-500">(Nueva)</span></p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400">Se descuenta al negocio en el corte de dispersión. <strong>No se cobra al cliente.</strong></p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                    <select v-model="saasForm.commissionInternalType"
+                                        class="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-rose-400 outline-none transition">
+                                        <option value="percent">% Porcentaje</option>
+                                        <option value="fixed">$ Monto Fijo</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                        {{ saasForm.commissionInternalType === 'percent' ? 'Porcentaje (%)' : 'Monto Fijo ($)' }}
+                                    </label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold">
+                                            {{ saasForm.commissionInternalType === 'percent' ? '%' : '$' }}
+                                        </span>
+                                        <input v-model.number="saasForm.commissionInternalAmount" type="number" min="0" step="0.01"
+                                            placeholder="0"
+                                            class="w-full pl-7 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-rose-400 outline-none transition">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg"
+                                :class="saasForm.commissionInternalAmount > 0 ? 'text-rose-600 dark:text-rose-300 bg-rose-100 dark:bg-rose-800/40' : 'text-slate-500 bg-slate-100 dark:bg-slate-700'">
+                                <i :class="saasForm.commissionInternalAmount > 0 ? 'fa-solid fa-building-columns' : 'fa-solid fa-ban'"></i>
+                                <span v-if="saasForm.commissionInternalAmount > 0">
+                                    Se descuenta {{ saasForm.commissionInternalType === 'percent' ? saasForm.commissionInternalAmount + '%' : '$' + saasForm.commissionInternalAmount }} al negocio en el corte (invisible para el cliente)
+                                </span>
+                                <span v-else>Comisión interna inactiva (valor = 0)</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- OPCIONES DE METODOS DE PAGO -->
-
+                
                 <!-- TRENDING -->
                 <div v-if="editingBusiness">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Visibilidad en Marketplace</p>

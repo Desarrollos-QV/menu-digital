@@ -236,6 +236,7 @@ exports.createBusiness = async (req, res) => {
     const { businessName, ownerEmail, username, password, plan,
             commissionWebType, commissionWebAmount,
             commissionPosType, commissionPosAmount,
+            commissionInternalType, commissionInternalAmount,
             acceptCash, acceptCard } = req.body;
     
     try {
@@ -252,10 +253,12 @@ exports.createBusiness = async (req, res) => {
             ownerEmail: ownerEmail,
             slug: businessName.toLowerCase().replace(/ /g, '-'),
             plan: plan || 'free',
-            commissionWebType:   commissionWebType   || 'percent',
-            commissionWebAmount: commissionWebAmount  ?? 0,
-            commissionPosType:   commissionPosType   || 'percent',
-            commissionPosAmount: commissionPosAmount  ?? 0,
+            commissionWebType:        commissionWebType        || 'percent',
+            commissionWebAmount:      commissionWebAmount       ?? 0,
+            commissionPosType:        commissionPosType        || 'percent',
+            commissionPosAmount:      commissionPosAmount       ?? 0,
+            commissionInternalType:   commissionInternalType   || 'percent',
+            commissionInternalAmount: commissionInternalAmount  ?? 0,
             acceptCash: cashEnabled,
             acceptCard: cardEnabled
         });
@@ -290,6 +293,7 @@ exports.updateBusiness = async (req, res) => {
                 lat, lng, allowDelivery, allowPickup, allowOnlineOrders,
                 commissionWebType, commissionWebAmount,
                 commissionPosType, commissionPosAmount,
+                commissionInternalType, commissionInternalAmount,
                 acceptCash, acceptCard } = req.body;
 
         // Validar métodos de pago (solo si se envían)
@@ -317,10 +321,12 @@ exports.updateBusiness = async (req, res) => {
         if (allowPickup       !== undefined) updateData.allowPickup       = allowPickup;
         if (allowOnlineOrders !== undefined) updateData.allowOnlineOrders = allowOnlineOrders;
         // Comisiones
-        if (commissionWebType   !== undefined) updateData.commissionWebType   = commissionWebType;
-        if (commissionWebAmount !== undefined) updateData.commissionWebAmount = commissionWebAmount;
-        if (commissionPosType   !== undefined) updateData.commissionPosType   = commissionPosType;
-        if (commissionPosAmount !== undefined) updateData.commissionPosAmount = commissionPosAmount;
+        if (commissionWebType       !== undefined) updateData.commissionWebType       = commissionWebType;
+        if (commissionWebAmount     !== undefined) updateData.commissionWebAmount     = commissionWebAmount;
+        if (commissionPosType       !== undefined) updateData.commissionPosType       = commissionPosType;
+        if (commissionPosAmount     !== undefined) updateData.commissionPosAmount     = commissionPosAmount;
+        if (commissionInternalType  !== undefined) updateData.commissionInternalType  = commissionInternalType;
+        if (commissionInternalAmount !== undefined) updateData.commissionInternalAmount = commissionInternalAmount;
         // Métodos de pago
         if (acceptCash !== undefined) updateData.acceptCash = acceptCash;
         if (acceptCard !== undefined) updateData.acceptCard = acceptCard;

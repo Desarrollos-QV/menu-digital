@@ -52,10 +52,13 @@ const businessSchema = new mongoose.Schema({
         primaryColor: { type: String, default: '#6366f1' }
     },
     // Comisiones SaaS
-    commissionWebType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
-    commissionWebAmount: { type: Number, default: 0, min: 0 }, // % o monto fijo por venta WebApp
-    commissionPosType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
-    commissionPosAmount: { type: Number, default: 0, min: 0 }, // % o monto fijo por venta POS (0 = inactivo)
+    commissionWebType:        { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+    commissionWebAmount:      { type: Number, default: 0, min: 0 }, // % o monto fijo cobrado AL CLIENTE en WebApp
+    commissionPosType:        { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+    commissionPosAmount:      { type: Number, default: 0, min: 0 }, // % o monto fijo por venta POS (0 = inactivo)
+    // Comisión Interna: se descuenta al negocio en la dispersión, NO se cobra al cliente
+    commissionInternalType:   { type: String, enum: ['percent', 'fixed'], default: 'percent' },
+    commissionInternalAmount: { type: Number, default: 0, min: 0 }, // % o monto fijo a descontar en corte
     // Deuda y pagos de comisiones
     commissionDebt: { type: Number, default: 0, min: 0 }, // Monto total adeudado al admin SaaS
     commissionPayments: [{

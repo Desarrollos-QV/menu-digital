@@ -80,10 +80,12 @@ export function useSaas() {
         acceptCash: true,
         acceptCard: true,
         // Comisiones
-        commissionWebType:   'percent',
-        commissionWebAmount: 0,
-        commissionPosType:   'percent',
-        commissionPosAmount: 0,
+        commissionWebType:        'percent',
+        commissionWebAmount:      0,
+        commissionPosType:        'percent',
+        commissionPosAmount:      0,
+        commissionInternalType:   'percent',
+        commissionInternalAmount: 0,
         _stats: null
     };
     const saasForm = ref({ ...defaultForm });
@@ -112,10 +114,12 @@ export function useSaas() {
                 acceptCash: business.acceptCash !== false,
                 acceptCard: business.acceptCard !== false,
                 // Comisiones
-                commissionWebType:   business.commissionWebType   || 'percent',
-                commissionWebAmount: business.commissionWebAmount  ?? 0,
-                commissionPosType:   business.commissionPosType   || 'percent',
-                commissionPosAmount: business.commissionPosAmount  ?? 0,
+                commissionWebType:        business.commissionWebType        || 'percent',
+                commissionWebAmount:      business.commissionWebAmount       ?? 0,
+                commissionPosType:        business.commissionPosType        || 'percent',
+                commissionPosAmount:      business.commissionPosAmount       ?? 0,
+                commissionInternalType:   business.commissionInternalType   || 'percent',
+                commissionInternalAmount: business.commissionInternalAmount  ?? 0,
                 username: '---',
                 password: '',
                 _stats: {
@@ -174,10 +178,12 @@ export function useSaas() {
                     acceptCash:          saasForm.value.acceptCash,
                     acceptCard:          saasForm.value.acceptCard,
                     // Comisiones
-                    commissionWebType:   saasForm.value.commissionWebType,
-                    commissionWebAmount: saasForm.value.commissionWebAmount,
-                    commissionPosType:   saasForm.value.commissionPosType,
-                    commissionPosAmount: saasForm.value.commissionPosAmount
+                    commissionWebType:        saasForm.value.commissionWebType,
+                    commissionWebAmount:      saasForm.value.commissionWebAmount,
+                    commissionPosType:        saasForm.value.commissionPosType,
+                    commissionPosAmount:      saasForm.value.commissionPosAmount,
+                    commissionInternalType:   saasForm.value.commissionInternalType,
+                    commissionInternalAmount: saasForm.value.commissionInternalAmount
                 };
             } else {
                 payload = {
@@ -571,6 +577,37 @@ export function useSaas() {
         dispersionFilterFrom.value = '';
         dispersionFilterTo.value = '';
     };
+
+    // ─── SUMMARY DE DISPERSIONES (Vista Mi Billetera SuperAdmin) ───────────────
+    const dispersionSummary = ref(null);
+    const dispersionSummaryLoading = ref(false);
+    const dispersionSummarySearch = ref('');
+
+    const filteredSummaryBusinesses = computed(() => {
+        if (!dispersionSummary.value?.businessesPending) return [];
+        const q = dispersionSummarySearch.value.toLowerCase();
+        if (!q) return dispersionSummary.value.businessesPending;
+        return dispersionSummary.value.businessesPending.filter(b =>
+            b.name.toLowerCase().includes(q)
+        );
+    });
+
+    const fetchDispersionSummary = async () => {
+        dispersionSummaryLoading.value = true;
+        try {
+            const res = await authFetch('/api/saas/dispersions/summary');
+            if (res.ok) {
+                dispersionSummary.value = await res.json();
+            } else {
+                toastr.error('Error cargando resumen de billetera');
+            }
+        } catch (e) {
+            toastr.error('Error de red al cargar billetera');
+        } finally {
+            dispersionSummaryLoading.value = false;
+        }
+    };
+
     
     // Variables para el form de crear dispersion
     const dispersionForm = ref({
@@ -611,6 +648,74 @@ export function useSaas() {
         }
     };
 
+    // ─── BILLETERA DEL NEGOCIO (Wallet) ───────────────────────────────────────
+    const walletFilterTab = ref('Todo'); 
+    const walletSearch = ref('');
+
+    const filteredWalletDispersions = computed(() => {
+        let list = dispersions.value;
+
+        if (walletSearch.value) {
+            const q = walletSearch.value.toLowerCase();
+            list = list.filter(d => (d._id && d._id.toLowerCase().includes(q)));
+        }
+
+        const now = new Date();
+        if (walletFilterTab.value === 'Hoy') {
+            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            list = list.filter(d => new Date(d.createdAt) >= start);
+        } else if (walletFilterTab.value === 'Esta semana') {
+            const start = new Date(now);
+            start.setDate(now.getDate() - now.getDay());
+            start.setHours(0,0,0,0);
+            list = list.filter(d => new Date(d.createdAt) >= start);
+        } else if (walletFilterTab.value === 'Este mes') {
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            list = list.filter(d => new Date(d.createdAt) >= start);
+        } else if (walletFilterTab.value === 'Últimos 3 meses') {
+            const start = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+            list = list.filter(d => new Date(d.createdAt) >= start);
+        }
+
+        return list;
+    });
+
+    const walletStats = computed(() => {
+        const stats = {
+            saldoDisponible: 0, 
+            saldoPendiente: 0,
+            ventasTotales: 0,
+            pedidos: 0,
+            comisionPlataforma: 0,
+            pagosEntregados: 0,
+            montoARecibir: 0,
+            nextPaymentDate: null
+        };
+
+        const list = dispersions.value; 
+        
+        list.forEach(d => {
+            stats.ventasTotales += d.totalSales || 0;
+            stats.pedidos += d.totalOrders || 0;
+            stats.comisionPlataforma += d.commissionTotal || 0;
+
+            if (d.status === 'paid') {
+                stats.pagosEntregados += d.netToPay || 0;
+            } else {
+                stats.saldoPendiente += d.netToPay || 0;
+                stats.montoARecibir += d.netToPay || 0;
+            }
+        });
+
+        const today = new Date();
+        const nextCut = new Date(today);
+        nextCut.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7 || 7)); // Proximo Lunes
+        stats.nextPaymentDate = nextCut;
+
+        return stats;
+    });
+
+
     const previewDispersion = async () => {
         if (!dispersionForm.value.businessId || !dispersionForm.value.periodStart || !dispersionForm.value.periodEnd) {
             return toastr.warning('Faltan datos para la previsualización');
@@ -643,9 +748,30 @@ export function useSaas() {
                 showCreateDispersionModal.value = false;
                 dispersionPreview.value = null;
                 fetchDispersionsAdmin();
+                fetchDispersionSummary(); // Para refrescar la tabla de negocios pendientes
             } else {
                 const err = await res.json();
                 toastr.error(err.message || 'Error al generar dispersión');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        }
+    };
+
+    const quickCut = async (businessId, periodStart, periodEnd) => {
+        if (!confirm('¿Seguro que deseas generar el corte para este negocio?')) return;
+        try {
+            const res = await authFetch('/api/saas/dispersions', {
+                method: 'POST',
+                body: JSON.stringify({ businessId, periodStart, periodEnd })
+            });
+            if (res.ok) {
+                toastr.success('Corte rápido generado exitosamente');
+                fetchDispersionsAdmin();
+                fetchDispersionSummary(); // Refrescar la tabla "listos para corte"
+            } else {
+                const err = await res.json();
+                toastr.error(err.message || 'Error al generar corte');
             }
         } catch (e) {
             toastr.error('Error de conexión');
@@ -751,6 +877,7 @@ export function useSaas() {
         fetchMyDispersions,
         previewDispersion,
         submitCreateDispersion,
+        quickCut,
         payDispersion,
         // Filtros de dispersiones
         dispersionFilterBiz,
@@ -758,6 +885,18 @@ export function useSaas() {
         dispersionFilterFrom,
         dispersionFilterTo,
         filteredDispersions,
-        clearDispersionFilters
+        clearDispersionFilters,
+        // Summary (Mi Billetera SuperAdmin)
+        dispersionSummary,
+        dispersionSummaryLoading,
+        dispersionSummarySearch,
+        filteredSummaryBusinesses,
+        fetchDispersionSummary,
+        // Billetera del Negocio
+        walletFilterTab,
+        walletSearch,
+        filteredWalletDispersions,
+        walletStats
     };
+
 }
