@@ -559,6 +559,93 @@ export function useSaas() {
     const dispersionFilterFrom = ref('');
     const dispersionFilterTo = ref('');
 
+    // ─── FILTRO DE PERIODO PARA VISTA PRINCIPAL ──────────────────────────────
+    const _nowDisp = new Date();
+    const _firstOfMonth = new Date(_nowDisp.getFullYear(), _nowDisp.getMonth(), 1).toISOString().split('T')[0];
+    const _lastOfMonth  = new Date(_nowDisp.getFullYear(), _nowDisp.getMonth() + 1, 0).toISOString().split('T')[0];
+    const dispPeriodFrom = ref(_firstOfMonth);
+    const dispPeriodTo   = ref(_lastOfMonth);
+    const dispPeriodShortcut = ref('Este mes');
+
+    const setDispPeriodShortcut = (shortcut) => {
+        const n = new Date();
+        dispPeriodShortcut.value = shortcut;
+        if (shortcut === 'Hoy') {
+            const d = n.toISOString().split('T')[0];
+            dispPeriodFrom.value = d; dispPeriodTo.value = d;
+        } else if (shortcut === 'Últimos 7 días') {
+            const to = n.toISOString().split('T')[0];
+            const from = new Date(n); from.setDate(n.getDate() - 6);
+            dispPeriodFrom.value = from.toISOString().split('T')[0]; dispPeriodTo.value = to;
+        } else if (shortcut === 'Este mes') {
+            dispPeriodFrom.value = new Date(n.getFullYear(), n.getMonth(), 1).toISOString().split('T')[0];
+            dispPeriodTo.value   = new Date(n.getFullYear(), n.getMonth() + 1, 0).toISOString().split('T')[0];
+        } else if (shortcut === 'Mes anterior') {
+            dispPeriodFrom.value = new Date(n.getFullYear(), n.getMonth() - 1, 1).toISOString().split('T')[0];
+            dispPeriodTo.value   = new Date(n.getFullYear(), n.getMonth(), 0).toISOString().split('T')[0];
+        }
+    };
+
+    // Agrupación de dispersiones por día (para la tabla principal)
+    const dispersionsByDay = computed(() => {
+        const from = dispPeriodFrom.value ? new Date(dispPeriodFrom.value + 'T00:00:00') : null;
+        const to   = dispPeriodTo.value   ? new Date(dispPeriodTo.value   + 'T23:59:59') : null;
+
+        const filtered = dispersions.value.filter(d => {
+            const created = new Date(d.createdAt);
+            const inRange = (!from || created >= from) && (!to || created <= to);
+            return inRange;
+        });
+
+        // Agrupar por día (YYYY-MM-DD de periodEnd, que es el día del corte)
+        const map = {};
+        filtered.forEach(d => {
+            const dayKey = d.createdAt ? new Date(d.createdAt).toISOString().split('T')[0] : 'unknown';
+            if (!map[dayKey]) {
+                map[dayKey] = {
+                    date: dayKey,
+                    totalOrders: 0,
+                    totalSales: 0,
+                    commissionTotal: 0,
+                    stripeFees: 0,
+                    netToPay: 0,
+                    restaurants: [],
+                    pendingCount: 0,
+                    expanded: false
+                };
+            }
+            const g = map[dayKey];
+            g.totalOrders    += d.totalOrders || 0;
+            g.totalSales     += d.cardSales || d.totalSales || 0;
+            g.commissionTotal+= d.commissionTotal || 0;
+            g.stripeFees     += d.stripeFees || 0;
+            g.netToPay       += d.netToPay || 0;
+            if (d.status !== 'paid') g.pendingCount++;
+            g.restaurants.push(d);
+        });
+
+        return Object.values(map).sort((a, b) => b.date.localeCompare(a.date));
+    });
+
+    // KPIs del periodo de análisis seleccionado
+    const dispersionPeriodKpis = computed(() => {
+        const kpis = { totalCobrado: 0, commissionTH: 0, commissionStripe: 0, totalToDisperse: 0 };
+        dispersionsByDay.value.forEach(day => {
+            kpis.totalCobrado      += day.totalSales;
+            kpis.commissionTH      += day.commissionTotal;
+            kpis.commissionStripe  += day.stripeFees;
+            kpis.totalToDisperse   += day.netToPay;
+        });
+        return kpis;
+    });
+
+    // Estado de filas expandidas en la tabla por día
+    const expandedDays = ref({});
+    const toggleDayExpand = (dateKey) => {
+        expandedDays.value[dateKey] = !expandedDays.value[dateKey];
+    };
+
+
     const filteredDispersions = computed(() => {
         return dispersions.value.filter(d => {
             const bizName = d.businessId?.name || '';
@@ -583,6 +670,9 @@ export function useSaas() {
     const dispersionSummaryLoading = ref(false);
     const dispersionSummarySearch = ref('');
 
+    const summaryPage = ref(1);
+    const SUMMARY_PAGE_SIZE = 6;
+
     const filteredSummaryBusinesses = computed(() => {
         if (!dispersionSummary.value?.businessesPending) return [];
         const q = dispersionSummarySearch.value.toLowerCase();
@@ -591,6 +681,22 @@ export function useSaas() {
             b.name.toLowerCase().includes(q)
         );
     });
+
+    const summaryTotalPages = computed(() =>
+        Math.max(1, Math.ceil(filteredSummaryBusinesses.value.length / SUMMARY_PAGE_SIZE))
+    );
+
+    const pagedSummaryBusinesses = computed(() => {
+        const start = (summaryPage.value - 1) * SUMMARY_PAGE_SIZE;
+        return filteredSummaryBusinesses.value.slice(start, start + SUMMARY_PAGE_SIZE);
+    });
+
+    const setSummaryPage = (p) => {
+        summaryPage.value = Math.min(Math.max(1, p), summaryTotalPages.value);
+    };
+
+    // Reset page on search change
+    const _watchSummarySearch = (newVal) => { summaryPage.value = 1; };
 
     const fetchDispersionSummary = async () => {
         dispersionSummaryLoading.value = true;
@@ -780,6 +886,9 @@ export function useSaas() {
 
     const payDispersion = async (id, reference) => {
         try {
+            // Buscar la dispersión para extraer info del negocio
+            const dispersion = dispersions.value.find(d => d._id === id);
+
             const res = await authFetch(`/api/saas/dispersions/${id}/pay`, {
                 method: 'PUT',
                 body: JSON.stringify({ reference })
@@ -787,10 +896,63 @@ export function useSaas() {
             if (res.ok) {
                 toastr.success('Dispersión marcada como pagada');
                 fetchDispersionsAdmin();
+
+                // Magia: Generar notificación de WhatsApp si el negocio tiene teléfono
+                if (dispersion && dispersion.businessId && dispersion.businessId.phone) {
+                    const phone = dispersion.businessId.phone.replace(/\D/g, ''); // Solo números
+                    const amount = (dispersion.netToPay || 0).toLocaleString('en-US', {minimumFractionDigits:2});
+                    const total = (dispersion.totalSales || 0).toLocaleString('en-US', {minimumFractionDigits:2});
+                    const comm = ((dispersion.commissionTotal || 0) + (dispersion.stripeFees || 0)).toLocaleString('en-US', {minimumFractionDigits:2});
+                    
+                    const msg = `Hola *${dispersion.businessId.name}*! 🍔\n\nTe confirmamos que tu corte por *$${amount}* ya fue depositado o transferido.\n\n📊 *Resumen del Corte:*\n- Ventas Totales: $${total}\n- Comisiones retenidas: -$${comm}\n- *Total Depositado: $${amount}*\n\n¡Gracias por ser parte de Tengo Hambre! 🚀`;
+                    
+                    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+                    
+                    // Abrimos WhatsApp Web/App en otra pestaña
+                    window.open(waUrl, '_blank');
+                } else {
+                    toastr.info('No se pudo enviar WhatsApp (El negocio no tiene teléfono registrado)');
+                }
             }
         } catch (e) {
             toastr.error('Error al pagar dispersión');
         }
+    };
+
+    const exportDispersionsCSV = () => {
+        if (!dispersionsByDay.value || dispersionsByDay.value.length === 0) {
+            return toastr.warning('No hay datos para exportar en este periodo');
+        }
+
+        let csvString = "Fecha de Corte,Negocio,Pedidos,Ventas Totales,Comision TH,Comision Stripe,Monto a Dispersar,Estatus\n";
+
+        dispersionsByDay.value.forEach(day => {
+            day.restaurants.forEach(d => {
+                const date = new Date(d.createdAt).toLocaleDateString('es-MX');
+                const bizName = `"${(d.businessId?.name || 'Desconocido').replace(/"/g, '""')}"`;
+                const orders = d.totalOrders || 0;
+                const sales = (d.totalSales || 0).toFixed(2);
+                const commTH = (d.commissionTotal || 0).toFixed(2);
+                const commStripe = (d.stripeFees || 0).toFixed(2);
+                const net = (d.netToPay || 0).toFixed(2);
+                const status = d.status === 'paid' ? 'Pagado' : 'Pendiente';
+
+                csvString += `${date},${bizName},${orders},${sales},${commTH},${commStripe},${net},${status}\n`;
+            });
+        });
+
+        // Use Blob for proper encoding including UTF-8 BOM so Excel opens it correctly
+        const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Reporte_Dispersiones_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toastr.success('Reporte financiero exportado exitosamente');
     };
 
     return {
@@ -879,6 +1041,7 @@ export function useSaas() {
         submitCreateDispersion,
         quickCut,
         payDispersion,
+        exportDispersionsCSV,
         // Filtros de dispersiones
         dispersionFilterBiz,
         dispersionFilterStatus,
@@ -886,11 +1049,24 @@ export function useSaas() {
         dispersionFilterTo,
         filteredDispersions,
         clearDispersionFilters,
+        // Periodo de análisis
+        dispPeriodFrom,
+        dispPeriodTo,
+        dispPeriodShortcut,
+        setDispPeriodShortcut,
+        dispersionsByDay,
+        dispersionPeriodKpis,
+        expandedDays,
+        toggleDayExpand,
         // Summary (Mi Billetera SuperAdmin)
         dispersionSummary,
         dispersionSummaryLoading,
         dispersionSummarySearch,
         filteredSummaryBusinesses,
+        pagedSummaryBusinesses,
+        summaryPage,
+        summaryTotalPages,
+        setSummaryPage,
         fetchDispersionSummary,
         // Billetera del Negocio
         walletFilterTab,

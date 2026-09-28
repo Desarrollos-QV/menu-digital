@@ -127,6 +127,7 @@ exports.createDispersion = async (req, res) => {
         let cashSales = 0;
         let deliveryFees = 0;
         let commissionTotal = 0;
+        let stripeFees = 0;
 
         orders.forEach(o => {
             let orderSubtotal = o.subtotal || 0; 
@@ -226,7 +227,7 @@ exports.listDispersionsAdmin = async (req, res) => {
         if (req.query.businessId) {
             query.businessId = req.query.businessId;
         }
-        const dispersions = await Dispersion.find(query).populate('businessId', 'name slug').sort({ createdAt: -1 });
+        const dispersions = await Dispersion.find(query).populate('businessId', 'name slug phone').sort({ createdAt: -1 });
         res.json(dispersions);
     } catch (e) {
         res.status(500).json({ error: e.message });
