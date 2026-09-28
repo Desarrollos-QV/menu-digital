@@ -597,7 +597,7 @@ createApp({
                 if (item.view === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
                 if (item.view === 'saas_dispersions') {
                     saas.fetchBusinesses();
-                    saas.fetchDispersionsAdmin();
+                    saas.fetchDailySales();
                     saas.fetchDispersionSummary();
                 }
 
@@ -1360,7 +1360,7 @@ createApp({
                     if (currentView.value === 'saas_frequent_customers') saas.fetchFrequentCustomers(1);
                     if (currentView.value === 'saas_dispersions') {
                         saas.fetchBusinesses();
-                        saas.fetchDispersionsAdmin();
+                        saas.fetchDailySales();
                     }
                     if (currentView.value === 'ads') { banners.fetchBanners(); froods.fetchFroods(); }
                     if (currentView.value === 'media') media.fetchMedia();

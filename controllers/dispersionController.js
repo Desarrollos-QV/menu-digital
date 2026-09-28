@@ -397,3 +397,254 @@ exports.getDispersionSummary = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 };
+exports.getDailySales = async (req, res) => {
+    try {
+        const { start, end } = req.query;
+        if (!start || !end) return res.status(400).json({ message: 'start y end requeridos' });
+
+        const startDate = new Date(start + 'T00:00:00');
+        const endDate = new Date(end + 'T23:59:59.999');
+
+        const orders = await Order.find({
+            createdAt: { $gte: startDate, $lte: endDate },
+            paymentMethod: { $in: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] },
+            $or: [
+                { status: { $in: ['completed', 'delivered', 'ready'] } },
+                { stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+            ]
+        }).populate('businessId', 'name slug phone commissionInternalAmount commissionInternalType commissionWebType commissionWebAmount').populate('dispersionId', 'status');
+
+        const STRIPE_FEE_PERCENT = parseFloat(process.env.STRIPE_FEE_PERCENT) || 4.1;
+        const STRIPE_FEE_FIXED = parseFloat(process.env.STRIPE_FEE_FIXED) || 3;
+
+        const days = {};
+
+        orders.forEach(o => {
+            const biz = o.businessId;
+            if (!biz) return;
+            const dayKey = new Date(o.createdAt).toLocaleDateString('en-CA'); // YYYY-MM-DD local
+            
+            if (!days[dayKey]) {
+                days[dayKey] = {
+                    date: dayKey,
+                    totalOrders: 0,
+                    totalSales: 0,
+                    commissionTotal: 0,
+                    stripeFees: 0,
+                    netToPay: 0,
+                    pendingCount: 0,
+                    restaurants: {}
+                };
+            }
+            
+            const g = days[dayKey];
+            const bizId = String(biz._id);
+
+            if (!g.restaurants[bizId]) {
+                g.restaurants[bizId] = {
+                    businessId: { _id: bizId, name: biz.name, phone: biz.phone },
+                    totalOrders: 0,
+                    totalSales: 0,
+                    cardSales: 0,
+                    commissionTotal: 0,
+                    stripeFees: 0,
+                    netToPay: 0,
+                    status: 'paid', // asumimos paid hasta que encontremos un pending
+                    _date: dayKey
+                };
+            }
+            const r = g.restaurants[bizId];
+
+            let orderSubtotal = o.subtotal || 0;
+            let orderTotal = o.total || 0;
+
+            r.totalOrders++;
+            r.totalSales += orderSubtotal;
+            r.cardSales += orderTotal;
+
+            // Comision Web
+            let webComm = 0;
+            if (o.commission && o.commission.amount) {
+                webComm = o.commission.amount;
+            } else {
+                if (biz.commissionWebType === 'percent') {
+                    webComm = (orderSubtotal * (biz.commissionWebAmount / 100));
+                } else {
+                    webComm = (biz.commissionWebAmount || 0);
+                }
+            }
+
+            // Comision Interna
+            let intComm = 0;
+            if (biz.commissionInternalAmount > 0) {
+                if (biz.commissionInternalType === 'percent') {
+                    intComm = (orderSubtotal * (biz.commissionInternalAmount / 100));
+                } else {
+                    intComm = biz.commissionInternalAmount;
+                }
+            }
+            
+            const totalComm = webComm + intComm;
+            r.commissionTotal += totalComm;
+
+            // Stripe fee
+            let sFee = 0;
+            if (orderTotal > 0) {
+                sFee = (orderTotal * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
+                sFee = sFee * 1.16; // IVA
+            }
+            r.stripeFees += sFee;
+
+            r.netToPay += (orderTotal - totalComm - sFee);
+
+            // Verificar si este pedido esta pagado
+            // Esta pagado si tiene un dispersionId y el status del dispersion es 'paid'
+            const isOrderPaid = o.dispersionId && o.dispersionId.status === 'paid';
+            if (!isOrderPaid) {
+                r.status = 'pending';
+            }
+        });
+
+        // Convertir diccionarios a arrays
+        const result = Object.values(days).map(day => {
+            let dayPending = 0;
+            let dayTotalSales = 0;
+            let dayComm = 0;
+            let dayStripe = 0;
+            let dayNet = 0;
+            let dayOrders = 0;
+
+            const rests = Object.values(day.restaurants).map(r => {
+                if (r.status === 'pending') dayPending++;
+                dayTotalSales += r.cardSales;
+                dayComm += r.commissionTotal;
+                dayStripe += r.stripeFees;
+                dayNet += r.netToPay;
+                dayOrders += r.totalOrders;
+                return r;
+            });
+            
+            return {
+                date: day.date,
+                totalOrders: dayOrders,
+                totalSales: dayTotalSales,
+                commissionTotal: dayComm,
+                stripeFees: dayStripe,
+                netToPay: dayNet,
+                pendingCount: dayPending,
+                restaurants: rests
+            };
+        });
+
+        // Ordenar de mas reciente a mas antiguo
+        result.sort((a, b) => b.date.localeCompare(a.date));
+
+        res.json(result);
+
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
+
+exports.payDayDispersion = async (req, res) => {
+    try {
+        const { businessId, date, reference } = req.body;
+        if (!businessId || !date) return res.status(400).json({ message: 'businessId y date requeridos' });
+
+        const startDate = new Date(date + 'T00:00:00');
+        const endDate = new Date(date + 'T23:59:59.999');
+
+        const orders = await Order.find({
+            businessId,
+            createdAt: { $gte: startDate, $lte: endDate },
+            paymentMethod: { $in: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] },
+            $or: [
+                { status: { $in: ['completed', 'delivered', 'ready'] } },
+                { stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+            ]
+        }).populate('businessId');
+
+        if (orders.length === 0) return res.status(400).json({ message: 'No hay pedidos validos en este dia' });
+        
+        let totalOrders = 0;
+        let cardSales = 0;
+        let commissionTotal = 0;
+        let stripeFees = 0;
+        
+        const STRIPE_FEE_PERCENT = parseFloat(process.env.STRIPE_FEE_PERCENT) || 4.1;
+        const STRIPE_FEE_FIXED = parseFloat(process.env.STRIPE_FEE_FIXED) || 3;
+
+        const business = orders[0].businessId;
+
+        const ordersToCut = orders.filter(o => !o.dispersionId);
+        let dispersionCreated = null;
+        
+        if (ordersToCut.length > 0) {
+            ordersToCut.forEach(o => {
+                let orderSubtotal = o.subtotal || 0;
+                let orderTotal = o.total || 0;
+                totalOrders++;
+                cardSales += orderTotal;
+
+                let webComm = o.commission?.amount || (business.commissionWebType === 'percent' ? (orderSubtotal * (business.commissionWebAmount / 100)) : (business.commissionWebAmount || 0));
+                let intComm = business.commissionInternalAmount > 0 ? (business.commissionInternalType === 'percent' ? (orderSubtotal * (business.commissionInternalAmount / 100)) : business.commissionInternalAmount) : 0;
+                commissionTotal += (webComm + intComm);
+
+                let sFee = 0;
+                if (orderTotal > 0) {
+                    sFee = (orderTotal * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
+                    sFee = sFee * 1.16; 
+                }
+                stripeFees += sFee;
+            });
+
+            const netToPay = cardSales - commissionTotal - stripeFees;
+
+            dispersionCreated = new Dispersion({
+                businessId,
+                periodStart: startDate,
+                periodEnd: endDate,
+                totalOrders,
+                totalSales: cardSales,
+                cardSales,
+                cashSales: 0,
+                deliveryFees: 0,
+                commissionTotal,
+                stripeFees,
+                netToPay,
+                status: 'paid',
+                paidAt: new Date(),
+                reference: reference || 'PAGO DIARIO',
+                createdBy: req.user ? req.user.id : null
+            });
+            await dispersionCreated.save();
+
+            await Order.updateMany(
+                { _id: { $in: ordersToCut.map(o => o._id) } },
+                { $set: { dispersionId: dispersionCreated._id } }
+            );
+        }
+
+        // Ademas si habia ordenes q ya tenian dispersionId pero estaba en pending, la ponemos en paid
+        const dispersionIds = [...new Set(orders.filter(o => o.dispersionId).map(o => String(o.dispersionId._id || o.dispersionId)))];
+        if (dispersionIds.length > 0) {
+            await Dispersion.updateMany(
+                { _id: { $in: dispersionIds }, status: 'pending' },
+                { $set: { status: 'paid', paidAt: new Date(), reference: reference || 'PAGO DIARIO' } }
+            );
+            
+            if (!dispersionCreated) {
+                dispersionCreated = await Dispersion.findById(dispersionIds[0]).populate('businessId');
+            }
+        }
+        
+        if (dispersionCreated && !dispersionCreated.populated('businessId')) {
+             await dispersionCreated.populate('businessId');
+        }
+
+        res.json({ success: true, dispersion: dispersionCreated });
+
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};

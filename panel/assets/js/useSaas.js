@@ -587,45 +587,22 @@ export function useSaas() {
     };
 
     // Agrupación de dispersiones por día (para la tabla principal)
-    const dispersionsByDay = computed(() => {
-        const from = dispPeriodFrom.value ? new Date(dispPeriodFrom.value + 'T00:00:00') : null;
-        const to   = dispPeriodTo.value   ? new Date(dispPeriodTo.value   + 'T23:59:59') : null;
+    const dispersionsByDay = ref([]);
 
-        const filtered = dispersions.value.filter(d => {
-            const created = new Date(d.createdAt);
-            const inRange = (!from || created >= from) && (!to || created <= to);
-            return inRange;
-        });
-
-        // Agrupar por día (YYYY-MM-DD de periodEnd, que es el día del corte)
-        const map = {};
-        filtered.forEach(d => {
-            const dayKey = d.createdAt ? new Date(d.createdAt).toISOString().split('T')[0] : 'unknown';
-            if (!map[dayKey]) {
-                map[dayKey] = {
-                    date: dayKey,
-                    totalOrders: 0,
-                    totalSales: 0,
-                    commissionTotal: 0,
-                    stripeFees: 0,
-                    netToPay: 0,
-                    restaurants: [],
-                    pendingCount: 0,
-                    expanded: false
-                };
+    const fetchDailySales = async () => {
+        if (!dispPeriodFrom.value || !dispPeriodTo.value) return;
+        dispersionsLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/dispersions/daily-sales?start=${dispPeriodFrom.value}&end=${dispPeriodTo.value}`);
+            if (res.ok) {
+                dispersionsByDay.value = await res.json();
             }
-            const g = map[dayKey];
-            g.totalOrders    += d.totalOrders || 0;
-            g.totalSales     += d.cardSales || d.totalSales || 0;
-            g.commissionTotal+= d.commissionTotal || 0;
-            g.stripeFees     += d.stripeFees || 0;
-            g.netToPay       += d.netToPay || 0;
-            if (d.status !== 'paid') g.pendingCount++;
-            g.restaurants.push(d);
-        });
-
-        return Object.values(map).sort((a, b) => b.date.localeCompare(a.date));
-    });
+        } catch (e) {
+            toastr.error('Error cargando ventas diarias');
+        } finally {
+            dispersionsLoading.value = false;
+        }
+    };
 
     // KPIs del periodo de análisis seleccionado
     const dispersionPeriodKpis = computed(() => {
@@ -853,7 +830,7 @@ export function useSaas() {
                 toastr.success('Corte de dispersión generado exitosamente');
                 showCreateDispersionModal.value = false;
                 dispersionPreview.value = null;
-                fetchDispersionsAdmin();
+                fetchDailySales();
                 fetchDispersionSummary(); // Para refrescar la tabla de negocios pendientes
             } else {
                 const err = await res.json();
@@ -873,7 +850,7 @@ export function useSaas() {
             });
             if (res.ok) {
                 toastr.success('Corte rápido generado exitosamente');
-                fetchDispersionsAdmin();
+                fetchDailySales();
                 fetchDispersionSummary(); // Refrescar la tabla "listos para corte"
             } else {
                 const err = await res.json();
@@ -895,7 +872,8 @@ export function useSaas() {
             });
             if (res.ok) {
                 toastr.success('Dispersión marcada como pagada');
-                fetchDispersionsAdmin();
+                fetchDailySales();
+                fetchDispersionSummary();
 
                 // Magia: Generar notificación de WhatsApp si el negocio tiene teléfono
                 if (dispersion && dispersion.businessId && dispersion.businessId.phone) {
@@ -919,6 +897,40 @@ export function useSaas() {
         }
     };
 
+    const payDay = async (businessId, date, reference) => {
+        try {
+            const res = await authFetch(`/api/saas/dispersions/pay-day`, {
+                method: 'POST',
+                body: JSON.stringify({ businessId, date, reference })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                toastr.success('Corte diario generado y pagado');
+                fetchDailySales();
+                fetchDispersionSummary();
+
+                // Notificacion WhatsApp
+                const disp = data.dispersion;
+                if (disp && disp.businessId && disp.businessId.phone) {
+                    const phone = disp.businessId.phone.replace(/\D/g, ''); 
+                    const amount = (disp.netToPay || 0).toLocaleString('en-US', {minimumFractionDigits:2});
+                    const total = (disp.totalSales || 0).toLocaleString('en-US', {minimumFractionDigits:2});
+                    const comm = ((disp.commissionTotal || 0) + (disp.stripeFees || 0)).toLocaleString('en-US', {minimumFractionDigits:2});
+                    
+                    const msg = `Hola *${disp.businessId.name}*! 🍔\n\nTe confirmamos que tu corte diario (Ventas del ${date}) por *$${amount}* ya fue depositado o transferido.\n\n📊 *Resumen del Corte:*\n- Ventas Totales: $${total}\n- Comisiones retenidas: -$${comm}\n- *Total Depositado: $${amount}*\n\n¡Gracias por ser parte de Tengo Hambre! 🚀`;
+                    
+                    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+                    window.open(waUrl, '_blank');
+                }
+            } else {
+                const err = await res.json();
+                toastr.error(err.message || 'Error al procesar pago diario');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        }
+    };
+
     const exportDispersionsCSV = () => {
         if (!dispersionsByDay.value || dispersionsByDay.value.length === 0) {
             return toastr.warning('No hay datos para exportar en este periodo');
@@ -928,10 +940,10 @@ export function useSaas() {
 
         dispersionsByDay.value.forEach(day => {
             day.restaurants.forEach(d => {
-                const date = new Date(d.createdAt).toLocaleDateString('es-MX');
+                const date = new Date(day.date + 'T12:00:00').toLocaleDateString('es-MX');
                 const bizName = `"${(d.businessId?.name || 'Desconocido').replace(/"/g, '""')}"`;
                 const orders = d.totalOrders || 0;
-                const sales = (d.totalSales || 0).toFixed(2);
+                const sales = (d.cardSales || d.totalSales || 0).toFixed(2);
                 const commTH = (d.commissionTotal || 0).toFixed(2);
                 const commStripe = (d.stripeFees || 0).toFixed(2);
                 const net = (d.netToPay || 0).toFixed(2);
@@ -1036,11 +1048,13 @@ export function useSaas() {
         dispersionForm,
         dispersionPreview,
         fetchDispersionsAdmin,
+        fetchDailySales,
         fetchMyDispersions,
         previewDispersion,
         submitCreateDispersion,
         quickCut,
         payDispersion,
+        payDay,
         exportDispersionsCSV,
         // Filtros de dispersiones
         dispersionFilterBiz,
