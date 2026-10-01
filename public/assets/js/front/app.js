@@ -574,7 +574,7 @@ createApp({
             }
 
             // --- Bloqueo de Registro ---
-            if (!sharedCust.customer.value) {
+            if (!sharedCust.customer.value && !skipAuthPrompt.value) {
                 authPromptContext.value = 'checkout';
                 pendingCheckout.value = true;
                 
