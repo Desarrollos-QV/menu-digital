@@ -713,6 +713,7 @@ export function useSaas() {
     });
 
     const isCurrentBalanceMonth = computed(() => balanceMonth.value >= _nowMx.substring(0, 7));
+    const isMinBalanceMonth     = computed(() => balanceMonth.value <= '2026-07');
 
     const fetchBalanceSummary = async () => {
         balanceStatsLoading.value = true;
@@ -735,12 +736,15 @@ export function useSaas() {
     const shiftBalanceMonth = (delta) => {
         const [y, m] = balanceMonth.value.split('-').map(Number);
         const d = new Date(y, m - 1 + delta, 1);
-        balanceMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const newMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (newMonth < '2026-07') return; // Bloquear antes de Julio 2026
+        balanceMonth.value = newMonth;
         fetchBalanceSummary();
     };
 
     const setBalanceMonth = (value) => {
         if (!/^\d{4}-\d{2}$/.test(value || '')) return;
+        if (value < '2026-07') value = '2026-07'; // Forzar límite inferior
         balanceMonth.value = value;
         fetchBalanceSummary();
     };
@@ -1180,6 +1184,7 @@ export function useSaas() {
         balanceMonth,
         balanceMonthLabel,
         isCurrentBalanceMonth,
+        isMinBalanceMonth,
         balanceSearch,
         balanceFilter,
         filteredBalanceRows,
