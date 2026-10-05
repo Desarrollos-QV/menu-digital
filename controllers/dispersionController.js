@@ -460,13 +460,14 @@ exports.getBalanceSummary = async (req, res) => {
             const b = byBiz[String(o.businessId)];
             if (!b) return; // órdenes huérfanas de negocios eliminados
 
-            const total    = o.total || 0;
             const subtotal = o.subtotal || 0;
             const isCard   = CARD_METHODS.includes(o.paymentMethod);
             const isPendingDispersion = !o.dispersionId;
 
             b.totalOrders += 1;
-            if (isCard) b.cardSales += total; else b.cashSales += total;
+            
+            // Se usa el subtotal para no incluir costos de envío ni propinas
+            if (isCard) b.cardSales += subtotal; else b.cashSales += subtotal;
 
             // Comisión: % sobre subtotal ó fijo por pedido (nunca ambas)
             let comm = 0;
@@ -476,13 +477,17 @@ exports.getBalanceSummary = async (req, res) => {
             b.commission += comm;
             if (isPendingDispersion) {
                 b.commissionPending += comm;
-                if (isCard) b.cardBalance += total;
+                if (isCard) b.cardBalance += subtotal; // El saldo a favor del restaurante también es sobre el subtotal
             }
         });
 
         // 5. Balance final
         const result = Object.values(byBiz).map(b => {
-            const balance = b.cardBalance - (b.commissionPending + b.maintenance);
+            // El usuario solicitó explícitamente restar el TOTAL de comisiones del mes contra el saldo con tarjeta
+            const balance = b.cardBalance - (b.commission + b.maintenance);
+            
+            // Si balance > 0, significa que Saldo > Deuda (La plataforma le debe dinero al restaurante)
+            // Si balance < 0, significa que Deuda > Saldo (El restaurante le debe dinero a la plataforma)
             return {
                 ...b,
                 cashSales:         r2(b.cashSales),
