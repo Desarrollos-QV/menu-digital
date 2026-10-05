@@ -397,6 +397,138 @@ exports.getDispersionSummary = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 };
+
+// ─── BALANCE POR RESTAURANTE (SuperAdmin → Billetera → Balance) ─────────────
+// Balance = Saldos con Tarjeta (no dispersado) - (Comisión pendiente + Mantenimiento)
+//   > 0  → la plataforma le debe al restaurante
+//   < 0  → el restaurante le debe a la plataforma
+// Comisión: SOLO una por restaurante → % interno (ej. 5%) o fijo por pedido (ej. $5).
+// Query opcional: ?month=YYYY-MM (por defecto el mes actual, hora Monterrey)
+exports.getBalanceSummary = async (req, res) => {
+    try {
+        const tzHelper = require('../helper/timezone');
+        const MAINTENANCE_FEE = parseFloat(process.env.MAINTENANCE_FEE) || 70;
+        const CARD_METHODS = ['card', 'credit_card', 'debit_card', 'online', 'stripe'];
+        const r2 = n => parseFloat((n || 0).toFixed(2));
+
+        // 1. Rango del mes
+        const monthParam = /^\d{4}-\d{2}$/.test(req.query.month || '') ? `${req.query.month}-15` : new Date();
+        const start = tzHelper.getStartOfMonth(monthParam);
+        const end   = tzHelper.getEndOfMonth(monthParam);
+
+        // 2. Órdenes válidas del mes (mismo criterio que Dispersiones)
+        const orders = await Order.find({
+            createdAt: { $gte: start, $lte: end },
+            $or: [
+                { status: { $in: ['completed', 'delivered', 'ready'] } },
+                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+            ]
+        }).select('businessId subtotal total paymentMethod dispersionId').lean();
+
+        // 3. Negocios: activos + cualquiera que haya vendido en el mes
+        const bizIdsWithOrders = [...new Set(orders.map(o => String(o.businessId)).filter(Boolean))];
+        const businesses = await Business.find({
+            $or: [{ active: true }, { _id: { $in: bizIdsWithOrders } }]
+        }).select('name avatar slug active commissionInternalType commissionInternalAmount').lean();
+
+        const byBiz = {};
+        businesses.forEach(b => {
+            const hasComm  = (b.commissionInternalAmount || 0) > 0;
+            const type     = hasComm ? (b.commissionInternalType || 'percent') : 'none';
+            const amount   = b.commissionInternalAmount || 0;
+            byBiz[String(b._id)] = {
+                businessId:        String(b._id),
+                businessName:      b.name || 'Desconocido',
+                avatar:            b.avatar || '',
+                slug:              b.slug || '',
+                commissionType:    type,          // 'percent' | 'fixed' | 'none'
+                commissionValue:   amount,        // 5 (→ 5%) ó 5 (→ $5 por pedido)
+                commissionRate:    type === 'percent' ? `${amount}%` : (type === 'fixed' ? `$${amount} x pedido` : 'Sin comisión'),
+                cashSales:         0,
+                cardSales:         0,
+                totalOrders:       0,
+                commission:        0,             // comisión generada en el mes (informativa)
+                commissionPending: 0,             // comisión de pedidos aún NO dispersados (la que se cobra aquí)
+                maintenance:       MAINTENANCE_FEE,
+                cardBalance:       0,             // ventas con tarjeta aún NO dispersadas
+                balance:           0
+            };
+        });
+
+        // 4. Acumular por restaurante
+        orders.forEach(o => {
+            const b = byBiz[String(o.businessId)];
+            if (!b) return; // órdenes huérfanas de negocios eliminados
+
+            const total    = o.total || 0;
+            const subtotal = o.subtotal || 0;
+            const isCard   = CARD_METHODS.includes(o.paymentMethod);
+            const isPendingDispersion = !o.dispersionId;
+
+            b.totalOrders += 1;
+            if (isCard) b.cardSales += total; else b.cashSales += total;
+
+            // Comisión: % sobre subtotal ó fijo por pedido (nunca ambas)
+            let comm = 0;
+            if (b.commissionType === 'percent') comm = subtotal * (b.commissionValue / 100);
+            else if (b.commissionType === 'fixed') comm = b.commissionValue;
+
+            b.commission += comm;
+            if (isPendingDispersion) {
+                b.commissionPending += comm;
+                if (isCard) b.cardBalance += total;
+            }
+        });
+
+        // 5. Balance final
+        const result = Object.values(byBiz).map(b => {
+            const balance = b.cardBalance - (b.commissionPending + b.maintenance);
+            return {
+                ...b,
+                cashSales:         r2(b.cashSales),
+                cardSales:         r2(b.cardSales),
+                commission:        r2(b.commission),
+                commissionPending: r2(b.commissionPending),
+                maintenance:       r2(b.maintenance),
+                cardBalance:       r2(b.cardBalance),
+                balance:           r2(balance),
+                status:            balance > 0 ? 'we_owe' : (balance < 0 ? 'they_owe' : 'zero')
+            };
+        }).sort((a, b) => (b.cashSales + b.cardSales) - (a.cashSales + a.cardSales));
+
+        // 6. KPIs del mes (cards superiores + resumen inferior)
+        const k = {
+            cashSales: 0, cardSales: 0, totalSales: 0, totalOrders: 0,
+            commissionPercent: 0, commissionFixed: 0, maintenance: 0,
+            cardBalance: 0, monthlyProfit: 0,
+            withDebtCount: 0, toCollectCount: 0, zeroCount: 0
+        };
+        result.forEach(r => {
+            k.cashSales   += r.cashSales;
+            k.cardSales   += r.cardSales;
+            k.totalOrders += r.totalOrders;
+            k.maintenance += r.maintenance;
+            k.cardBalance += r.cardBalance;
+            if (r.commissionType === 'percent') k.commissionPercent += r.commission;
+            if (r.commissionType === 'fixed')   k.commissionFixed   += r.commission;
+            if (r.status === 'they_owe') k.withDebtCount++;
+            else if (r.status === 'we_owe') k.toCollectCount++;
+            else k.zeroCount++;
+        });
+        k.totalSales    = k.cashSales + k.cardSales;
+        // Ganancia mensual de la plataforma = comisiones (5% + $5) + mantenimiento
+        k.monthlyProfit = k.commissionPercent + k.commissionFixed + k.maintenance;
+        ['cashSales','cardSales','totalSales','commissionPercent','commissionFixed','maintenance','cardBalance','monthlyProfit']
+            .forEach(key => { k[key] = r2(k[key]); });
+
+        const monthKey = start.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' }).substring(0, 7);
+
+        res.json({ month: monthKey, kpis: k, rows: result });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
+
 exports.getDailySales = async (req, res) => {
     try {
         const { start, end } = req.query;

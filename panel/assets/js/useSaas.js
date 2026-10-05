@@ -691,7 +691,98 @@ export function useSaas() {
         }
     };
 
-    
+    // ─── BALANCE (SuperAdmin) ────────────────────────────────────────────────
+    const emptyBalanceKpis = () => ({
+        cashSales: 0, cardSales: 0, totalSales: 0, totalOrders: 0,
+        commissionPercent: 0, commissionFixed: 0, maintenance: 0,
+        cardBalance: 0, monthlyProfit: 0,
+        withDebtCount: 0, toCollectCount: 0, zeroCount: 0
+    });
+    const _nowMx = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
+    const balanceStats        = ref([]);
+    const balanceKpis         = ref(emptyBalanceKpis());
+    const balanceStatsLoading = ref(false);
+    const balanceMonth        = ref(_nowMx.substring(0, 7)); // YYYY-MM
+    const balanceSearch       = ref('');
+    const balanceFilter       = ref('all'); // all | debt | collect | zero
+
+    const balanceMonthLabel = computed(() => {
+        const [y, m] = balanceMonth.value.split('-').map(Number);
+        const label = new Date(y, m - 1, 1).toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+        return label.charAt(0).toUpperCase() + label.slice(1).replace(' de ', ' ');
+    });
+
+    const isCurrentBalanceMonth = computed(() => balanceMonth.value >= _nowMx.substring(0, 7));
+
+    const fetchBalanceSummary = async () => {
+        balanceStatsLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/balance-summary?month=${balanceMonth.value}`);
+            if (res.ok) {
+                const data = await res.json();
+                balanceStats.value = data.rows || [];
+                balanceKpis.value  = { ...emptyBalanceKpis(), ...(data.kpis || {}) };
+            } else {
+                toastr.error('Error cargando balance');
+            }
+        } catch (e) {
+            console.error('Error de red al cargar balance', e);
+        } finally {
+            balanceStatsLoading.value = false;
+        }
+    };
+
+    const shiftBalanceMonth = (delta) => {
+        const [y, m] = balanceMonth.value.split('-').map(Number);
+        const d = new Date(y, m - 1 + delta, 1);
+        balanceMonth.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        fetchBalanceSummary();
+    };
+
+    const setBalanceMonth = (value) => {
+        if (!/^\d{4}-\d{2}$/.test(value || '')) return;
+        balanceMonth.value = value;
+        fetchBalanceSummary();
+    };
+
+    const filteredBalanceRows = computed(() => {
+        const q = balanceSearch.value.trim().toLowerCase();
+        return balanceStats.value.filter(r => {
+            if (q && !(r.businessName || '').toLowerCase().includes(q)) return false;
+            if (balanceFilter.value === 'debt')    return r.balance < 0;
+            if (balanceFilter.value === 'collect') return r.balance > 0;
+            if (balanceFilter.value === 'zero')    return r.balance === 0;
+            return true;
+        });
+    });
+
+    const balanceMoney = (n) => {
+        const v = Number(n) || 0;
+        const s = Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (v < 0 ? '-$' : '$') + s;
+    };
+
+    const exportBalanceCsv = () => {
+        const rows = filteredBalanceRows.value;
+        if (!rows.length) { toastr.info('No hay datos para exportar'); return; }
+        const head = ['#', 'Restaurante', 'Ventas Efectivo', 'Ventas Tarjeta', 'Total Venta', 'Total Pedidos',
+                      'Comision (%)', '$ por pedido', 'Mantenimiento', 'Saldos con Tarjeta', 'Balance', 'Estatus'];
+        const statusTxt = b => b > 0 ? 'Nos deben' : (b < 0 ? 'Debemos' : 'En 0');
+        const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+        const lines = rows.map((r, i) => [
+            i + 1, r.businessName, r.cashSales, r.cardSales, (r.cashSales + r.cardSales).toFixed(2), r.totalOrders,
+            r.commissionType === 'percent' ? r.commission : '', r.commissionType === 'fixed' ? r.commission : '',
+            r.maintenance, r.cardBalance, r.balance, statusTxt(r.balance)
+        ].map(esc).join(','));
+        const csv = '\uFEFF' + [head.map(esc).join(','), ...lines].join('\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `balance_${balanceMonth.value}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     // Variables para el form de crear dispersion
     const dispersionForm = ref({
         businessId: '',
@@ -1082,6 +1173,21 @@ export function useSaas() {
         summaryTotalPages,
         setSummaryPage,
         fetchDispersionSummary,
+        // Balance
+        balanceStats,
+        balanceKpis,
+        balanceStatsLoading,
+        balanceMonth,
+        balanceMonthLabel,
+        isCurrentBalanceMonth,
+        balanceSearch,
+        balanceFilter,
+        filteredBalanceRows,
+        fetchBalanceSummary,
+        shiftBalanceMonth,
+        setBalanceMonth,
+        exportBalanceCsv,
+        balanceMoney,
         // Billetera del Negocio
         walletFilterTab,
         walletSearch,

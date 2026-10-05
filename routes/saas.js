@@ -36,6 +36,9 @@ router.get('/dispersions', dispersionController.listDispersionsAdmin);
 router.put('/dispersions/:id/pay', dispersionController.payDispersion);
 router.post('/dispersions/pay-day', dispersionController.payDayDispersion);
 
+// Balance (Billetera → Balance)
+router.get('/balance-summary', dispersionController.getBalanceSummary);
+
 // Clientes frecuentes e historial de recompra (SuperAdmin)
 router.get('/frequent-customers', saasController.getFrequentCustomers);
 router.get('/frequent-customers/:phone/orders', saasController.getFrequentCustomerOrders);

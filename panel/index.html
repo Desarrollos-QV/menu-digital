@@ -1593,6 +1593,281 @@
 
                 </div>
 
+                <!-- VISTA BALANCE (SUPERADMIN) -->
+                <div v-if="currentView === 'saas_balance'" class="space-y-6 animate-fade-in">
+
+                    <!-- HEADER: Título + Selector de mes + Exportar -->
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
+                                    <i class="fa-solid fa-scale-balanced text-indigo-500"></i>
+                                </div>
+                                Balance
+                            </h1>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                                Control de ventas, comisiones y balance de todos los restaurantes.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button id="balance-prev-month" @click="saas.shiftBalanceMonth(-1)" title="Mes anterior"
+                                class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary transition shadow-sm">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <label class="relative h-11 min-w-[200px] px-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-sm cursor-pointer hover:border-primary transition">
+                                <i class="fa-regular fa-calendar text-slate-500"></i>
+                                <span class="flex-1 text-center font-bold text-slate-800 dark:text-white">{{ saas.balanceMonthLabel.value }}</span>
+                                <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                                <input id="balance-month-picker" type="month" :value="saas.balanceMonth.value"
+                                    @change="saas.setBalanceMonth($event.target.value)"
+                                    class="absolute inset-0 opacity-0 cursor-pointer" onclick="this.showPicker && this.showPicker()">
+                            </label>
+                            <button id="balance-next-month" @click="saas.shiftBalanceMonth(1)" :disabled="saas.isCurrentBalanceMonth.value" title="Mes siguiente"
+                                class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary transition shadow-sm disabled:opacity-40 disabled:pointer-events-none">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                            <button id="balance-refresh" @click="saas.fetchBalanceSummary()" title="Actualizar"
+                                class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary transition shadow-sm">
+                                <i class="fa-solid fa-rotate-right" :class="{'fa-spin': saas.balanceStatsLoading.value}"></i>
+                            </button>
+                            <button id="balance-export" @click="saas.exportBalanceCsv()"
+                                class="h-11 px-5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-white hover:border-primary hover:text-primary transition shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-download"></i> Exportar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KPI CARDS -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                        <!-- Ventas en efectivo -->
+                        <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 transition">
+                            <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-wallet"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-bold uppercase tracking-wide opacity-90">Ventas en efectivo</p>
+                                    <p class="text-2xl font-black truncate">{{ saas.balanceMoney(saas.balanceKpis.value.cashSales) }}</p>
+                                    <p class="text-xs opacity-80">Total del mes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Ventas con tarjeta -->
+                        <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition">
+                            <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-credit-card"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-bold uppercase tracking-wide opacity-90">Ventas con tarjeta</p>
+                                    <p class="text-2xl font-black truncate">{{ saas.balanceMoney(saas.balanceKpis.value.cardSales) }}</p>
+                                    <p class="text-xs opacity-80">Total del mes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Total de venta -->
+                        <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-violet-500 to-purple-700 text-white shadow-lg shadow-violet-500/20 hover:-translate-y-0.5 transition">
+                            <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-receipt"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-bold uppercase tracking-wide opacity-90">Total de venta</p>
+                                    <p class="text-2xl font-black truncate">{{ saas.balanceMoney(saas.balanceKpis.value.totalSales) }}</p>
+                                    <p class="text-xs opacity-80">Total del mes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Total de pedidos -->
+                        <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/20 hover:-translate-y-0.5 transition">
+                            <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-cart-shopping"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-bold uppercase tracking-wide opacity-90">Total de pedidos</p>
+                                    <p class="text-2xl font-black truncate">{{ (saas.balanceKpis.value.totalOrders || 0).toLocaleString('en-US') }}</p>
+                                    <p class="text-xs opacity-80">Total del mes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Ganancia mensual -->
+                        <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-amber-300 to-yellow-400 text-slate-900 shadow-lg shadow-amber-400/30 hover:-translate-y-0.5 transition">
+                            <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/20"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-12 h-12 rounded-xl bg-black/10 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-chart-simple"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-black uppercase tracking-wide">Ganancia mensual</p>
+                                    <p class="text-2xl font-black truncate">{{ saas.balanceMoney(saas.balanceKpis.value.monthlyProfit) }}</p>
+                                    <p class="text-xs font-medium opacity-80">Total del mes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BUSCADOR + FILTROS -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div class="relative w-full md:max-w-md">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input id="balance-search" type="text" v-model="saas.balanceSearch.value" placeholder="Buscar restaurante..."
+                                class="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm dark:text-white focus:ring-2 focus:ring-primary outline-none transition shadow-sm">
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button v-for="f in [
+                                        { key: 'all',     label: 'Todos',     count: saas.balanceStats.value.length },
+                                        { key: 'debt',    label: 'Con deuda', count: saas.balanceKpis.value.withDebtCount },
+                                        { key: 'collect', label: 'Nos deben', count: saas.balanceKpis.value.toCollectCount },
+                                        { key: 'zero',    label: 'En 0',      count: saas.balanceKpis.value.zeroCount }
+                                    ]" :key="f.key" :id="'balance-filter-' + f.key"
+                                @click="saas.balanceFilter.value = f.key"
+                                class="px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
+                                :class="saas.balanceFilter.value === f.key
+                                    ? 'bg-blue-600 text-white shadow-blue-600/30'
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-400'">
+                                {{ f.label }}
+                                <span class="px-1.5 py-0.5 rounded-md text-[10px]"
+                                    :class="saas.balanceFilter.value === f.key ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'">{{ f.count }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TABLA DE BALANCE -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead class="bg-gradient-to-r from-red-600 to-rose-600 text-white uppercase text-[10px] font-black tracking-wider">
+                                    <tr>
+                                        <th class="p-3 pl-5 text-center w-10">#</th>
+                                        <th class="p-3">Restaurante</th>
+                                        <th class="p-3 text-center">Ventas<br>Efectivo</th>
+                                        <th class="p-3 text-center">Ventas<br>Tarjeta</th>
+                                        <th class="p-3 text-center">Total de<br>Venta</th>
+                                        <th class="p-3 text-center">Total de<br>Pedidos</th>
+                                        <th class="p-3 text-center">Comisión<br>(5%)</th>
+                                        <th class="p-3 text-center">$5<br>por pedido</th>
+                                        <th class="p-3 text-center">Mantenimiento</th>
+                                        <th class="p-3 text-center">Saldos<br>con tarjeta</th>
+                                        <th class="p-3 text-center">Balance</th>
+                                        <th class="p-3 pr-5 text-center">Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    <tr v-if="saas.balanceStatsLoading.value">
+                                        <td colspan="12" class="p-10 text-center text-slate-400">
+                                            <i class="fa-solid fa-circle-notch fa-spin mr-2 text-primary"></i> Calculando balance...
+                                        </td>
+                                    </tr>
+                                    <tr v-else-if="saas.filteredBalanceRows.value.length === 0">
+                                        <td colspan="12" class="p-10 text-center text-slate-400">
+                                            <i class="fa-solid fa-store-slash text-2xl mb-2 block opacity-50"></i>
+                                            No se encontraron restaurantes para este filtro.
+                                        </td>
+                                    </tr>
+                                    <tr v-else v-for="(stat, idx) in saas.filteredBalanceRows.value" :key="stat.businessId"
+                                        class="odd:bg-white even:bg-slate-50/60 dark:odd:bg-slate-800 dark:even:bg-slate-800/60 hover:bg-indigo-50/50 dark:hover:bg-slate-700/40 transition">
+                                        <td class="p-3 pl-5 text-center font-bold text-slate-500">{{ idx + 1 }}</td>
+                                        <td class="p-3 font-black text-slate-800 dark:text-white uppercase whitespace-nowrap">{{ stat.businessName }}</td>
+                                        <td class="p-3 text-center font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{{ saas.balanceMoney(stat.cashSales) }}</td>
+                                        <td class="p-3 text-center font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">{{ saas.balanceMoney(stat.cardSales) }}</td>
+                                        <td class="p-3 text-center font-black text-slate-800 dark:text-white whitespace-nowrap">{{ saas.balanceMoney((stat.cashSales || 0) + (stat.cardSales || 0)) }}</td>
+                                        <td class="p-3 text-center font-bold text-slate-600 dark:text-slate-300">{{ stat.totalOrders || 0 }}</td>
+                                        <!-- Comisión % -->
+                                        <td class="p-3 text-center whitespace-nowrap">
+                                            <template v-if="stat.commissionType === 'percent'">
+                                                <span class="font-bold text-orange-500">{{ saas.balanceMoney(stat.commission) }}</span>
+                                                <p v-if="stat.commissionValue !== 5" class="text-[9px] text-slate-400 font-medium">({{ stat.commissionRate }})</p>
+                                                <p v-if="stat.commissionPending !== stat.commission" class="text-[9px] text-amber-500 font-bold" title="Comisión de pedidos aún no dispersados (la que se descuenta en el balance)">
+                                                    Pend. {{ saas.balanceMoney(stat.commissionPending) }}
+                                                </p>
+                                            </template>
+                                            <span v-else class="text-slate-400">—</span>
+                                        </td>
+                                        <!-- $ fijo por pedido -->
+                                        <td class="p-3 text-center whitespace-nowrap">
+                                            <template v-if="stat.commissionType === 'fixed'">
+                                                <span class="font-bold text-orange-500">{{ saas.balanceMoney(stat.commission) }}</span>
+                                                <p v-if="stat.commissionValue !== 5" class="text-[9px] text-slate-400 font-medium">({{ stat.commissionRate }})</p>
+                                                <p v-if="stat.commissionPending !== stat.commission" class="text-[9px] text-amber-500 font-bold" title="Comisión de pedidos aún no dispersados (la que se descuenta en el balance)">
+                                                    Pend. {{ saas.balanceMoney(stat.commissionPending) }}
+                                                </p>
+                                            </template>
+                                            <span v-else class="text-slate-400">—</span>
+                                        </td>
+                                        <td class="p-3 text-center font-bold text-orange-400 whitespace-nowrap">{{ saas.balanceMoney(stat.maintenance) }}</td>
+                                        <td class="p-3 text-center font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">{{ saas.balanceMoney(stat.cardBalance) }}</td>
+                                        <!-- Balance -->
+                                        <td class="p-2 text-center">
+                                            <div class="px-3 py-1.5 rounded-lg text-base font-black whitespace-nowrap"
+                                                :class="stat.balance > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                      : (stat.balance < 0 ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
+                                                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300')">
+                                                {{ saas.balanceMoney(stat.balance) }}
+                                            </div>
+                                        </td>
+                                        <!-- Estatus -->
+                                        <td class="p-2 pr-5 text-center">
+                                            <span class="inline-block w-full min-w-[96px] px-3 py-1.5 rounded-lg text-[11px] font-bold"
+                                                :class="stat.balance > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                      : (stat.balance < 0 ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
+                                                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300')">
+                                                {{ stat.balance > 0 ? 'Nos deben' : (stat.balance < 0 ? 'Debemos' : 'En 0') }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- RESUMEN DEL MES -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                        <div class="flex flex-col xl:flex-row xl:items-center gap-6">
+                            <div class="flex-1 min-w-0">
+                                <h2 class="font-black text-lg text-slate-900 dark:text-white flex items-center gap-3 mb-5">
+                                    <span class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200">
+                                        <i class="fa-solid fa-chart-column"></i>
+                                    </span>
+                                    Resumen {{ saas.balanceMonthLabel.value }}
+                                </h2>
+                                <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-y-5 divide-x divide-slate-100 dark:divide-slate-700">
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total efectivo</p>
+                                        <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.cashSales) }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total tarjeta</p>
+                                        <p class="text-xl font-black text-blue-600 dark:text-blue-400 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.cardSales) }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total de venta</p>
+                                        <p class="text-xl font-black text-slate-900 dark:text-white mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.totalSales) }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total de pedidos</p>
+                                        <p class="text-xl font-black text-purple-600 dark:text-purple-400 mt-1">{{ (saas.balanceKpis.value.totalOrders || 0).toLocaleString('en-US') }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total comisión (5%)</p>
+                                        <p class="text-xl font-black text-orange-500 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.commissionPercent) }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total $5 por pedido</p>
+                                        <p class="text-xl font-black text-orange-500 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.commissionFixed) }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total mantenimiento</p>
+                                        <p class="text-xl font-black text-violet-600 dark:text-violet-400 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.maintenance) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="xl:w-64 shrink-0 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-5 text-center">
+                                <p class="text-[11px] font-black uppercase text-emerald-800 dark:text-emerald-300 tracking-wide">Ganancia mensual</p>
+                                <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1 flex items-center justify-center gap-2">
+                                    {{ saas.balanceMoney(saas.balanceKpis.value.monthlyProfit) }}
+                                    <i class="fa-solid fa-chevron-up text-lg"></i>
+                                </p>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">Total del mes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- VISTA MUNICIPIOS (NUEVA FUNCIONALIDAD) -->
                 <div v-if="currentView === 'municipios'" class="animate-fade-in ">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

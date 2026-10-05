@@ -111,7 +111,16 @@ createApp({
         const saasMenu = ref([
             { id: 99, label: 'Dashboard', icon: 'fa-solid fa-chart-pie', view: 'saas_dashboard' },
             { id: 100, label: 'Clientes / Negocios', icon: 'fa-solid fa-building-user', view: 'saas_clients' },
-            { id: 101, label: 'Dispersiones', icon: 'fa-solid fa-money-bill-transfer', view: 'saas_dispersions' },
+            {
+                id: 110,
+                label: 'Billetera',
+                icon: 'fa-solid fa-wallet',
+                expanded: false,
+                children: [
+                    { id: 101, label: 'Dispersiones', view: 'saas_dispersions' },
+                    { id: 109, label: 'Balance', view: 'saas_balance' }
+                ]
+            },
             { id: 108, label: 'Ranking Restaurantes', icon: 'fa-solid fa-trophy', view: 'saas_ranking' },
             { id: 106, label: 'Usuarios Frecuentes', icon: 'fa-solid fa-users', view: 'saas_frequent_customers' },
             { id: 107, label: 'Cupones', icon: 'fa-solid fa-ticket', view: 'coupons' },
@@ -599,6 +608,11 @@ createApp({
                     saas.fetchBusinesses();
                     saas.fetchDailySales();
                     saas.fetchDispersionSummary();
+                }
+                if (item.view === 'saas_balance') {
+                    if (saas.fetchBalanceSummary) {
+                        saas.fetchBalanceSummary();
+                    }
                 }
 
                 if (item.view === 'saas_dashboard') {
