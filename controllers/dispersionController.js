@@ -434,17 +434,30 @@ exports.getBalanceSummary = async (req, res) => {
         const nextMStr = nextM.toString().padStart(2, '0');
         const end = new Date(new Date(`${nextY}-${nextMStr}-01T00:00:00`).getTime() - 1);
 
-        // 2. Órdenes válidas del mes (mismo criterio que Dispersiones)
-        const orders = await Order.find({
+        // 2. Órdenes válidas del mes (Para calcular actividad: Ventas y Comisiones)
+        const monthOrders = await Order.find({
             createdAt: { $gte: start, $lte: end },
             $or: [
-                { status: { $in: ['completed', 'delivered', 'ready'] } },
-                { stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+                { paymentMethod: { $nin: CARD_METHODS }, status: { $nin: ['cancelled', 'rejected'] } },
+                { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
             ]
         }).select('businessId subtotal total paymentMethod dispersionId').lean();
 
-        // 3. Negocios: activos + cualquiera que haya vendido en el mes
-        const bizIdsWithOrders = [...new Set(orders.map(o => String(o.businessId)).filter(Boolean))];
+        // 2.5 Órdenes pendientes históricas (Para calcular la deuda real acumulada)
+        const pendingOrders = await Order.find({
+            createdAt: { $lte: end },
+            dispersionId: null,
+            $or: [
+                { paymentMethod: { $nin: CARD_METHODS }, status: { $nin: ['cancelled', 'rejected'] } },
+                { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
+            ]
+        }).select('businessId subtotal total paymentMethod dispersionId').lean();
+
+        // 3. Negocios: activos + cualquiera que tenga actividad o saldos pendientes
+        const bizIds1 = monthOrders.map(o => String(o.businessId)).filter(Boolean);
+        const bizIds2 = pendingOrders.map(o => String(o.businessId)).filter(Boolean);
+        const bizIdsWithOrders = [...new Set([...bizIds1, ...bizIds2])];
+        
         const businesses = await Business.find({
             $or: [{ active: true }, { _id: { $in: bizIdsWithOrders } }]
         }).select('name avatar slug active commissionInternalType commissionInternalAmount commissionWebType commissionWebAmount').lean();
@@ -480,45 +493,61 @@ exports.getBalanceSummary = async (req, res) => {
             };
         });
 
-        // 4. Acumular por restaurante
-        orders.forEach(o => {
+        // 4. Acumular actividad del mes actual (Solo para mostrar ventas)
+        monthOrders.forEach(o => {
             const b = byBiz[String(o.businessId)];
-            if (!b) return; // órdenes huérfanas de negocios eliminados
+            if (!b) return;
 
             const subtotal = o.subtotal || 0;
-            const total = o.total || 0;
             const isCard   = CARD_METHODS.includes(o.paymentMethod);
-            const isPendingDispersion = !o.dispersionId;
 
             b.totalOrders += 1;
             
             // Se usa el subtotal para las columnas de Ventas para que el 5% cuadre visualmente
             if (isCard) b.cardSales += subtotal; else b.cashSales += subtotal;
 
-            // Comisión: % sobre subtotal ó fijo por pedido (nunca ambas)
+            // Comisión generada en el mes: % sobre subtotal ó fijo por pedido
             let comm = 0;
             if (b.commissionType === 'percent') comm = subtotal * (b.commissionValue / 100);
             else if (b.commissionType === 'fixed') comm = b.commissionValue;
 
             b.commission += comm;
-            if (isPendingDispersion) {
-                b.commissionPending += comm;
-                // El saldo a favor que tenemos nosotros es el TOTAL del cargo de Stripe menos comisiones de Stripe
-                if (isCard) {
-                    let sFee = 0;
-                    if (total > 0) {
-                        sFee = (total * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
-                        sFee = sFee * 1.16; // IVA
-                    }
-                    b.cardBalance += (total - sFee);
+        });
+
+        // 4.5 Acumular deuda pendiente (Saldos con tarjeta y Comisiones no dispersadas)
+        pendingOrders.forEach(o => {
+            const b = byBiz[String(o.businessId)];
+            if (!b) return;
+
+            const subtotal = o.subtotal || 0;
+            const total = o.total || 0;
+            const isCard = CARD_METHODS.includes(o.paymentMethod);
+
+            // Comisión pendiente
+            let comm = 0;
+            if (b.commissionType === 'percent') comm = subtotal * (b.commissionValue / 100);
+            else if (b.commissionType === 'fixed') comm = b.commissionValue;
+
+            b.commissionPending += comm;
+
+            // El saldo a favor que tenemos nosotros es el TOTAL del cargo de Stripe menos comisiones de Stripe
+            if (isCard) {
+                let sFee = 0;
+                if (total > 0) {
+                    sFee = (total * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
+                    sFee = sFee * 1.16; // IVA
                 }
+                b.cardBalance += (total - sFee);
             }
         });
 
         // 5. Balance final
         const result = Object.values(byBiz).map(b => {
-            // El usuario solicitó explícitamente restar el TOTAL de comisiones del mes contra el saldo con tarjeta, pero al revés:
-            const totalFees = b.commission + b.maintenance;
+            // El usuario solicitó explícitamente restar el TOTAL de comisiones PENDIENTES + mantenimiento contra el saldo con tarjeta.
+            // Ojo: Si el negocio tuvo ventas pero ya se le dispersó todo, su commissionPending es 0. 
+            // Su mantenimiento del mes sí se cobra, por lo que el totalFees será mantenimiento + comisiones pendientes.
+            // Para que cuadre matemáticamente con el mes actual, sumaremos el mantenimiento.
+            const totalFees = b.commissionPending + b.maintenance;
             const balance = totalFees - b.cardBalance; // Deuda - Saldo = Balance
             
             // Si balance > 0, significa que Deuda > Saldo (El restaurante le debe a la plataforma "Nos deben")
@@ -583,8 +612,9 @@ exports.getDailySales = async (req, res) => {
             createdAt: { $gte: startDate, $lte: endDate },
             paymentMethod: { $in: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] },
             $or: [
-                { status: { $in: ['completed', 'delivered', 'ready'] } },
-                { stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+                // Como filtramos por tarjeta arriba, en realidad solo aplica la regla de Stripe, pero mantenemos la lógica por seguridad
+                { paymentMethod: { $nin: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] }, status: { $nin: ['cancelled', 'rejected'] } },
+                { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
             ]
         }).populate('businessId', 'name slug phone commissionInternalAmount commissionInternalType commissionWebType commissionWebAmount').populate('dispersionId', 'status');
 
@@ -733,8 +763,8 @@ exports.payDayDispersion = async (req, res) => {
             createdAt: { $gte: startDate, $lte: endDate },
             paymentMethod: { $in: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] },
             $or: [
-                { status: { $in: ['completed', 'delivered', 'ready'] } },
-                { stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+                { paymentMethod: { $nin: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] }, status: { $nin: ['cancelled', 'rejected'] } },
+                { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
             ]
         }).populate('businessId');
 
