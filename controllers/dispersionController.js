@@ -610,7 +610,6 @@ exports.getDailySales = async (req, res) => {
 
         const orders = await Order.find({
             createdAt: { $gte: startDate, $lte: endDate },
-            paymentMethod: { $in: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] },
             $or: [
                 // Como filtramos por tarjeta arriba, en realidad solo aplica la regla de Stripe, pero mantenemos la lógica por seguridad
                 { paymentMethod: { $nin: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] }, status: { $nin: ['cancelled', 'rejected'] } },
@@ -661,10 +660,11 @@ exports.getDailySales = async (req, res) => {
 
             let orderSubtotal = o.subtotal || 0;
             let orderTotal = o.total || 0;
+            const isCard = ['card', 'credit_card', 'debit_card', 'online', 'stripe'].includes(o.paymentMethod);
 
             r.totalOrders++;
             r.totalSales += orderSubtotal;
-            r.cardSales += orderTotal;
+            if (isCard) r.cardSales += orderTotal;
 
             // Comision Web
             let webComm = 0;
@@ -693,13 +693,13 @@ exports.getDailySales = async (req, res) => {
 
             // Stripe fee
             let sFee = 0;
-            if (orderTotal > 0) {
+            if (isCard && orderTotal > 0) {
                 sFee = (orderTotal * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
                 sFee = sFee * 1.16; // IVA
             }
             r.stripeFees += sFee;
 
-            r.netToPay += (orderTotal - totalComm - sFee);
+            r.netToPay += (isCard ? orderTotal : 0) - totalComm - sFee;
 
             // Verificar si este pedido esta pagado
             // Esta pagado si tiene un dispersionId y el status del dispersion es 'paid'
@@ -761,7 +761,6 @@ exports.payDayDispersion = async (req, res) => {
         const orders = await Order.find({
             businessId,
             createdAt: { $gte: startDate, $lte: endDate },
-            paymentMethod: { $in: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] },
             $or: [
                 { paymentMethod: { $nin: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] }, status: { $nin: ['cancelled', 'rejected'] } },
                 { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
@@ -787,15 +786,17 @@ exports.payDayDispersion = async (req, res) => {
             ordersToCut.forEach(o => {
                 let orderSubtotal = o.subtotal || 0;
                 let orderTotal = o.total || 0;
+                const isCard = ['card', 'credit_card', 'debit_card', 'online', 'stripe'].includes(o.paymentMethod);
+                
                 totalOrders++;
-                cardSales += orderTotal;
+                if (isCard) cardSales += orderTotal;
 
                 let webComm = o.commission?.amount || (business.commissionWebType === 'percent' ? (orderSubtotal * (business.commissionWebAmount / 100)) : (business.commissionWebAmount || 0));
                 let intComm = business.commissionInternalAmount > 0 ? (business.commissionInternalType === 'percent' ? (orderSubtotal * (business.commissionInternalAmount / 100)) : business.commissionInternalAmount) : 0;
                 commissionTotal += (webComm + intComm);
 
                 let sFee = 0;
-                if (orderTotal > 0) {
+                if (isCard && orderTotal > 0) {
                     sFee = (orderTotal * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
                     sFee = sFee * 1.16; 
                 }
