@@ -408,6 +408,8 @@ exports.getBalanceSummary = async (req, res) => {
     try {
         const tzHelper = require('../helper/timezone');
         const MAINTENANCE_FEE = parseFloat(process.env.MAINTENANCE_FEE) || 70;
+        const STRIPE_FEE_PERCENT = parseFloat(process.env.STRIPE_FEE_PERCENT) || 4.1;
+        const STRIPE_FEE_FIXED   = parseFloat(process.env.STRIPE_FEE_FIXED) || 3;
         const CARD_METHODS = ['card', 'credit_card', 'debit_card', 'online', 'stripe'];
         const r2 = n => parseFloat((n || 0).toFixed(2));
 
@@ -429,13 +431,20 @@ exports.getBalanceSummary = async (req, res) => {
         const bizIdsWithOrders = [...new Set(orders.map(o => String(o.businessId)).filter(Boolean))];
         const businesses = await Business.find({
             $or: [{ active: true }, { _id: { $in: bizIdsWithOrders } }]
-        }).select('name avatar slug active commissionInternalType commissionInternalAmount').lean();
+        }).select('name avatar slug active commissionInternalType commissionInternalAmount commissionWebType commissionWebAmount').lean();
 
         const byBiz = {};
         businesses.forEach(b => {
-            const hasComm  = (b.commissionInternalAmount || 0) > 0;
-            const type     = hasComm ? (b.commissionInternalType || 'percent') : 'none';
-            const amount   = b.commissionInternalAmount || 0;
+            let type = 'none';
+            let amount = 0;
+            if ((b.commissionInternalAmount || 0) > 0) {
+                type = b.commissionInternalType;
+                amount = b.commissionInternalAmount;
+            } else if ((b.commissionWebAmount || 0) > 0) {
+                type = b.commissionWebType;
+                amount = b.commissionWebAmount;
+            }
+
             byBiz[String(b._id)] = {
                 businessId:        String(b._id),
                 businessName:      b.name || 'Desconocido',
@@ -461,12 +470,13 @@ exports.getBalanceSummary = async (req, res) => {
             if (!b) return; // órdenes huérfanas de negocios eliminados
 
             const subtotal = o.subtotal || 0;
+            const total = o.total || 0;
             const isCard   = CARD_METHODS.includes(o.paymentMethod);
             const isPendingDispersion = !o.dispersionId;
 
             b.totalOrders += 1;
             
-            // Se usa el subtotal para no incluir costos de envío ni propinas
+            // Se usa el subtotal para las columnas de Ventas para que el 5% cuadre visualmente
             if (isCard) b.cardSales += subtotal; else b.cashSales += subtotal;
 
             // Comisión: % sobre subtotal ó fijo por pedido (nunca ambas)
@@ -477,7 +487,15 @@ exports.getBalanceSummary = async (req, res) => {
             b.commission += comm;
             if (isPendingDispersion) {
                 b.commissionPending += comm;
-                if (isCard) b.cardBalance += subtotal; // El saldo a favor del restaurante también es sobre el subtotal
+                // El saldo a favor que tenemos nosotros es el TOTAL del cargo de Stripe menos comisiones de Stripe
+                if (isCard) {
+                    let sFee = 0;
+                    if (total > 0) {
+                        sFee = (total * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
+                        sFee = sFee * 1.16; // IVA
+                    }
+                    b.cardBalance += (total - sFee);
+                }
             }
         });
 
