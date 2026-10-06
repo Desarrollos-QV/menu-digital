@@ -413,17 +413,33 @@ exports.getBalanceSummary = async (req, res) => {
         const CARD_METHODS = ['card', 'credit_card', 'debit_card', 'online', 'stripe'];
         const r2 = n => parseFloat((n || 0).toFixed(2));
 
-        // 1. Rango del mes
-        const monthParam = /^\d{4}-\d{2}$/.test(req.query.month || '') ? `${req.query.month}-15` : new Date();
-        const start = tzHelper.getStartOfMonth(monthParam);
-        const end   = tzHelper.getEndOfMonth(monthParam);
+        // 1. Rango del mes (Alineado con getDailySales para que no haya discrepancia de zonas horarias)
+        let y, m;
+        if (/^\d{4}-\d{2}$/.test(req.query.month || '')) {
+            const parts = req.query.month.split('-');
+            y = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+        } else {
+            const d = new Date();
+            y = d.getFullYear();
+            m = d.getMonth() + 1;
+        }
+        const mStr = m.toString().padStart(2, '0');
+        // getDailySales usa new Date('YYYY-MM-DDT00:00:00')
+        const start = new Date(`${y}-${mStr}-01T00:00:00`);
+        // Para obtener el fin de mes:
+        let nextM = m + 1;
+        let nextY = y;
+        if (nextM > 12) { nextM = 1; nextY++; }
+        const nextMStr = nextM.toString().padStart(2, '0');
+        const end = new Date(new Date(`${nextY}-${nextMStr}-01T00:00:00`).getTime() - 1);
 
         // 2. Órdenes válidas del mes (mismo criterio que Dispersiones)
         const orders = await Order.find({
             createdAt: { $gte: start, $lte: end },
             $or: [
                 { status: { $in: ['completed', 'delivered', 'ready'] } },
-                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+                { stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
             ]
         }).select('businessId subtotal total paymentMethod dispersionId').lean();
 
