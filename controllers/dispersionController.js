@@ -483,11 +483,12 @@ exports.getBalanceSummary = async (req, res) => {
 
         // 5. Balance final
         const result = Object.values(byBiz).map(b => {
-            // El usuario solicitó explícitamente restar el TOTAL de comisiones del mes contra el saldo con tarjeta
-            const balance = b.cardBalance - (b.commission + b.maintenance);
+            // El usuario solicitó explícitamente restar el TOTAL de comisiones del mes contra el saldo con tarjeta, pero al revés:
+            const totalFees = b.commission + b.maintenance;
+            const balance = totalFees - b.cardBalance; // Deuda - Saldo = Balance
             
-            // Si balance > 0, significa que Saldo > Deuda (La plataforma le debe dinero al restaurante)
-            // Si balance < 0, significa que Deuda > Saldo (El restaurante le debe dinero a la plataforma)
+            // Si balance > 0, significa que Deuda > Saldo (El restaurante le debe a la plataforma "Nos deben")
+            // Si balance < 0, significa que Saldo > Deuda (La plataforma le debe al restaurante "Debemos")
             return {
                 ...b,
                 cashSales:         r2(b.cashSales),
@@ -495,6 +496,7 @@ exports.getBalanceSummary = async (req, res) => {
                 commission:        r2(b.commission),
                 commissionPending: r2(b.commissionPending),
                 maintenance:       r2(b.maintenance),
+                totalFees:         r2(totalFees),
                 cardBalance:       r2(b.cardBalance),
                 balance:           r2(balance),
                 status:            balance > 0 ? 'we_owe' : (balance < 0 ? 'they_owe' : 'zero')
@@ -504,7 +506,7 @@ exports.getBalanceSummary = async (req, res) => {
         // 6. KPIs del mes (cards superiores + resumen inferior)
         const k = {
             cashSales: 0, cardSales: 0, totalSales: 0, totalOrders: 0,
-            commissionPercent: 0, commissionFixed: 0, maintenance: 0,
+            commissionPercent: 0, commissionFixed: 0, maintenance: 0, totalFees: 0,
             cardBalance: 0, monthlyProfit: 0,
             withDebtCount: 0, toCollectCount: 0, zeroCount: 0
         };
@@ -514,6 +516,7 @@ exports.getBalanceSummary = async (req, res) => {
             k.totalOrders += r.totalOrders;
             k.maintenance += r.maintenance;
             k.cardBalance += r.cardBalance;
+            k.totalFees   += r.totalFees;
             if (r.commissionType === 'percent') k.commissionPercent += r.commission;
             if (r.commissionType === 'fixed')   k.commissionFixed   += r.commission;
             if (r.status === 'they_owe') k.withDebtCount++;
@@ -523,7 +526,7 @@ exports.getBalanceSummary = async (req, res) => {
         k.totalSales    = k.cashSales + k.cardSales;
         // Ganancia mensual de la plataforma = comisiones (5% + $5) + mantenimiento
         k.monthlyProfit = k.commissionPercent + k.commissionFixed + k.maintenance;
-        ['cashSales','cardSales','totalSales','commissionPercent','commissionFixed','maintenance','cardBalance','monthlyProfit']
+        ['cashSales','cardSales','totalSales','commissionPercent','commissionFixed','maintenance','totalFees','cardBalance','monthlyProfit']
             .forEach(key => { k[key] = r2(k[key]); });
 
         const monthKey = start.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' }).substring(0, 7);

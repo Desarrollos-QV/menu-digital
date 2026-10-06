@@ -1742,6 +1742,7 @@
                                         <th class="p-3 text-center">Comisión<br>(5%)</th>
                                         <th class="p-3 text-center">$5<br>por pedido</th>
                                         <th class="p-3 text-center">Mantenimiento</th>
+                                        <th class="p-3 text-center">Total<br>(Comm + Mant)</th>
                                         <th class="p-3 text-center">Saldos<br>con tarjeta</th>
                                         <th class="p-3 text-center">Balance</th>
                                         <th class="p-3 pr-5 text-center">Estatus</th>
@@ -1790,6 +1791,7 @@
                                             <span v-else class="text-slate-400">—</span>
                                         </td>
                                         <td class="p-3 text-center font-bold text-orange-400 whitespace-nowrap">{{ saas.balanceMoney(stat.maintenance) }}</td>
+                                        <td class="p-3 text-center font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{{ saas.balanceMoney(stat.totalFees) }}</td>
                                         <td class="p-3 text-center font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">{{ saas.balanceMoney(stat.cardBalance) }}</td>
                                         <!-- Balance -->
                                         <td class="p-2 text-center">
@@ -1825,7 +1827,7 @@
                                     </span>
                                     Resumen {{ saas.balanceMonthLabel.value }}
                                 </h2>
-                                <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-y-5 divide-x divide-slate-100 dark:divide-slate-700">
+                                <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-y-5 divide-x divide-slate-100 dark:divide-slate-700">
                                     <div class="px-3 text-center">
                                         <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total efectivo</p>
                                         <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.cashSales) }}</p>
@@ -1853,6 +1855,10 @@
                                     <div class="px-3 text-center">
                                         <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total mantenimiento</p>
                                         <p class="text-xl font-black text-violet-600 dark:text-violet-400 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.maintenance) }}</p>
+                                    </div>
+                                    <div class="px-3 text-center">
+                                        <p class="text-[10px] font-bold uppercase text-slate-500 tracking-wide">Total Fees</p>
+                                        <p class="text-xl font-black text-slate-700 dark:text-slate-300 mt-1 whitespace-nowrap">{{ saas.balanceMoney(saas.balanceKpis.value.totalFees) }}</p>
                                     </div>
                                 </div>
                             </div>

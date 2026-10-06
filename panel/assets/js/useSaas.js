@@ -694,7 +694,7 @@ export function useSaas() {
     // ─── BALANCE (SuperAdmin) ────────────────────────────────────────────────
     const emptyBalanceKpis = () => ({
         cashSales: 0, cardSales: 0, totalSales: 0, totalOrders: 0,
-        commissionPercent: 0, commissionFixed: 0, maintenance: 0,
+        commissionPercent: 0, commissionFixed: 0, maintenance: 0, totalFees: 0,
         cardBalance: 0, monthlyProfit: 0,
         withDebtCount: 0, toCollectCount: 0, zeroCount: 0
     });
@@ -770,13 +770,13 @@ export function useSaas() {
         const rows = filteredBalanceRows.value;
         if (!rows.length) { toastr.info('No hay datos para exportar'); return; }
         const head = ['#', 'Restaurante', 'Ventas Efectivo', 'Ventas Tarjeta', 'Total Venta', 'Total Pedidos',
-                      'Comision (%)', '$ por pedido', 'Mantenimiento', 'Saldos con Tarjeta', 'Balance', 'Estatus'];
+                      'Comision (%)', '$ por pedido', 'Mantenimiento', 'Total (Comm + Mant)', 'Saldos con Tarjeta', 'Balance', 'Estatus'];
         const statusTxt = b => b > 0 ? 'Nos deben' : (b < 0 ? 'Debemos' : 'En 0');
         const esc = v => `"${String(v).replace(/"/g, '""')}"`;
         const lines = rows.map((r, i) => [
             i + 1, r.businessName, r.cashSales, r.cardSales, (r.cashSales + r.cardSales).toFixed(2), r.totalOrders,
             r.commissionType === 'percent' ? r.commission : '', r.commissionType === 'fixed' ? r.commission : '',
-            r.maintenance, r.cardBalance, r.balance, statusTxt(r.balance)
+            r.maintenance, r.totalFees, r.cardBalance, r.balance, statusTxt(r.balance)
         ].map(esc).join(','));
         const csv = '\uFEFF' + [head.map(esc).join(','), ...lines].join('\n');
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
