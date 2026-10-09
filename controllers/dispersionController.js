@@ -19,8 +19,8 @@ exports.previewDispersion = async (req, res) => {
             createdAt: { $gte: start, $lte: end },
             dispersionId: null, // null matches both null and missing in MongoDB
             $or: [
-                { status: { $in: ['completed', 'delivered', 'ready'] } },
-                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+                { paymentMethod: { $nin: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] }, status: { $nin: ['cancelled', 'rejected'] } },
+                { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
             ]
         });
 
@@ -36,7 +36,7 @@ exports.previewDispersion = async (req, res) => {
 
         orders.forEach(o => {
             let orderSubtotal = o.subtotal || 0; 
-            totalSales += orderSubtotal;
+            totalSales += (o.total || 0); // Sumar el total completo para que Cuadre con los ingresos reales
             deliveryFees += (o.deliveryCost || 0);
 
             const isCard = ['card', 'credit_card', 'debit_card', 'online', 'stripe'].includes(o.paymentMethod);
@@ -70,14 +70,16 @@ exports.previewDispersion = async (req, res) => {
             
             commissionTotal += (webComm + intComm);
 
-            if (o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded') {
-                const sPct = parseFloat(process.env.STRIPE_FEE_PERCENT) || 0;
-                const sFix = parseFloat(process.env.STRIPE_FEE_FIXED) || 0;
-                stripeFees += (o.total * (sPct / 100)) + sFix;
+            if (isCard && o.total > 0) {
+                const sPct = parseFloat(process.env.STRIPE_FEE_PERCENT) || 4.1;
+                const sFix = parseFloat(process.env.STRIPE_FEE_FIXED) || 3;
+                let sFee = (o.total * (sPct / 100)) + sFix;
+                sFee = sFee * 1.16; // IVA
+                stripeFees += sFee;
             }
         });
 
-        const netToPay = cardSales - commissionTotal;
+        const netToPay = cardSales - commissionTotal - stripeFees;
 
         res.json({
             businessId,
@@ -111,8 +113,8 @@ exports.createDispersion = async (req, res) => {
             createdAt: { $gte: start, $lte: end },
             dispersionId: null,
             $or: [
-                { status: { $in: ['completed', 'delivered', 'ready'] } },
-                { paymentMethod: 'stripe', stripePaymentStatus: 'succeeded', status: { $ne: 'cancelled' } }
+                { paymentMethod: { $nin: ['card', 'credit_card', 'debit_card', 'online', 'stripe'] }, status: { $nin: ['cancelled', 'rejected'] } },
+                { stripePaymentStatus: 'succeeded', status: { $nin: ['cancelled', 'rejected'] } }
             ]
         });
 
@@ -131,7 +133,7 @@ exports.createDispersion = async (req, res) => {
 
         orders.forEach(o => {
             let orderSubtotal = o.subtotal || 0; 
-            totalSales += orderSubtotal;
+            totalSales += (o.total || 0);
             deliveryFees += (o.deliveryCost || 0);
 
             const isCard = ['card', 'credit_card', 'debit_card', 'online', 'stripe'].includes(o.paymentMethod);
@@ -164,14 +166,16 @@ exports.createDispersion = async (req, res) => {
             }
             commissionTotal += (webComm + intComm);
 
-            if (o.paymentMethod === 'stripe' && o.stripePaymentStatus === 'succeeded') {
-                const sPct = parseFloat(process.env.STRIPE_FEE_PERCENT) || 0;
-                const sFix = parseFloat(process.env.STRIPE_FEE_FIXED) || 0;
-                stripeFees += (o.total * (sPct / 100)) + sFix;
+            if (isCard && o.total > 0) {
+                const sPct = parseFloat(process.env.STRIPE_FEE_PERCENT) || 4.1;
+                const sFix = parseFloat(process.env.STRIPE_FEE_FIXED) || 3;
+                let sFee = (o.total * (sPct / 100)) + sFix;
+                sFee = sFee * 1.16;
+                stripeFees += sFee;
             }
         });
 
-        const netToPay = cardSales - commissionTotal;
+        const netToPay = cardSales - commissionTotal - stripeFees;
 
         const dispersion = new Dispersion({
             businessId,

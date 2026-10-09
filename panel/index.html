@@ -4544,6 +4544,10 @@
                             <span>Comisión Plataforma:</span>
                             <span class="font-bold">-${{ saas.dispersionPreview.value.commissionTotal.toFixed(2) }}</span>
                         </li>
+                        <li v-if="saas.dispersionPreview.value.stripeFees > 0" class="flex justify-between text-red-500">
+                            <span>Comisiones de Tarjeta (Stripe):</span>
+                            <span class="font-bold">-${{ saas.dispersionPreview.value.stripeFees.toFixed(2) }}</span>
+                        </li>
                         <li class="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
                             <span class="font-bold text-slate-800 dark:text-white">Monto Neto a Pagar al Negocio:</span>
                             <span class="font-black text-emerald-600 dark:text-emerald-400 text-lg">${{ saas.dispersionPreview.value.netToPay.toFixed(2) }}</span>
