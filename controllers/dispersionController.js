@@ -194,7 +194,9 @@ exports.createDispersion = async (req, res) => {
             stripeFees,
             maintenanceFee: MAINTENANCE_FEE,
             netToPay,
-            status: 'pending',
+            status: 'paid',
+            paidAt: new Date(),
+            reference: 'CORTE GENERADO DESDE MODAL',
             createdBy: req.user ? req.user.id : null
         });
 
