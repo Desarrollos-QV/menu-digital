@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Business = require('../models/Business');
 const Dispersion = require('../models/Dispersion');
+const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 exports.previewDispersion = async (req, res) => {
     try {
@@ -79,7 +80,8 @@ exports.previewDispersion = async (req, res) => {
             }
         });
 
-        const netToPay = cardSales - commissionTotal - stripeFees;
+        const MAINTENANCE_FEE = parseFloat(process.env.MAINTENANCE_FEE) || 70;
+        const netToPay = cardSales - commissionTotal - stripeFees - MAINTENANCE_FEE;
 
         res.json({
             businessId,
@@ -92,6 +94,7 @@ exports.previewDispersion = async (req, res) => {
             deliveryFees,
             commissionTotal,
             stripeFees,
+            maintenanceFee: MAINTENANCE_FEE,
             netToPay
         });
     } catch (e) {
@@ -175,7 +178,8 @@ exports.createDispersion = async (req, res) => {
             }
         });
 
-        const netToPay = cardSales - commissionTotal - stripeFees;
+        const MAINTENANCE_FEE = parseFloat(process.env.MAINTENANCE_FEE) || 70;
+        const netToPay = cardSales - commissionTotal - stripeFees - MAINTENANCE_FEE;
 
         const dispersion = new Dispersion({
             businessId,
@@ -188,6 +192,7 @@ exports.createDispersion = async (req, res) => {
             deliveryFees,
             commissionTotal,
             stripeFees,
+            maintenanceFee: MAINTENANCE_FEE,
             netToPay,
             status: 'pending',
             createdBy: req.user ? req.user.id : null
@@ -200,6 +205,27 @@ exports.createDispersion = async (req, res) => {
             { _id: { $in: orders.map(o => o._id) } },
             { $set: { dispersionId: dispersion._id } }
         );
+
+        // --- LÓGICA DE NOTIFICACIÓN TWILIO A RESTAURANTE ---
+        if (business.phone) {
+            try {
+                // Formatear fechas para el mensaje
+                const formatDate = (date) => new Date(date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+                
+                const toPhone = `whatsapp:+521${business.phone}`;
+                const fromPhone = `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`;
+                const msg = `🔔 *Tengo Hambre - Resumen de Corte*\nHola *${business.name}*, se ha generado tu corte de ventas en la plataforma.\n\n📅 *Período:* ${formatDate(start)} al ${formatDate(end)}\n📦 *Pedidos incluidos:* ${orders.length}\n💰 *Balance final:* $${netToPay.toFixed(2)}\n\n✅ *Tus deudas pendientes de este período han sido liquidadas.*`;
+
+                await client.messages.create({
+                    body: msg,
+                    from: fromPhone,
+                    to: toPhone
+                });
+            } catch (twilioErr) {
+                console.error("Error enviando WhatsApp de corte:", twilioErr.message);
+            }
+        }
+        // ----------------------------------------------------
 
         res.json({ success: true, dispersion });
     } catch (e) {

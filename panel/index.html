@@ -4544,6 +4544,10 @@
                             <span>Comisión Plataforma:</span>
                             <span class="font-bold">-${{ saas.dispersionPreview.value.commissionTotal.toFixed(2) }}</span>
                         </li>
+                        <li class="flex justify-between text-red-500">
+                            <span>Mantenimiento Mensual:</span>
+                            <span class="font-bold">-${{ (saas.dispersionPreview.value.maintenanceFee || 70).toFixed(2) }}</span>
+                        </li>
                         <li v-if="saas.dispersionPreview.value.stripeFees > 0" class="flex justify-between text-red-500">
                             <span>Comisiones de Tarjeta (Stripe):</span>
                             <span class="font-bold">-${{ saas.dispersionPreview.value.stripeFees.toFixed(2) }}</span>
