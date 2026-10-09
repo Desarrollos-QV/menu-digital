@@ -448,8 +448,10 @@ exports.getBalanceSummary = async (req, res) => {
         }).select('businessId subtotal total paymentMethod dispersionId').lean();
 
         // 2.5 Órdenes pendientes históricas (Para calcular la deuda real acumulada)
+        // A petición del administrador, se ignoran deudas de antes del 1 de Julio de 2026
+        const CUTOFF_DATE = new Date('2026-07-01T00:00:00');
         const pendingOrders = await Order.find({
-            createdAt: { $lte: end },
+            createdAt: { $gte: CUTOFF_DATE, $lte: end },
             dispersionId: null,
             $or: [
                 { paymentMethod: { $nin: CARD_METHODS }, status: { $nin: ['cancelled', 'rejected'] } },
