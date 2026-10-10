@@ -538,7 +538,17 @@ exports.getBalanceSummary = async (req, res) => {
             b.totalOrders += 1;
             
             // Se usa el subtotal para las columnas de Ventas para que el 5% cuadre visualmente
-            if (isCard) b.cardSales += subtotal; else b.cashSales += subtotal;
+            if (isCard) {
+                b.cardSales += subtotal;
+                let sFee = 0;
+                if (total > 0) {
+                    sFee = (total * (STRIPE_FEE_PERCENT / 100)) + STRIPE_FEE_FIXED;
+                    sFee = sFee * 1.16; // IVA
+                }
+                b.monthStripeDeposit = (b.monthStripeDeposit || 0) + (total - sFee);
+            } else {
+                b.cashSales += subtotal;
+            }
 
             // Comisión generada en el mes: % sobre subtotal ó fijo por pedido
             let comm = 0;
@@ -604,7 +614,7 @@ exports.getBalanceSummary = async (req, res) => {
         const k = {
             cashSales: 0, cardSales: 0, totalSales: 0, totalOrders: 0,
             commissionPercent: 0, commissionFixed: 0, maintenance: 0, totalFees: 0,
-            cardBalance: 0, monthlyProfit: 0,
+            cardBalance: 0, monthlyProfit: 0, realCashInBank: 0,
             withDebtCount: 0, toCollectCount: 0, zeroCount: 0
         };
         result.forEach(r => {
@@ -619,11 +629,16 @@ exports.getBalanceSummary = async (req, res) => {
             if (r.status === 'they_owe') k.withDebtCount++;
             else if (r.status === 'we_owe') k.toCollectCount++;
             else k.zeroCount++;
+
+            // Dinero real en banco: lo que Stripe nos depositó vs lo que les cobramos.
+            // Solo podemos "quedarnos" con lo que cobramos si Stripe nos depositó suficiente.
+            const monthFees = r.commission + r.maintenance;
+            k.realCashInBank += Math.min(monthFees, r.monthStripeDeposit || 0);
         });
         k.totalSales    = k.cashSales + k.cardSales;
         // Ganancia mensual de la plataforma = comisiones (5% + $5) + mantenimiento
         k.monthlyProfit = k.commissionPercent + k.commissionFixed + k.maintenance;
-        ['cashSales','cardSales','totalSales','commissionPercent','commissionFixed','maintenance','totalFees','cardBalance','monthlyProfit']
+        ['cashSales','cardSales','totalSales','commissionPercent','commissionFixed','maintenance','totalFees','cardBalance','monthlyProfit','realCashInBank']
             .forEach(key => { k[key] = r2(k[key]); });
 
         const monthKey = start.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' }).substring(0, 7);

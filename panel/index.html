@@ -1638,7 +1638,7 @@
                     </div>
 
                     <!-- KPI CARDS -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
                         <!-- Ventas en efectivo -->
                         <div class="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 transition">
                             <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10"></div>
@@ -1693,9 +1693,21 @@
                             <div class="flex items-center gap-4 relative">
                                 <div class="w-12 h-12 rounded-xl bg-black/10 flex items-center justify-center text-2xl shrink-0"><i class="fa-solid fa-chart-simple"></i></div>
                                 <div class="min-w-0">
-                                    <p class="text-[11px] font-black uppercase tracking-wide">Ganancia mensual</p>
+                                    <p class="text-[11px] font-black uppercase tracking-wide">Ganancia Teorica</p>
                                     <p class="text-2xl font-black truncate">{{ saas.balanceMoney(saas.balanceKpis.value.monthlyProfit) }}</p>
-                                    <p class="text-xs font-medium opacity-80">Total del mes</p>
+                                    <p class="text-[10px] font-bold opacity-80 leading-tight mt-1">Total ganado (Aún si falta cobrar)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Efectivo Libre en Bancos -->
+                        <div class="relative overflow-hidden rounded-2xl p-5 bg-slate-900 text-white shadow-lg shadow-slate-900/30 hover:-translate-y-0.5 transition border border-slate-700">
+                            <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/5"></div>
+                            <div class="flex items-center gap-4 relative">
+                                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl shrink-0 text-emerald-400"><i class="fa-solid fa-building-columns"></i></div>
+                                <div class="min-w-0">
+                                    <p class="text-[11px] font-black text-emerald-400 uppercase tracking-wide">En Bancos (Neto)</p>
+                                    <p class="text-2xl font-black truncate">{{ saas.balanceMoney(saas.balanceKpis.value.realCashInBank) }}</p>
+                                    <p class="text-[10px] font-medium opacity-70 leading-tight mt-1">Stripe retenido - Dispersiones</p>
                                 </div>
                             </div>
                         </div>
