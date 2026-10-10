@@ -533,6 +533,7 @@ exports.getBalanceSummary = async (req, res) => {
             if (!b) return;
 
             const subtotal = o.subtotal || 0;
+            const total = o.total || 0;
             const isCard   = CARD_METHODS.includes(o.paymentMethod);
 
             b.totalOrders += 1;
