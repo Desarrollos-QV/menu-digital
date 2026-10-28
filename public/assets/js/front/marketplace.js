@@ -997,13 +997,23 @@ createApp({
                         return found || list[fallbackIndex % list.length];
                     };
 
-                    // Fetch de promos reales desde la base de datos de manera funcional
+                    // Helper para resolver el objeto negocio completo y actualizado
+                    const resolveBusiness = (bizData) => {
+                        if (!bizData) return null;
+                        const bizId = typeof bizData === 'object' ? (bizData._id || bizData.id) : bizData;
+                        const matched = businesses.value.find(b => String(b._id) === String(bizId));
+                        if (matched) return matched;
+                        if (typeof bizData === 'object' && (bizData.slug || bizData.name)) return bizData;
+                        return null;
+                    };
+
+                    // Fetch de promos reales desde la base de datos (SOLO de negocios actualmente abiertos)
                     try {
                         const promosRes = await fetch('api/public/promos');
                         if (promosRes.ok) {
                             const dbPromos = await promosRes.json();
                             promos.value = dbPromos.map(p => {
-                                // Resolver el tagClass basado en el tag
+                                const biz = resolveBusiness(p.businessId);
                                 let tagClass = "bg-secondary text-white"; // default emerald
                                 const tagLower = (p.promoTag || '').toLowerCase();
                                 if (tagLower.includes('2x1')) {
@@ -1019,9 +1029,9 @@ createApp({
                                     tag: p.promoTag || "PROMO",
                                     tagClass: tagClass,
                                     image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
-                                    business: p.businessId
+                                    business: biz
                                 };
-                            }).filter(p => p.business); // Solo si el producto tiene negocio válido
+                            }).filter(p => p.business && isBusinessCurrentlyOpen(p.business));
                         } else {
                             promos.value = [];
                         }
@@ -1030,20 +1040,21 @@ createApp({
                         promos.value = [];
                     }
 
-                    // Fetch de productos menores o iguales a $100
+                    // Fetch de productos menores o iguales a $100 (SOLO de negocios actualmente abiertos)
                     try {
                         const cheapRes = await fetch('api/public/cheap-products');
                         if (cheapRes.ok) {
                             const dbCheap = await cheapRes.json();
                             cheapProducts.value = dbCheap.map(p => {
+                                const biz = resolveBusiness(p.businessId);
                                 return {
                                     id: p._id,
                                     title: p.name,
                                     price: p.price,
                                     image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
-                                    business: p.businessId
+                                    business: biz
                                 };
-                            }).filter(p => p.business);
+                            }).filter(p => p.business && isBusinessCurrentlyOpen(p.business));
                         } else {
                             cheapProducts.value = [];
                         }
@@ -1052,20 +1063,21 @@ createApp({
                         cheapProducts.value = [];
                     }
 
-                    // Fetch de lo más pedido (Top products)
+                    // Fetch de lo más pedido / Top products (SOLO de negocios actualmente abiertos)
                     try {
                         const topRes = await fetch('api/public/top-products');
                         if (topRes.ok) {
                             const dbTop = await topRes.json();
                             topProducts.value = dbTop.map(p => {
+                                const biz = resolveBusiness(p.businessId);
                                 return {
                                     id: p._id,
                                     title: p.name,
                                     price: p.price,
                                     image: p.image || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80",
-                                    business: p.businessId
+                                    business: biz
                                 };
-                            }).filter(p => p.business);
+                            }).filter(p => p.business && isBusinessCurrentlyOpen(p.business));
                         } else {
                             topProducts.value = [];
                         }
@@ -1185,9 +1197,10 @@ createApp({
         // ---- LÓGICA HORARIO MARKETPLACE ----
         const DAY_NAMES_MKT = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-        const isBusinessCurrentlyOpen = (biz) => {
-            // 1. Si el admin lo cerró manualmente → siempre cerrado
-            if (biz.isOpen === false) return false;
+        function isBusinessCurrentlyOpen(biz) {
+            if (!biz) return false;
+            // 1. Si está inactivo o el admin lo cerró manualmente → cerrado
+            if (biz.active === false || biz.isOpen === false) return false;
 
             const schedule = biz.schedule;
             // 2. Sin schedule configurado → confiamos en isOpen

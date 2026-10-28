@@ -41,13 +41,19 @@
             <div class="mobile-drawer-header">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 bg-brand rounded-xl flex items-center justify-center shadow-md shadow-brand/20">
-                        <img src="/assets/images/logo.jpg" alt="" class="w-full h-full object-cover rounded-xl">
+                        <img src="/assets/images/logo.jpeg" alt="" class="w-full h-full object-cover rounded-xl">
                     </div>
                     <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
                 </div>
-                <button @click="mobileDrawerOpen = false" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-brand transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <!-- Theme Toggle en Drawer Header -->
+                    <button @click="toggleTheme" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand transition shadow-xs" title="Cambiar tema">
+                        <i :class="theme === 'dark' ? 'fa-solid fa-moon text-sm' : 'fa-solid fa-sun text-sm'"></i>
+                    </button>
+                    <button @click="mobileDrawerOpen = false" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-brand transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Drawer Body (scrollable) -->
@@ -75,6 +81,17 @@
                         <span class="icon-wrap text-brand"><i class="fa-solid fa-newspaper"></i></span>
                         Blog
                     </a>
+                </div>
+
+                <!-- Sección: Tema / Apariencia -->
+                <div class="mobile-drawer-section">
+                    <p class="mobile-drawer-label">Apariencia</p>
+                    <button @click="toggleTheme" class="mobile-drawer-item">
+                        <span class="icon-wrap text-brand">
+                            <i :class="theme === 'dark' ? 'fa-solid fa-moon text-indigo-400' : 'fa-solid fa-sun text-amber-500'"></i>
+                        </span>
+                        <span>{{ theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro' }}</span>
+                    </button>
                 </div>
 
                 <!-- Sección: Usuario Logeado -->
@@ -125,17 +142,17 @@
                         
                         <!-- Logo -->
                         <a href="/" class="flex items-center gap-2 group cursor-pointer">
-                            <div class="w-8 h-8 md:w-9 md:h-9 bg-brand rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-105 transition flex-shrink-0">
-                                <img src="/assets/images/logo.jpg" alt="" class="rounded-xl">
+                            <div class="w-10 h-10 md:w-10 md:h-10 rounded-xl overflow-hidden shadow-md shadow-brand/20 group-hover:scale-105 transition flex-shrink-0 bg-brand">
+                                <img src="/assets/images/logo.jpeg" alt="Tengo Hambre" class="w-full h-full object-cover">
                             </div>
                         </a>
                     </div>
 
                     <!-- Lado Medio: Selector Ubicación (Pin Rojo + Nombre Colonia + Caret ∨) -->
-                    <div class="flex items-center gap-1 cursor-pointer hover:opacity-80 transition py-1.5 px-3 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-100 dark:border-slate-700" @click="showLocationModal = true">
+                    <div class="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition py-1.5 px-3 bg-slate-50 dark:bg-slate-800 rounded-full border border-slate-200/60 dark:border-slate-700 shadow-xs" @click="showLocationModal = true">
                         <i class="fa-solid fa-location-dot text-brand text-sm md:text-base animate-bounce-slow"></i>
-                        <span class="text-slate-800 dark:text-white font-bold text-xs md:text-sm truncate max-w-[150px] md:max-w-[400px]">
-                            {{ currentLag ? currentLag.name : 'Seleccionar ubicación' }}
+                        <span class="text-slate-800 dark:text-white font-bold text-xs md:text-sm truncate max-w-[130px] sm:max-w-[200px] md:max-w-[400px]">
+                            {{ currentLag ? currentLag.name : 'Centro' }}
                         </span>
                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                     </div>
@@ -143,14 +160,9 @@
                     <!-- Lado Derecho: Acciones de Cuenta -->
                     <div class="flex items-center gap-2 md:gap-3">
                         <!-- Blog link (Desktop) -->
-                        <a href="/blog.html" class="hidden md:flex text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition items-center gap-1.5 mr-2">
+                        <a href="/blog.html" class="hidden md:flex text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand transition items-center gap-1.5 mr-1">
                             <i class="fa-solid fa-newspaper text-brand"></i> Blog
                         </a>
-                        
-                        <!-- Theme Toggle -->
-                        <button @click="toggleTheme" class="w-10 h-10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand transition">
-                            <i :class="theme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun'"></i>
-                        </button>
 
                         <!-- ESTADO: LOGUEADO -->
                         <div v-if="currentUser" class="relative z-50" v-click-outside="() => showUserDropdown = false">
@@ -178,7 +190,7 @@
 
                         <!-- ESTADO: NO LOGUEADO (INVITADO) -->
                         <button v-else @click="showUserModal = true" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-brand hover:text-white transition shadow-sm" title="Iniciar Sesión / Registro">
-                            <i class="fa-regular fa-user"></i>
+                            <i class="fa-regular fa-user text-sm md:text-base"></i>
                         </button>
                     </div>
 
@@ -192,7 +204,7 @@
                         </div>
                         <input v-model="searchQuery" type="text" 
                             class="block w-full pl-11 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 rounded-full text-sm font-semibold focus:ring-2 focus:ring-brand focus:bg-white outline-none transition-all placeholder:text-slate-400/90 shadow-inner-sm" 
-                            placeholder="Buscar en Tengo Hambre...">
+                            placeholder="Buscar restaurantes o platillos...">
                     </div>
                 </div>
 
@@ -200,7 +212,7 @@
         </nav>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 pt-36 md:pt-32 pb-12">
+        <main class="flex-1 pt-36 md:pt-32 pb-24 md:pb-12">
             <!-- Pickup: barra de búsqueda sticky (solo en modo recolectar) -->
             <div v-show="deliveryMode === 'pickup'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-0 transition-all" :class="{'shadow-sm': scrolled}">
                 <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-3">
@@ -236,153 +248,45 @@
                 </div>
 
                 <!-- ========================= MODO ENTREGA (default) ========================= -->
-                <div v-else-if="deliveryMode === 'delivery'">
-                    <!-- 🔥 TOP TREND PRODUCTS -->
-                    <div v-if="!searchQuery && selectedCategory === 'all' && topProducts.length > 0" class="lg:mt-5 mb-5">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    🏆 LO MÁS PEDIDO
-                                </h5>
+                <div v-else-if="deliveryMode === 'delivery'" class="space-y-6 md:space-y-10">
+
+                    <!-- 1. CATEGORÍAS (Barra horizontal con iconos estilo mockup) -->
+                    <div class="pt-1 pb-2 -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <div class="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x items-start pb-2">
+                            <!-- Categoría: Lo más pedido (Todo) -->
+                            <div @click="selectedCategory = 'all'" 
+                                 class="snap-start flex flex-col items-center flex-shrink-0 cursor-pointer group min-w-[68px] sm:min-w-[76px]">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl transition-all duration-200"
+                                     :class="selectedCategory === 'all' ? 'bg-red-50 dark:bg-red-950/40 text-brand ring-2 ring-brand/30 shadow-sm scale-105' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'">
+                                    <span>🍔</span>
+                                </div>
+                                <span class="text-[11px] sm:text-xs font-bold text-center mt-1.5 transition-colors leading-tight line-clamp-1"
+                                      :class="selectedCategory === 'all' ? 'text-slate-900 dark:text-white font-black' : 'text-slate-600 dark:text-slate-400'">
+                                    Lo más pedido
+                                </span>
+                                <div class="h-0.5 rounded-full mx-auto mt-1 transition-all duration-300"
+                                     :class="selectedCategory === 'all' ? 'w-6 bg-brand' : 'w-0 bg-transparent'"></div>
                             </div>
-                        </div>
-                        <div class="flex overflow-x-auto gap-4 pb-4 px-4 snap-x no-scrollbar">
-                            <div v-for="product in topProducts" :key="product.id"
-                                class="relative snap-start flex-shrink-0 w-36 md:w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden cursor-pointer hover:shadow-lg hover:scale-[0.98] transition-transform"
-                                @click="goToBusiness(product.business)">
-                                <!-- TOP Badge -->
-                                <div class="absolute top-2 left-2 z-10 bg-amber-400 text-white text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shadow flex items-center gap-0.5">
-                                    🏆 TOP
-                                </div>
-                                <!-- Image -->
-                                <div class="w-full h-24 md:h-32 bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                    <img loading="lazy" :src="product.image" :alt="product.title" class="w-full h-full object-cover" />
-                                </div>
-                                <!-- Info -->
-                                <div class="p-2.5 md:p-3">
-                                    <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{{ product.title }}</p>
-                                    <p class="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ product.business?.name }}</p>
-                                    <div class="flex items-center justify-between mt-2">
-                                        <p class="text-sm md:text-base font-black text-brand">${{ product.price?.toFixed(2) }}</p>
-                                        <button @click.stop="goToBusiness(product.business)" class="w-6 h-6 md:w-7 md:h-7 bg-brand text-white rounded-full flex items-center justify-center text-xs md:text-sm font-bold shadow-sm active:scale-90 transition-transform shrink-0">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- PROMOS DE HOY (Carrusel Horizontal) -->
-                    <div v-if="!searchQuery && selectedCategory === 'all' && promos.length > 0" class="lg:mt-5 mb-5">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    🔥 PROMOS DE HOY
-                                </h5>
-                            </div>
-                        </div>
 
-                        <!-- Horizontal Scroll list -->
-                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 px-4 snap-x">
-                            <div v-for="promo in promos" :key="promo.id" @click="goToBusiness(promo.business)" 
-                                class="snap-start flex-shrink-0 w-[calc((100%-32px)/2.2)] md:w-[calc((100%-32px)/3.2)] lg:w-[calc((100%-32px)/4)] bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700/50 cursor-pointer hover:shadow-lg transition-all duration-300">
-                                
-                                <!-- Promo Image + Tag -->
-                                <div class="relative h-20 md:h-36 w-full bg-slate-100 dark:bg-slate-700">
-                                    <img :src="promo.image" class="w-full h-full object-cover rounded-xl" alt="">
-                                    <span :class="promo.tagClass" class="absolute top-1.5 left-1.5 text-[7px] md:text-[9px] font-black px-1.5 py-0.5 rounded shadow uppercase tracking-wider">
-                                        {{ promo.tag }}
-                                    </span>
+                            <!-- Resto de Categorías Dinámicas -->
+                            <div v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id"
+                                 class="snap-start flex flex-col items-center flex-shrink-0 cursor-pointer group min-w-[68px] sm:min-w-[76px]">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl transition-all duration-200"
+                                     :class="selectedCategory === cat.id ? 'bg-red-50 dark:bg-red-950/40 text-brand ring-2 ring-brand/30 shadow-sm scale-105' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'">
+                                    <span class="group-hover:scale-110 transition-transform duration-200">{{ cat.emoji }}</span>
                                 </div>
-
-                                <!-- Promo Details -->
-                                <div class="p-2 md:p-4 flex flex-col gap-1.5 md:gap-3">
-                                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center  md:gap-2">
-                                        <h3 class="font-extrabold text-[10px] w-full lg:max-w-[60%] md:text-sm text-slate-800 dark:text-white ">
-                                            {{ promo.title }}
-                                        </h3>
-                                        <h2 class="text-brand font-black text-[27px] text-red-500 shrink-0 leading-none">
-                                            ${{ promo.price }}
-                                        </h2>
-                                    </div>
-
-                                    <!-- Business Info Row -->
-                                    <div class="flex items-center gap-1 md:gap-2 border-t border-slate-50 dark:border-slate-700/50 pt-1.5 md:pt-3">
-                                        <div class="w-5 h-5 md:w-8 md:h-8 rounded-full border border-slate-100 dark:border-slate-700 overflow-hidden flex-shrink-0 bg-slate-50">
-                                            <img :src="promo.business.avatar ? 'https://tengo-hambre.com' + promo.business.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="font-bold text-[9px] md:text-xs text-slate-700 dark:text-slate-300 truncate">
-                                                {{ promo.business.name }}
-                                            </p>
-                                            <p class="text-[7px] md:text-[10px] text-slate-400 font-semibold flex items-center gap-0.5">
-                                                <i class="fa-regular fa-clock text-[8px] md:text-[9px]"></i> {{ promo.business.time }} min
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
+                                <span class="text-[11px] sm:text-xs font-bold text-center mt-1.5 transition-colors leading-tight line-clamp-1"
+                                      :class="selectedCategory === cat.id ? 'text-slate-900 dark:text-white font-black' : 'text-slate-600 dark:text-slate-400'">
+                                    {{ cat.name }}
+                                </span>
+                                <div class="h-0.5 rounded-full mx-auto mt-1 transition-all duration-300"
+                                     :class="selectedCategory === cat.id ? 'w-6 bg-brand' : 'w-0 bg-transparent'"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Meno de $100 Pesos -->
-                    <div v-if="!searchQuery && selectedCategory === 'all' && cheapProducts.length > 0" class="lg:mt-5 mb-5">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
-                                    💸 ¡MENOS DE $100 PESOS!
-                                </h5>
-                            </div>
-                        </div>
-
-                        <!-- Horizontal Scroll list -->
-                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 px-4 snap-x">
-                            <div v-for="product in cheapProducts" :key="product.id" @click="goToBusiness(product.business)" 
-                                class="snap-start flex-shrink-0 w-[calc((100%-32px)/2.2)] md:w-[calc((100%-32px)/3.2)] lg:w-[calc((100%-32px)/4)] bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700/50 cursor-pointer hover:shadow-lg transition-all duration-300">
-                                
-                                <!-- Product Image + Tag -->
-                                <div class="relative h-20 md:h-36 w-full bg-slate-100 dark:bg-slate-700">
-                                    <img :src="product.image" class="w-full h-full object-cover rounded-xl" alt="">
-                                    <span class="bg-emerald-500 text-white absolute top-1.5 left-1.5 text-[7px] md:text-[9px] font-black px-1.5 py-0.5 rounded shadow uppercase tracking-wider">
-                                        ¡OFERTA!
-                                    </span>
-                                </div>
-
-                                <!-- Product Details -->
-                                <div class="p-2 md:p-4 flex flex-col gap-1.5 md:gap-3">
-                                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center  md:gap-2">
-                                        <h3 class="font-extrabold text-[10px] w-full lg:max-w-[60%] md:text-sm text-slate-800 dark:text-white ">
-                                            {{ product.title }}
-                                        </h3>
-                                        <h2 class="text-brand font-black text-[27px] text-emerald-500 shrink-0 leading-none">
-                                            ${{ product.price }}
-                                        </h2>
-                                    </div>
-
-                                    <!-- Business Info Row -->
-                                    <div class="flex items-center gap-1 md:gap-2 border-t border-slate-50 dark:border-slate-700/50 pt-1.5 md:pt-3">
-                                        <div class="w-5 h-5 md:w-8 md:h-8 rounded-full border border-slate-100 dark:border-slate-700 overflow-hidden flex-shrink-0 bg-slate-50">
-                                            <img :src="product.business.avatar ? 'https://tengo-hambre.com' + product.business.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="font-bold text-[9px] md:text-xs text-slate-700 dark:text-slate-300 truncate">
-                                                {{ product.business.name }}
-                                            </p>
-                                            <p class="text-[7px] md:text-[10px] text-slate-400 font-semibold flex items-center gap-0.5">
-                                                <i class="fa-regular fa-clock text-[8px] md:text-[9px]"></i> {{ product.business.time }} min
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- HERO SLIDER SECTION (oculto en modo Recolectar) -->
-                    <div v-show="deliveryMode === 'delivery'" class="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 mb-8 md:mb-12">
+                    <!-- 2. HERO SLIDER SECTION (Dinámico desde panel de control) -->
+                    <div class="max-w-7xl mx-auto px-0 mb-8 md:mb-12">
                         <div v-if="banners.length > 0" class="relative rounded-3xl overflow-hidden shadow-soft aspect-[2/1] md:aspect-[21/9] lg:aspect-[3/1] min-h-[160px] bg-slate-100 dark:bg-slate-800 group">
                             
                             <!-- Slides Container -->
@@ -432,32 +336,139 @@
                         <div v-else class="relative rounded-3xl overflow-hidden h-48 md:h-64 bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
                     </div>
 
-                    <!-- CATEGORÍAS (Sticky Wrapper) -->
-                    <div v-show="deliveryMode === 'delivery'" class="sticky top-[120px] md:top-[70px] z-40 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-3 border-b border-slate-200/50 dark:border-slate-800/50 mb-8 md:mb-12 transition-all" :class="{'shadow-sm': scrolled}">
-                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div class="flex gap-3 md:gap-4 overflow-x-auto no-scrollbar snap-x items-center">
-                                <button @click="selectedCategory = 'all'" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2"
-                                    :class="selectedCategory === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-lg dark:bg-white dark:text-slate-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
-                                    <i class="fa-solid fa-utensils"></i> Todo
-                                </button>
-                                <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id" class="snap-start flex-shrink-0 px-5 py-2 md:py-2.5 rounded-full font-bold text-sm md:text-base transition-all border flex items-center gap-2 group"
-                                    :class="selectedCategory === cat.id ? 'bg-brand text-white border-brand shadow-lg shadow-brand/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand hover:text-brand'">
-                                    <span class="group-hover:scale-110 transition-transform duration-200">{{ cat.emoji }}</span> {{ cat.name }}
-                                </button>
+                    <!-- 3. PROMOS DE HOY -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && promos.length > 0">
+                        <div class="flex justify-between items-center mb-4 px-1">
+                            <h5 class="text-base sm:text-lg md:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                Promos de hoy
+                            </h5>
+                            <button @click="document.getElementById('restaurantes-cerca')?.scrollIntoView({ behavior: 'smooth' })" 
+                                    class="text-xs sm:text-sm font-bold text-brand hover:underline flex items-center gap-1">
+                                Ver todo <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                            </button>
+                        </div>
+
+                        <!-- Horizontal Scroll list -->
+                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-2 snap-x -mx-4 sm:mx-0 px-4 sm:px-0">
+                            <div v-for="promo in promos" :key="promo.id" @click="goToBusiness(promo.business)" 
+                                class="snap-start flex-shrink-0 w-44 sm:w-52 md:w-60 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700/60 shadow-xs hover:shadow-md cursor-pointer transition-all duration-300 group flex flex-col">
+                                
+                                <!-- Promo Image + Tags -->
+                                <div class="relative h-28 sm:h-32 md:h-36 w-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                    <img :src="promo.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="">
+                                    
+                                    <span :class="promo.tagClass || 'bg-brand text-white'" class="absolute top-2 left-2 text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded shadow uppercase tracking-wider z-10">
+                                        {{ promo.tag || 'EXCLUSIVO' }}
+                                    </span>
+
+                                    <button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center text-slate-400 hover:text-red-500 transition shadow-xs z-10" @click.stop="">
+                                        <i class="fa-regular fa-heart text-xs"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Promo Details -->
+                                <div class="p-3 flex flex-col justify-between flex-1">
+                                    <div>
+                                        <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-brand transition">
+                                            {{ promo.title }}
+                                        </h3>
+                                        <p class="text-[10px] sm:text-xs text-slate-400 font-medium truncate mt-0.5">
+                                            {{ promo.business?.name }}
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center justify-between mt-2.5 pt-1.5 border-t border-slate-50 dark:border-slate-700/50">
+                                        <span class="text-brand font-black text-sm sm:text-base leading-none">
+                                            ${{ promo.price }} MXN
+                                        </span>
+                                        <button @click.stop="goToBusiness(promo.business)" class="w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center text-xs font-bold shadow-sm active:scale-90 transition-transform">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
 
-                    <!-- ALL BUSINESSES GRID (Restaurantes cerca de ti) -->
-                    <div class="animate-fade-in">
-                        <div class="flex justify-between items-center mt-5 mb-6">
+                    <!-- 5. OTRAS SECCIONES (Lo más pedido / Menos de $100 pesos) -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && topProducts.length > 0" class="pt-4">
+                        <div class="flex justify-between items-center mb-4 px-1">
+                            <h5 class="text-base sm:text-lg font-black dark:text-white flex items-center gap-2">
+                                🏆 TOP PRODUCTOS
+                            </h5>
+                        </div>
+                        <div class="flex overflow-x-auto gap-4 pb-4 px-1 snap-x no-scrollbar">
+                            <div v-for="product in topProducts" :key="product.id"
+                                class="relative snap-start flex-shrink-0 w-36 md:w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden cursor-pointer hover:shadow-lg hover:scale-[0.98] transition-transform"
+                                @click="goToBusiness(product.business)">
+                                <div class="absolute top-2 left-2 z-10 bg-amber-400 text-white text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shadow flex items-center gap-0.5">
+                                    🏆 TOP
+                                </div>
+                                <div class="w-full h-24 md:h-32 bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                    <img loading="lazy" :src="product.image" :alt="product.title" class="w-full h-full object-cover" />
+                                </div>
+                                <div class="p-2.5 md:p-3">
+                                    <p class="text-xs md:text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{{ product.title }}</p>
+                                    <p class="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ product.business?.name }}</p>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <p class="text-sm md:text-base font-black text-brand">${{ product.price?.toFixed(2) }}</p>
+                                        <button @click.stop="goToBusiness(product.business)" class="w-6 h-6 md:w-7 md:h-7 bg-brand text-white rounded-full flex items-center justify-center text-xs md:text-sm font-bold shadow-sm active:scale-90 transition-transform shrink-0">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Menos de $100 Pesos -->
+                    <div v-if="!searchQuery && selectedCategory === 'all' && cheapProducts.length > 0" class="pt-2">
+                        <div class="flex justify-between items-center mb-4 px-1">
+                            <h5 class="text-base sm:text-lg font-black dark:text-white flex items-center gap-2">
+                                💸 ¡MENOS DE $100 PESOS!
+                            </h5>
+                        </div>
+                        <div class="flex overflow-x-auto no-scrollbar gap-4 pb-4 px-1 snap-x">
+                            <div v-for="product in cheapProducts" :key="product.id" @click="goToBusiness(product.business)" 
+                                class="snap-start flex-shrink-0 w-40 sm:w-48 bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700/50 cursor-pointer hover:shadow-lg transition-all duration-300">
+                                <div class="relative h-24 md:h-32 w-full bg-slate-100 dark:bg-slate-700">
+                                    <img :src="product.image" class="w-full h-full object-cover" alt="">
+                                    <span class="bg-emerald-500 text-white absolute top-1.5 left-1.5 text-[7px] md:text-[9px] font-black px-1.5 py-0.5 rounded shadow uppercase tracking-wider">
+                                        ¡OFERTA!
+                                    </span>
+                                </div>
+                                <div class="p-2.5 flex flex-col gap-1">
+                                    <div class="flex justify-between items-center gap-1">
+                                        <h3 class="font-extrabold text-xs text-slate-800 dark:text-white truncate">
+                                            {{ product.title }}
+                                        </h3>
+                                        <span class="text-brand font-black text-sm text-emerald-500 shrink-0">
+                                            ${{ product.price }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 font-semibold truncate">
+                                        {{ product.business?.name }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. RESTAURANTES CERCA DE TI -->
+                    <div id="restaurantes-cerca" class="animate-fade-in pt-1">
+                        <div class="flex justify-between items-center mb-6 px-1">
                             <div>
-                                <h5 class="text-sm md:text-lg font-black dark:text-white flex items-center gap-2">
+                                <h5 class="text-base sm:text-lg md:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                                     <span v-if="searchQuery">🔍 RESULTADOS DE "{{ searchQuery.toUpperCase() }}"</span>
-                                    <span v-else>📍 RESTAURANTES CERCA DE TI</span>
-                                    <span class="text-sm font-bold text-slate-400 ml-2">({{ filteredBusinesses.length }})</span>
+                                    <span v-else>Restaurantes cerca de ti</span>
+                                    <span class="text-xs sm:text-sm font-bold text-slate-400">({{ filteredBusinesses.length }})</span>
                                 </h5>
                             </div>
+                            <button v-if="!searchQuery && selectedCategory !== 'all'" @click="selectedCategory = 'all'" 
+                                    class="text-xs sm:text-sm font-bold text-brand hover:underline flex items-center gap-1">
+                                Ver todo <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                            </button>
                         </div>
 
                         <!-- Empty state -->
@@ -470,78 +481,74 @@
                             <button @click="selectedCategory = 'all'; searchQuery = ''" class="mt-4 px-6 py-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-bold hover:opacity-95 transition">Ver todo</button>
                         </div>
 
-                        <!-- Grid Premium -->
-                        <div v-else class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                        <!-- Grid de Restaurantes como en el diseño -->
+                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                             <div v-for="biz in filteredBusinesses" :key="biz._id" @click="goToBusiness(biz)" 
                                 class="biz-card bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-lg border border-slate-100 dark:border-slate-700/50 cursor-pointer group flex flex-col relative transition-all duration-300">
                                 
-                                <!-- Portada (Large banner - uses Avatar as background, or cover, or fallback) -->
-                                <div class="relative w-full h-24 md:h-36 overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 border-t-3 border-t-primary">
+                                <!-- Portada -->
+                                <div class="relative w-full h-32 sm:h-36 md:h-40 overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0">
                                     <img :src="biz.cover ? 'https://tengo-hambre.com' + biz.cover : (biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80')" 
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80"></div>
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-80"></div>
                                     
-                                    <!-- Badge de Oferta sobre la Portada (Ej: "PIZZA FAMILIAR DESDE $199" or custom based on tags)
-                                    <div v-if="biz.promo || biz.deliveryCost === 0" class="absolute top-0 left-4 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md flex items-center gap-1 uppercase tracking-wider">
-                                        <i class="fa-solid fa-tag"></i> 
-                                        {{ biz.promo ? 'OFERTA ACTIVA' : '' }}
-                                    </div> -->
-                                    
-                                    <!-- Heart Icon Overlay on top-right (Favorito) 
-                                    <button class="absolute top-0 right-4 w-9 h-9 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-500 hover:bg-white transition-all duration-300" @click.stop="">
-                                        <i class="fa-regular fa-heart text-sm"></i>
-                                    </button>-->
+                                    <!-- Heart Icon Favorito -->
+                                    <button class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center text-slate-500 hover:text-red-500 transition shadow-sm z-10" @click.stop="">
+                                        <i class="fa-regular fa-heart text-xs"></i>
+                                    </button>
 
                                     <!-- Gold Star Tengo Hambre Awards -->
-                                    <div v-if="biz.hasGoldStar" class="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg shadow-yellow-500/50 flex items-center gap-1.5 uppercase tracking-widest border border-yellow-300/50 z-10">
-                                        <i class="fa-solid fa-star animate-pulse text-white"></i>
+                                    <div v-if="biz.hasGoldStar" class="absolute top-2.5 left-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 uppercase tracking-widest border border-yellow-300/50 z-10">
+                                        <i class="fa-solid fa-star text-white text-[8px]"></i>
                                         <span>Estrella Dorada</span>
                                     </div>
-                                    
                                 </div>
                                 
                                 <!-- Content Box -->
-                                <div class="flex items-start mt-2 ml-1 gap-2">
+                                <div class="p-4 flex items-start gap-3">
                                     <!-- Circular avatar/logo -->
-                                    <div class="w-14 h-14 rounded-full border border-slate-100 dark:border-slate-700 overflow-hidden flex-shrink-0 bg-white shadow-sm">
+                                    <div class="w-12 h-12 rounded-full border-2 border-white dark:border-slate-800 overflow-hidden flex-shrink-0 bg-white shadow-md -mt-6 z-10">
                                         <img :src="biz.avatar ? 'https://tengo-hambre.com' + biz.avatar : '/assets/images/logo.jpg'" class="w-full h-full object-cover">
                                     </div>
                                     
                                     <!-- Business Info Details -->
-                                    <div class="min-w-0 flex-1 flex flex-col gap-1">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <h3 class="font-extrabold text-base md:text-lg text-slate-800 dark:text-white group-hover:text-brand transition truncate flex items-center gap-1">
+                                    <div class="min-w-0 flex-1 flex flex-col gap-0.5">
+                                        <div class="flex items-center justify-between gap-1">
+                                            <h3 class="font-black text-sm sm:text-base text-slate-800 dark:text-white group-hover:text-brand transition truncate flex items-center gap-1">
                                                 {{ biz.name }}
-                                                <i class="fa-solid fa-circle-check text-blue-500 text-xs shrink-0" title="Verificado"></i>
+                                                <i class="fa-solid fa-circle-check text-blue-500 text-[10px] shrink-0" title="Verificado"></i>
                                             </h3>
-                                            <!-- Rating badge -->
-                                            <span class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300">
-                                                {{ biz.rating }} <i class="fa-solid fa-star text-yellow-400 text-[10px]"></i>
-                                            </span>
                                         </div>
                                         
-                                        <!-- Details: Tags, delivery, time -->
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold line-clamp-1 leading-normal">
-                                            {{ biz.tags ? biz.tags.join(' • ') : 'Restaurante' }} 
-                                            • {{ biz.time }} min 
-                                            • Envío: {{ biz.deliveryCost === 0 ? 'Gratis' : `$${biz.deliveryCost}` }}
+                                        <!-- Details: Tags -->
+                                        <p class="text-[11px] text-slate-400 font-semibold truncate">
+                                            {{ biz.tags && biz.tags.length ? biz.tags.join(' • ') : 'Restaurante' }}
                                         </p>
+
+                                        <!-- Rating and Time / Delivery -->
+                                        <div class="flex items-center gap-2 mt-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                                            <span class="flex items-center gap-1 text-slate-700 dark:text-slate-200">
+                                                <i class="fa-solid fa-star text-amber-400 text-[10px]"></i> {{ biz.rating || '4.8' }}
+                                            </span>
+                                            <span class="text-slate-300 dark:text-slate-600">|</span>
+                                            <span class="flex items-center gap-1 text-slate-500">
+                                                <i class="fa-regular fa-clock text-[9px]"></i> {{ biz.time || '30-45' }} min
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- Bottom Status & Action Bar -->
-                                <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-slate-50 dark:border-slate-700/30">
+                                <div class="px-4 pb-4 pt-1 flex items-center justify-between border-t border-slate-50 dark:border-slate-700/30 mt-auto">
                                     <!-- Status Badge (Open / Closed) -->
-                                    <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm"
+                                    <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xs"
                                         :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'">
                                         <span class="w-1.5 h-1.5 rounded-full" :class="isBusinessCurrentlyOpen(biz) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
                                         {{ isBusinessCurrentlyOpen(biz) ? 'Abierto' : 'Cerrado' }}
                                     </span>
                                     
-                                    <!-- Filled Action Button -->
-                                    <button class="bg-brand hover:brightness-90 text-white 
-                                        text-xs font-extrabold px-4 py-2 rounded-xl transition-all duration-300 
-                                        shadow-md shadow-brand/30 hover:shadow-lg flex items-center gap-1">
+                                    <!-- Action Button -->
+                                    <button class="bg-brand hover:brightness-90 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition-all duration-300 shadow-sm shadow-brand/20 hover:shadow-md flex items-center gap-1">
                                         Ver menú <i class="fa-solid fa-chevron-right text-[8px]"></i>
                                     </button>
                                 </div>
@@ -550,6 +557,7 @@
                         </div>
 
                     </div>
+
                 </div>
 
                 <!-- ========================= MODO RECOLECTAR ========================= -->
@@ -653,13 +661,13 @@
         </main>
 
         <!-- FOOTER WEB COMPLETO -->
-        <footer class="bg-white dark:bg-slate-950 pt-16 pb-8 border-t border-slate-100 dark:border-slate-800">
+        <footer class="bg-white dark:bg-slate-950 pt-16 pb-24 md:pb-8 border-t border-slate-100 dark:border-slate-800">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                     <div class="col-span-1 md:col-span-2">
                         <div class="flex items-center gap-2 mb-4">
                             <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white shadow-md">
-                                <img src="/assets/images/logo.jpg" alt="">
+                                <img src="/assets/images/logo.jpeg" alt="">
                             </div>
                             <span class="font-bold text-xl text-slate-900 dark:text-white">Tengo <span class="text-brand">Hambre</span></span>
                         </div>
@@ -993,6 +1001,38 @@
                 </button>
             </div>
         </div>
+
+        <!-- BOTTOM NAVIGATION BAR (Solo Móvil como en el diseño) -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/60 dark:border-slate-800 px-6 py-2 flex justify-between items-center shadow-lg">
+            <!-- Inicio (Activo con barra roja debajo) -->
+            <a href="/" class="flex flex-col items-center cursor-pointer group">
+                <i class="fa-solid fa-house text-brand text-lg"></i>
+                <span class="text-[10px] font-black text-brand mt-0.5">Inicio</span>
+                <div class="w-6 h-0.5 bg-brand rounded-full mt-0.5"></div>
+            </a>
+
+            <!-- Buscar -->
+            <button @click="document.querySelector('input[v-model=\'searchQuery\']')?.focus(); window.scrollTo({ top: 0, behavior: 'smooth' });" class="flex flex-col items-center cursor-pointer text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">Buscar</span>
+                <div class="w-6 h-0.5 bg-transparent rounded-full mt-0.5"></div>
+            </button>
+
+            <!-- Pedidos -->
+            <a href="/profile" class="flex flex-col items-center cursor-pointer text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition">
+                <i class="fa-solid fa-receipt text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">Pedidos</span>
+                <div class="w-6 h-0.5 bg-transparent rounded-full mt-0.5"></div>
+            </a>
+
+            <!-- Mi cuenta -->
+            <button @click="currentUser ? (showUserDropdown = !showUserDropdown) : (showUserModal = true)" class="flex flex-col items-center cursor-pointer text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition">
+                <i class="fa-regular fa-user text-lg"></i>
+                <span class="text-[10px] font-bold mt-0.5">Mi cuenta</span>
+                <div class="w-6 h-0.5 bg-transparent rounded-full mt-0.5"></div>
+            </button>
+        </nav>
+
     </div>
     <!-- Scripts -->
     <script src="https://js.stripe.com/v3/"></script>

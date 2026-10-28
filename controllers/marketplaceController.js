@@ -91,41 +91,112 @@ exports.getCustomerStatus = async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-// Obtener todos los productos marcados como promoción
+// Helper para verificar si un negocio está abierto según su configuración y horario (zona Monterrey/MX)
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DAY_MAP = {
+    'domingo': 'Domingo',
+    'lunes': 'Lunes',
+    'martes': 'Martes',
+    'miércoles': 'Miércoles',
+    'miercoles': 'Miércoles',
+    'jueves': 'Jueves',
+    'viernes': 'Viernes',
+    'sábado': 'Sábado',
+    'sabado': 'Sábado'
+};
+
+const isBusinessOpen = (biz) => {
+    if (!biz) return false;
+    if (biz.active === false) return false;
+    if (biz.isOpen === false) return false;
+
+    const schedule = biz.schedule;
+    if (!schedule || schedule.length === 0) return biz.isOpen !== false;
+
+    try {
+        const tz = 'America/Monterrey';
+        const now = new Date();
+        const dayFormatter = new Intl.DateTimeFormat('es-ES', { timeZone: tz, weekday: 'long' });
+        const timeParts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(now);
+        
+        const hour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        const minute = parseInt(timeParts.find(p => p.type === 'minute')?.value || '0', 10);
+        const currentMinutes = hour * 60 + minute;
+
+        const rawDay = dayFormatter.format(now).toLowerCase();
+        const todayName = DAY_MAP[rawDay] || 'Lunes';
+        const todayIdx = DAY_NAMES.indexOf(todayName);
+        const yesterdayIdx = (todayIdx + 6) % 7;
+        const yesterdayName = DAY_NAMES[yesterdayIdx];
+
+        const todayDay = schedule.find(d => d.day === todayName);
+        const yesterdayDay = schedule.find(d => d.day === yesterdayName);
+
+        const checkDayActive = (day, isToday) => {
+            if (!day || !day.isOpen) return false;
+            const [openH, openM] = (day.open || '00:00').split(':').map(Number);
+            const [closeH, closeM] = (day.close || '23:59').split(':').map(Number);
+            const openMinutes = openH * 60 + openM;
+            const closeMinutes = closeH * 60 + closeM;
+
+            if (openMinutes < closeMinutes) {
+                return isToday && currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+            } else if (openMinutes > closeMinutes) {
+                if (isToday) {
+                    return currentMinutes >= openMinutes;
+                } else {
+                    return currentMinutes < closeMinutes;
+                }
+            } else {
+                return isToday;
+            }
+        };
+
+        return checkDayActive(todayDay, true) || checkDayActive(yesterdayDay, false);
+    } catch (e) {
+        return biz.isOpen !== false;
+    }
+};
+
+// Obtener todos los productos marcados como promoción (solo de negocios abiertos)
 exports.getPromos = async (req, res) => {
     try {
         const promos = await Product.find({ isPromo: true, active: true })
             .populate('businessId')
             .sort({ updatedAt: -1 });
-        res.json(promos);
+
+        const openPromos = promos.filter(p => p.businessId && isBusinessOpen(p.businessId));
+        res.json(openPromos);
     } catch (error) {
         console.error('Error al obtener promociones:', error);
         res.status(500).json({ message: 'Error al obtener promociones' });
     }
 };
 
-// Obtener productos con precio menor o igual a $100
+// Obtener productos con precio menor o igual a $100 (solo de negocios abiertos)
 exports.getCheapProducts = async (req, res) => {
     try {
         const products = await Product.find({ price: { $gt: 0, $lte: 100 }, active: true })
             .populate('businessId')
-            .sort({ updatedAt: -1 })
-            .limit(20);
-        res.json(products);
+            .sort({ updatedAt: -1 });
+
+        const openProducts = products.filter(p => p.businessId && isBusinessOpen(p.businessId)).slice(0, 20);
+        res.json(openProducts);
     } catch (error) {
         console.error('Error al obtener productos de $100 o menos:', error);
         res.status(500).json({ message: 'Error al obtener productos' });
     }
 };
 
-// Obtener productos TOP (salesCount > 10), ordenados por popularidad
+// Obtener productos TOP (salesCount > 10), ordenados por popularidad (solo de negocios abiertos)
 exports.getTopProducts = async (req, res) => {
     try {
         const topProducts = await Product.find({ active: true, salesCount: { $gt: 10 } })
             .populate('businessId')
-            .sort({ salesCount: -1 })
-            .limit(10);
-        res.json(topProducts);
+            .sort({ salesCount: -1 });
+
+        const openTop = topProducts.filter(p => p.businessId && isBusinessOpen(p.businessId)).slice(0, 10);
+        res.json(openTop);
     } catch (error) {
         console.error('Error al obtener lo más pedido:', error);
         res.status(500).json({ message: 'Error interno del servidor' });
