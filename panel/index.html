@@ -4524,6 +4524,22 @@
                             <option value="">Selecciona un negocio...</option>
                             <option v-for="b in saas.businesses.value" :key="b._id" :value="b._id">{{ b.name }}</option>
                         </select>
+                        <!-- Estado del último corte al seleccionar negocio -->
+                        <div v-if="saas.selectedBizLastCutLoading.value" class="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+                            <i class="fa-solid fa-spinner fa-spin text-primary"></i> Consultando historial de cortes...
+                        </div>
+                        <div v-else-if="saas.dispersionForm.value.businessId && saas.selectedBizLastCut.value" class="mt-1.5 p-2 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 rounded-lg text-xs flex items-center justify-between">
+                            <span class="text-indigo-800 dark:text-indigo-300 font-medium flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock-rotate-left text-indigo-500"></i> Último corte:
+                                <strong>{{ saas.formatCutDate(saas.selectedBizLastCut.value.createdAt) }}</strong>
+                            </span>
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400">
+                                (Período: {{ saas.formatCutDateOnly(saas.selectedBizLastCut.value.periodStart) }} - {{ saas.formatCutDateOnly(saas.selectedBizLastCut.value.periodEnd) }})
+                            </span>
+                        </div>
+                        <div v-else-if="saas.dispersionForm.value.businessId" class="mt-1.5 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-info text-slate-400"></i> Sin cortes previos generados para este negocio.
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -4542,7 +4558,48 @@
 
                 <!-- Resumen de Previsualización -->
                 <div v-if="saas.dispersionPreview.value" class="mt-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                    <h4 class="text-sm font-black text-slate-800 dark:text-white mb-3">Resumen del Corte</h4>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-black text-slate-800 dark:text-white">Resumen del Corte</h4>
+                        <span v-if="saas.dispersionPreview.value.lastCut" class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
+                            <i class="fa-solid fa-clock-rotate-left text-[10px]"></i> Con corte previo
+                        </span>
+                        <span v-else class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                            <i class="fa-solid fa-sparkles text-[10px]"></i> Primer corte
+                        </span>
+                    </div>
+
+                    <!-- Tarjeta con Fecha del Último Corte -->
+                    <div class="mb-3.5 p-3 rounded-xl border transition-all"
+                         :class="saas.dispersionPreview.value.lastCut 
+                            ? 'bg-gradient-to-r from-indigo-50/90 to-blue-50/90 dark:from-indigo-950/40 dark:to-blue-950/40 border-indigo-200 dark:border-indigo-800/60' 
+                            : 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/40'">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                                     :class="saas.dispersionPreview.value.lastCut ? 'bg-indigo-600 text-white' : 'bg-amber-500 text-white'">
+                                    <i class="fa-solid text-xs" :class="saas.dispersionPreview.value.lastCut ? 'fa-clock-rotate-left' : 'fa-calendar-xmark'"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Fecha del Último Corte Generado
+                                    </p>
+                                    <p class="text-sm font-black text-slate-900 dark:text-white" v-if="saas.dispersionPreview.value.lastCut">
+                                        {{ saas.formatCutDate(saas.dispersionPreview.value.lastCut.createdAt) }}
+                                    </p>
+                                    <p class="text-xs font-semibold text-amber-700 dark:text-amber-300" v-else>
+                                        Sin corte previo registrado
+                                    </p>
+                                </div>
+                            </div>
+                            <div v-if="saas.dispersionPreview.value.lastCut" class="text-right">
+                                <span class="text-[10px] text-slate-400 block font-medium">Período anterior:</span>
+                                <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                    {{ saas.formatCutDateOnly(saas.dispersionPreview.value.lastCut.periodStart) }} al {{ saas.formatCutDateOnly(saas.dispersionPreview.value.lastCut.periodEnd) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <ul class="space-y-2 text-sm">
                         <li class="flex justify-between">
                             <span class="text-slate-500">Total Ingresos:</span>

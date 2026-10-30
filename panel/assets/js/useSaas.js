@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { authFetch } from './api.js';
 
 export function useSaas() {
@@ -794,6 +794,77 @@ export function useSaas() {
         periodEnd: today
     });
     const dispersionPreview = ref(null);
+    const selectedBizLastCut = ref(null);
+    const selectedBizLastCutLoading = ref(false);
+
+    const formatCutDate = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        try {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
+    const formatCutDateOnly = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        try {
+            const str = String(dateStr).split('T')[0];
+            const [y, m, d] = str.split('-').map(Number);
+            if (y && m && d) {
+                return new Date(y, m - 1, d).toLocaleDateString('es-MX', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            }
+            return new Date(dateStr).toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
+    const fetchLastDispersionForBusiness = async (bizId) => {
+        if (!bizId) {
+            selectedBizLastCut.value = null;
+            return;
+        }
+        selectedBizLastCutLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/dispersions/last/${bizId}`);
+            if (res.ok) {
+                const data = await res.json();
+                selectedBizLastCut.value = data.lastCut || null;
+            } else {
+                selectedBizLastCut.value = null;
+            }
+        } catch (e) {
+            console.error('Error cargando último corte del negocio:', e);
+            selectedBizLastCut.value = null;
+        } finally {
+            selectedBizLastCutLoading.value = false;
+        }
+    };
+
+    watch(() => dispersionForm.value.businessId, (newBizId) => {
+        dispersionPreview.value = null;
+        if (newBizId) {
+            fetchLastDispersionForBusiness(newBizId);
+        } else {
+            selectedBizLastCut.value = null;
+        }
+    });
 
     const fetchDispersionsAdmin = async (businessId = '') => {
         dispersionsLoading.value = true;
@@ -904,7 +975,11 @@ export function useSaas() {
                 body: JSON.stringify(dispersionForm.value)
             });
             if (res.ok) {
-                dispersionPreview.value = await res.json();
+                const data = await res.json();
+                dispersionPreview.value = data;
+                if (data.lastCut !== undefined) {
+                    selectedBizLastCut.value = data.lastCut;
+                }
             } else {
                 const err = await res.json();
                 toastr.error(err.message || 'Error en previsualización');
@@ -925,6 +1000,7 @@ export function useSaas() {
                 toastr.success('Corte de dispersión generado exitosamente');
                 showCreateDispersionModal.value = false;
                 dispersionPreview.value = null;
+                selectedBizLastCut.value = null;
                 fetchDailySales();
                 fetchDispersionSummary(); // Para refrescar la tabla de negocios pendientes
             } else {
@@ -1142,6 +1218,11 @@ export function useSaas() {
         showCreateDispersionModal,
         dispersionForm,
         dispersionPreview,
+        selectedBizLastCut,
+        selectedBizLastCutLoading,
+        fetchLastDispersionForBusiness,
+        formatCutDate,
+        formatCutDateOnly,
         fetchDispersionsAdmin,
         fetchDailySales,
         fetchMyDispersions,

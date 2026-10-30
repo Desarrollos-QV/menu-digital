@@ -83,6 +83,9 @@ exports.previewDispersion = async (req, res) => {
         const MAINTENANCE_FEE = parseFloat(process.env.MAINTENANCE_FEE) || 70;
         const netToPay = cardSales - commissionTotal - stripeFees - MAINTENANCE_FEE;
 
+        // Buscar el último corte generado para este negocio
+        const lastDispersion = await Dispersion.findOne({ businessId }).sort({ createdAt: -1 }).lean();
+
         res.json({
             businessId,
             periodStart: start,
@@ -95,7 +98,41 @@ exports.previewDispersion = async (req, res) => {
             commissionTotal,
             stripeFees,
             maintenanceFee: MAINTENANCE_FEE,
-            netToPay
+            netToPay,
+            lastCut: lastDispersion ? {
+                _id: lastDispersion._id,
+                createdAt: lastDispersion.createdAt,
+                periodStart: lastDispersion.periodStart,
+                periodEnd: lastDispersion.periodEnd,
+                netToPay: lastDispersion.netToPay,
+                status: lastDispersion.status,
+                totalOrders: lastDispersion.totalOrders,
+                totalSales: lastDispersion.totalSales
+            } : null
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+};
+
+exports.getLastDispersionByBusiness = async (req, res) => {
+    try {
+        const { businessId } = req.params;
+        if (!businessId) {
+            return res.status(400).json({ message: 'businessId es requerido' });
+        }
+        const lastDispersion = await Dispersion.findOne({ businessId }).sort({ createdAt: -1 }).lean();
+        res.json({
+            lastCut: lastDispersion ? {
+                _id: lastDispersion._id,
+                createdAt: lastDispersion.createdAt,
+                periodStart: lastDispersion.periodStart,
+                periodEnd: lastDispersion.periodEnd,
+                netToPay: lastDispersion.netToPay,
+                status: lastDispersion.status,
+                totalOrders: lastDispersion.totalOrders,
+                totalSales: lastDispersion.totalSales
+            } : null
         });
     } catch (e) {
         res.status(500).json({ error: e.message });

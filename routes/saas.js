@@ -31,6 +31,7 @@ router.post('/dispersions', dispersionController.createDispersion);
 // IMPORTANTE: rutas fijas ANTES de /:id para evitar conflictos
 router.get('/dispersions/summary', dispersionController.getDispersionSummary);
 router.get('/dispersions/daily-sales', dispersionController.getDailySales);
+router.get('/dispersions/last/:businessId', dispersionController.getLastDispersionByBusiness);
 router.get('/dispersions/me', auth, dispersionController.listMyDispersions);
 router.get('/dispersions', dispersionController.listDispersionsAdmin);
 router.put('/dispersions/:id/pay', dispersionController.payDispersion);
