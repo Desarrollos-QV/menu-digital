@@ -14,6 +14,11 @@ router.put('/businesses/:id/toggle', saasController.toggleBusinessStatus);
 router.put('/businesses/:id', saasController.updateBusiness);
 router.delete('/businesses/:id', saasController.deleteBusiness);
 
+// Seguridad y Accesos por negocio (SuperAdmin)
+router.get('/businesses/:id/security', saasController.getBusinessSecurity);
+router.put('/businesses/:id/reset-password', saasController.resetBusinessPassword);
+router.put('/businesses/:id/update-security-user', saasController.updateBusinessSecurityUser);
+
 // Comisiones por negocio
 router.get('/businesses/:id/commission-stats', saasController.getCommissionStats);
 router.post('/businesses/:id/commission-payment', saasController.addCommissionPayment);

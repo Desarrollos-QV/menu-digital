@@ -90,7 +90,182 @@ export function useSaas() {
     };
     const saasForm = ref({ ...defaultForm });
 
+    // ─── TABS Y SEGURIDAD DEL MODAL SAAS ─────────────────────────────────────
+    const saasModalTab = ref('info'); // 'info' | 'security'
+    const saasSecurityUsers = ref([]);
+    const saasSecurityLoading = ref(false);
+    const saasResetPasswordForm = ref({
+        userId: '',
+        newPassword: '',
+        showPassword: false,
+        loading: false
+    });
+    const saasResetPasswordSuccess = ref(null);
+    const saasEditUserForm = ref({
+        userId: '',
+        username: '',
+        email: '',
+        isEditing: false,
+        loading: false
+    });
+
+    const fetchBusinessSecurity = async (businessId) => {
+        if (!businessId) return;
+        saasSecurityLoading.value = true;
+        try {
+            const res = await authFetch(`/api/saas/businesses/${businessId}/security`);
+            if (res.ok) {
+                const data = await res.json();
+                saasSecurityUsers.value = data.users || [];
+                if (saasSecurityUsers.value.length > 0) {
+                    saasResetPasswordForm.value.userId = saasSecurityUsers.value[0]._id;
+                }
+            } else {
+                saasSecurityUsers.value = [];
+            }
+        } catch (e) {
+            console.error('Error cargando seguridad del negocio:', e);
+            saasSecurityUsers.value = [];
+        } finally {
+            saasSecurityLoading.value = false;
+        }
+    };
+
+    const generateSecurePassword = (target = 'reset') => {
+        const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const lowers = 'abcdefghijkmnopqrstuvwxyz';
+        const digits = '23456789';
+        const specials = '!@#$%*';
+        const allChars = uppers + lowers + digits + specials;
+        let pass = '';
+        pass += uppers[Math.floor(Math.random() * uppers.length)];
+        pass += lowers[Math.floor(Math.random() * lowers.length)];
+        pass += digits[Math.floor(Math.random() * digits.length)];
+        pass += specials[Math.floor(Math.random() * specials.length)];
+        for (let i = 0; i < 6; i++) {
+            pass += allChars[Math.floor(Math.random() * allChars.length)];
+        }
+        pass = pass.split('').sort(() => 0.5 - Math.random()).join('');
+
+        if (target === 'reset') {
+            saasResetPasswordForm.value.newPassword = pass;
+            saasResetPasswordForm.value.showPassword = true;
+        } else {
+            saasForm.value.password = pass;
+        }
+        if (typeof toastr !== 'undefined') toastr.info('Contraseña segura generada');
+    };
+
+    const submitResetPassword = async () => {
+        if (!saasResetPasswordForm.value.newPassword || saasResetPasswordForm.value.newPassword.length < 6) {
+            toastr.warning('La nueva contraseña debe tener mínimo 6 caracteres');
+            return;
+        }
+        const bizId = saasForm.value._id;
+        if (!bizId) return;
+
+        saasResetPasswordForm.value.loading = true;
+        try {
+            const res = await authFetch(`/api/saas/businesses/${bizId}/reset-password`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    userId: saasResetPasswordForm.value.userId,
+                    newPassword: saasResetPasswordForm.value.newPassword
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toastr.success(data.message || 'Contraseña restablecida exitosamente');
+                const targetUser = saasSecurityUsers.value.find(u => u._id === (saasResetPasswordForm.value.userId || data.user?._id)) || data.user;
+                saasResetPasswordSuccess.value = {
+                    username: targetUser ? targetUser.username : (data.user?.username || 'admin'),
+                    password: saasResetPasswordForm.value.newPassword,
+                    phone: saasForm.value.phone || '',
+                    businessName: saasForm.value.businessName
+                };
+                saasResetPasswordForm.value.newPassword = '';
+            } else {
+                toastr.error(data.message || 'Error al restablecer contraseña');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            saasResetPasswordForm.value.loading = false;
+        }
+    };
+
+    const startEditSecurityUser = (user) => {
+        saasEditUserForm.value = {
+            userId: user._id,
+            username: user.username,
+            email: user.email || '',
+            isEditing: true,
+            loading: false
+        };
+    };
+
+    const cancelEditSecurityUser = () => {
+        saasEditUserForm.value.isEditing = false;
+    };
+
+    const submitUpdateSecurityUser = async () => {
+        if (!saasEditUserForm.value.username || !saasEditUserForm.value.username.trim()) {
+            toastr.warning('El usuario es requerido');
+            return;
+        }
+        const bizId = saasForm.value._id;
+        if (!bizId) return;
+
+        saasEditUserForm.value.loading = true;
+        try {
+            const res = await authFetch(`/api/saas/businesses/${bizId}/update-security-user`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    userId: saasEditUserForm.value.userId,
+                    username: saasEditUserForm.value.username,
+                    email: saasEditUserForm.value.email
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toastr.success('Usuario actualizado correctamente');
+                saasEditUserForm.value.isEditing = false;
+                await fetchBusinessSecurity(bizId);
+            } else {
+                toastr.error(data.message || 'Error al actualizar usuario');
+            }
+        } catch (e) {
+            toastr.error('Error de conexión');
+        } finally {
+            saasEditUserForm.value.loading = false;
+        }
+    };
+
+    const copyCredentialsToClipboard = (username, password) => {
+        const loginUrl = window.location.origin + '/panel';
+        const text = `🔐 ACCESO A PANEL - TENGO HAMBRE\n🏪 Negocio: ${saasForm.value.businessName}\n👤 Usuario: ${username}\n🔑 Contraseña: ${password}\n🌐 Enlace: ${loginUrl}`;
+        navigator.clipboard.writeText(text).then(() => {
+            toastr.success('Credenciales copiadas al portapapeles');
+        }).catch(() => {
+            toastr.info('Copia manual: ' + text);
+        });
+    };
+
+    const shareCredentialsWhatsApp = (username, password) => {
+        let phone = (saasForm.value.phone || '').replace(/\D/g, '');
+        if (phone.length === 10) phone = '52' + phone;
+        const loginUrl = window.location.origin + '/panel';
+        const msg = encodeURIComponent(`👋 Hola *${saasForm.value.businessName}*, aquí tienes tus credenciales de acceso al panel administrativo de *Tengo Hambre*:\n\n👤 *Usuario:* ${username}\n🔑 *Contraseña:* ${password}\n\n🌐 *Acceso:* ${loginUrl}\n\nPor seguridad, te recomendamos no compartir estas credenciales con nadie más.`);
+        const url = phone ? `https://wa.me/${phone}?text=${msg}` : `https://api.whatsapp.com/send?text=${msg}`;
+        window.open(url, '_blank');
+    };
+
     const openSaasModal = (business = null) => {
+        saasModalTab.value = 'info';
+        saasResetPasswordSuccess.value = null;
+        saasResetPasswordForm.value = { userId: '', newPassword: '', showPassword: false, loading: false };
+        saasEditUserForm.value = { userId: '', username: '', email: '', isEditing: false, loading: false };
+
         if (business) {
             editingBusiness.value = true;
             saasForm.value = {
@@ -131,8 +306,10 @@ export function useSaas() {
                     categoriesCount: Array.isArray(business.categories) ? business.categories.length : 0,
                 }
             };
+            fetchBusinessSecurity(business._id);
         } else {
             editingBusiness.value = false;
+            saasSecurityUsers.value = [];
             saasForm.value = { ...defaultForm };
         }
         showSaasModal.value = true;
@@ -1278,7 +1455,22 @@ export function useSaas() {
         walletFilterTab,
         walletSearch,
         filteredWalletDispersions,
-        walletStats
+        walletStats,
+        // Seguridad del negocio
+        saasModalTab,
+        saasSecurityUsers,
+        saasSecurityLoading,
+        saasResetPasswordForm,
+        saasResetPasswordSuccess,
+        saasEditUserForm,
+        fetchBusinessSecurity,
+        generateSecurePassword,
+        submitResetPassword,
+        startEditSecurityUser,
+        cancelEditSecurityUser,
+        submitUpdateSecurityUser,
+        copyCredentialsToClipboard,
+        shareCredentialsWhatsApp
     };
 
 }

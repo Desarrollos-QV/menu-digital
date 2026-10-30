@@ -851,3 +851,131 @@ exports.getFrequentCustomerOrders = async (req, res) => {
         res.status(500).json({ message: e.message });
     }
 };
+
+// ─── GESTIÓN DE SEGURIDAD Y ACCESOS DEL NEGOCIO (SuperAdmin) ───────────────
+exports.getBusinessSecurity = async (req, res) => {
+    try {
+        const business = await Business.findById(req.params.id).lean();
+        if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+        const users = await User.find({ businessId: req.params.id })
+            .select('-password')
+            .sort({ createdAt: 1 })
+            .lean();
+
+        res.json({
+            business: {
+                _id: business._id,
+                name: business.name,
+                ownerEmail: business.ownerEmail,
+                phone: business.phone,
+                slug: business.slug,
+                active: business.active
+            },
+            users: users || []
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.resetBusinessPassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId, newPassword } = req.body;
+
+        if (!newPassword || newPassword.trim().length < 6) {
+            return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+        }
+
+        let user;
+        if (userId) {
+            user = await User.findOne({ _id: userId, businessId: id });
+        } else {
+            user = await User.findOne({ businessId: id, role: 'admin_negocio' });
+            if (!user) {
+                user = await User.findOne({ businessId: id });
+            }
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario de acceso no encontrado para este negocio' });
+        }
+
+        user.password = newPassword.trim();
+        await user.save();
+
+        res.json({
+            success: true,
+            message: `Contraseña restablecida correctamente para "${user.username}"`,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.updateBusinessSecurityUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId, username, email } = req.body;
+
+        if (!username || !username.trim()) {
+            return res.status(400).json({ message: 'El nombre de usuario es requerido' });
+        }
+
+        const cleanUsername = username.trim().toLowerCase();
+
+        // Verificar si el username ya está ocupado por otra persona
+        const existingUsername = await User.findOne({
+            username: cleanUsername,
+            _id: { $ne: userId }
+        });
+        if (existingUsername) {
+            return res.status(400).json({ message: 'Ese nombre de usuario ya está en uso por otra cuenta' });
+        }
+
+        let user;
+        if (userId) {
+            user = await User.findOne({ _id: userId, businessId: id });
+        } else {
+            user = await User.findOne({ businessId: id, role: 'admin_negocio' });
+        }
+
+        if (!user) {
+            const business = await Business.findById(id);
+            if (!business) return res.status(404).json({ message: 'Negocio no encontrado' });
+
+            user = new User({
+                username: cleanUsername,
+                email: email ? email.trim().toLowerCase() : (business.ownerEmail || `${cleanUsername}@tengohambre.com`),
+                password: 'Cambiar123*',
+                role: 'admin_negocio',
+                businessId: id
+            });
+            await user.save();
+        } else {
+            user.username = cleanUsername;
+            if (email) user.email = email.trim().toLowerCase();
+            await user.save();
+        }
+
+        res.json({
+            success: true,
+            message: 'Usuario actualizado correctamente',
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

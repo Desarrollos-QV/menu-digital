@@ -5266,8 +5266,36 @@
                 </button>
             </div>
 
+            <!-- TABS DE NAVEGACIÓN -->
+            <div class="flex border-b border-slate-100 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 px-6 gap-2">
+                <button type="button"
+                    @click="saasModalTab = 'info'"
+                    class="py-3 px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 outline-none"
+                    :class="saasModalTab === 'info'
+                        ? 'border-primary text-primary dark:text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
+                    <i class="fa-solid fa-store text-sm"></i>
+                    <span>Información del Negocio</span>
+                </button>
+                <button type="button"
+                    @click="saasModalTab = 'security'; if (editingBusiness && saasSecurityUsers.length === 0) fetchBusinessSecurity(saasForm._id);"
+                    class="py-3 px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 outline-none"
+                    :class="saasModalTab === 'security'
+                        ? 'border-primary text-primary dark:text-primary'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'">
+                    <i class="fa-solid fa-shield-halved text-sm"></i>
+                    <span>Seguridad y Accesos</span>
+                    <span v-if="editingBusiness && saasSecurityUsers.length" class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold">
+                        {{ saasSecurityUsers.length }}
+                    </span>
+                </button>
+            </div>
+
             <!-- Body scrollable -->
             <div class="p-6 overflow-y-auto space-y-5 flex-1">
+
+                <!-- TAB 1: INFORMACIÓN DEL NEGOCIO -->
+                <div v-show="saasModalTab === 'info'" class="space-y-5">
 
                 <!-- STATS (solo al editar) -->
                 <div v-if="editingBusiness && saasForm._stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -5651,7 +5679,7 @@
                     </button>
                 </div>
 
-                <!-- CREDENCIALES (solo al crear) -->
+                <!-- CREDENCIALES (solo al crear si se usa pestaña info) -->
                 <div v-if="!editingBusiness">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Credenciales de Acceso</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -5668,18 +5696,299 @@
                     </div>
                     <p class="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
                         <i class="fa-solid fa-triangle-exclamation"></i>
-                        Las credenciales son únicamente para el primer acceso. El dueño podrá cambiarlas desde su panel.
+                        Las credenciales son para el primer acceso. También puedes generarlas desde la pestaña Seguridad.
                     </p>
                 </div>
 
-                <!-- INFO READONLY si es edición -->
-                <div v-if="editingBusiness" class="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nota de Seguridad</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-2">
-                        <i class="fa-solid fa-shield-halved text-primary mt-0.5"></i>
-                        Las credenciales de acceso (usuario y contraseña) no se modifican desde aquí por seguridad. Para resetear contraseñas usa el módulo de Usuarios dentro del panel del negocio.
-                    </p>
+                <!-- ACCESO RÁPIDO A SEGURIDAD -->
+                <div v-if="editingBusiness" class="p-4 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 dark:from-indigo-950/30 dark:to-blue-950/30 border border-indigo-200 dark:border-indigo-800/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-600/20">
+                            <i class="fa-solid fa-key text-base"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800 dark:text-white">Gestión de Contraseña y Seguridad</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Restablece la contraseña, actualiza usuarios o bloquea accesos en la pestaña de Seguridad.</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="saasModalTab = 'security'; if (saasSecurityUsers.length === 0) fetchBusinessSecurity(saasForm._id);"
+                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 shrink-0">
+                        <span>Gestionar Seguridad</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
                 </div>
+
+                </div>
+                <!-- FIN TAB 1 -->
+
+                <!-- TAB 2: SEGURIDAD Y ACCESOS -->
+                <div v-show="saasModalTab === 'security'" class="space-y-5 animate-fade-in">
+                    <!-- CASO 1: EDITANDO NEGOCIO EXISTENTE -->
+                    <template v-if="editingBusiness">
+                        <!-- 1. Tarjeta Resumen de Estado de Seguridad -->
+                        <div class="p-4 rounded-2xl border transition"
+                             :class="saasForm.active 
+                                ? 'bg-gradient-to-r from-emerald-50/80 to-teal-50/80 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-200 dark:border-emerald-800/50' 
+                                : 'bg-gradient-to-r from-red-50/80 to-rose-50/80 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800/50'">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"
+                                         :class="saasForm.active ? 'bg-emerald-500 text-white shadow-emerald-500/20 shadow-lg' : 'bg-red-500 text-white shadow-red-500/20 shadow-lg'">
+                                        <i class="fa-solid" :class="saasForm.active ? 'fa-shield-halved' : 'fa-lock'"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-black text-slate-800 dark:text-white text-sm">Estado del Acceso:</h4>
+                                            <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                                  :class="saasForm.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'">
+                                                {{ saasForm.active ? 'Habilitado' : 'Bloqueado' }}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                            {{ saasForm.active ? 'Los administradores pueden iniciar sesión en su panel con sus credenciales.' : 'El acceso al panel y POS está suspendido temporalmente.' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="saasForm.active = !saasForm.active"
+                                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border self-start sm:self-auto shrink-0"
+                                    :class="saasForm.active 
+                                        ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/30' 
+                                        : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30'">
+                                    <i class="fa-solid" :class="saasForm.active ? 'fa-user-slash' : 'fa-user-check'"></i>
+                                    {{ saasForm.active ? 'Bloquear Acceso' : 'Desbloquear Acceso' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Cuentas de Acceso Vinculadas -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <i class="fa-solid fa-users-gear text-slate-500"></i> Cuentas de Acceso al Negocio
+                                </p>
+                                <span class="text-[11px] text-slate-400">
+                                    {{ saasSecurityUsers.length }} cuenta(s) activa(s)
+                                </span>
+                            </div>
+
+                            <div v-if="saasSecurityLoading" class="p-6 text-center text-slate-400 text-xs bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                                <i class="fa-solid fa-spinner fa-spin text-primary text-base mb-1"></i>
+                                <p>Consultando credenciales en base de datos...</p>
+                            </div>
+
+                            <div v-else-if="saasSecurityUsers.length === 0" class="p-4 rounded-xl border border-dashed border-amber-300 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20 text-xs text-amber-700 dark:text-amber-300 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                                    <span>No se encontró ninguna cuenta vinculada a este negocio.</span>
+                                </div>
+                                <button type="button" @click="startEditSecurityUser({ _id: '', username: saasForm.slug || 'admin', email: saasForm.ownerEmail })"
+                                    class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs transition">
+                                    Crear cuenta admin
+                                </button>
+                            </div>
+
+                            <div v-else class="space-y-2.5">
+                                <div v-for="user in saasSecurityUsers" :key="user._id"
+                                     class="p-3.5 bg-slate-50 dark:bg-slate-700/40 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:bg-primary/20 flex items-center justify-center font-black text-sm shrink-0">
+                                            {{ user.username ? user.username.charAt(0).toUpperCase() : 'U' }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-black text-sm text-slate-800 dark:text-white truncate">@{{ user.username }}</span>
+                                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                                    {{ user.role === 'admin_negocio' ? 'Admin Negocio' : user.role }}
+                                                </span>
+                                            </div>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                                                <i class="fa-solid fa-envelope text-[10px]"></i> {{ user.email || 'Sin correo asociado' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <button type="button" @click="saasResetPasswordForm.userId = user._id"
+                                            class="px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5"
+                                            :class="saasResetPasswordForm.userId === user._id 
+                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-100'">
+                                            <i class="fa-solid fa-key text-[10px]"></i>
+                                            <span>Restablecer</span>
+                                        </button>
+                                        <button type="button" @click="startEditSecurityUser(user)"
+                                            class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:hover:text-white transition"
+                                            title="Editar Usuario / Email">
+                                            <i class="fa-solid fa-pen text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de Edición de Usuario / Email -->
+                        <div v-if="saasEditUserForm.isEditing" class="p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/30 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h5 class="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user-pen"></i> Editar Datos de Usuario
+                                </h5>
+                                <button type="button" @click="cancelEditSecurityUser" class="text-xs text-slate-400 hover:text-red-500">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nombre de Usuario (Login)</label>
+                                    <input v-model="saasEditUserForm.username" type="text"
+                                        class="w-full px-3 py-2 border rounded-xl text-sm bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Email de Acceso</label>
+                                    <input v-model="saasEditUserForm.email" type="email"
+                                        class="w-full px-3 py-2 border rounded-xl text-sm bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2 pt-1">
+                                <button type="button" @click="cancelEditSecurityUser" class="px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-200 rounded-lg">Cancelar</button>
+                                <button type="button" @click="submitUpdateSecurityUser" :disabled="saasEditUserForm.loading"
+                                    class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow transition flex items-center gap-1">
+                                    <i v-if="saasEditUserForm.loading" class="fa-solid fa-spinner fa-spin"></i>
+                                    <span>Guardar Usuario</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 3. Formulario Restablecer Contraseña -->
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-2">
+                                        <i class="fa-solid fa-key text-primary"></i> Restablecer Contraseña
+                                    </h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Ingresa una nueva contraseña o genera una segura al instante.
+                                    </p>
+                                </div>
+                                <button type="button" @click="generateSecurePassword('reset')"
+                                    class="px-3 py-1.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 hover:bg-indigo-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800/50">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>Generar Segura</span>
+                                </button>
+                            </div>
+
+                            <!-- Selector de usuario si hay múltiples -->
+                            <div v-if="saasSecurityUsers.length > 1">
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Cuenta a Restablecer</label>
+                                <select v-model="saasResetPasswordForm.userId" class="w-full px-3 py-2 border rounded-xl text-sm bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none focus:ring-2 focus:ring-primary">
+                                    <option v-for="u in saasSecurityUsers" :key="u._id" :value="u._id">@{{ u.username }} ({{ u.email || 'sin email' }})</option>
+                                </select>
+                            </div>
+
+                            <!-- Input de contraseña con toggle de visibilidad -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nueva Contraseña</label>
+                                <div class="relative">
+                                    <input :type="saasResetPasswordForm.showPassword ? 'text' : 'password'"
+                                        v-model="saasResetPasswordForm.newPassword"
+                                        placeholder="Escribe la nueva contraseña (mínimo 6 caracteres)..."
+                                        class="w-full pl-4 pr-10 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none transition font-mono">
+                                    <button type="button" @click="saasResetPasswordForm.showPassword = !saasResetPasswordForm.showPassword"
+                                        class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-white transition text-xs">
+                                        <i class="fa-solid" :class="saasResetPasswordForm.showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="button" @click="submitResetPassword" :disabled="saasResetPasswordForm.loading || !saasResetPasswordForm.newPassword"
+                                class="w-full py-2.5 bg-primary hover:bg-primaryDark text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                                <i v-if="saasResetPasswordForm.loading" class="fa-solid fa-spinner fa-spin"></i>
+                                <i v-else class="fa-solid fa-shield-check"></i>
+                                <span>Restablecer y Guardar Contraseña</span>
+                            </button>
+
+                            <!-- Banner de éxito tras restablecer contraseña -->
+                            <div v-if="saasResetPasswordSuccess" class="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 space-y-3 animate-fade-in">
+                                <div class="flex items-start gap-2.5">
+                                    <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                        <i class="fa-solid fa-check text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                                            ¡Contraseña restablecida exitosamente!
+                                        </p>
+                                        <p class="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+                                            Puedes copiar los datos o compartirlos directamente por WhatsApp con el dueño.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-emerald-100 dark:border-emerald-900 text-xs font-mono flex items-center justify-between">
+                                    <div>
+                                        <span class="text-slate-400 block text-[10px]">USUARIO / CONTRASEÑA:</span>
+                                        <strong class="text-slate-800 dark:text-white">@{{ saasResetPasswordSuccess.username }}</strong> : 
+                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ saasResetPasswordSuccess.password }}</span>
+                                    </div>
+                                    <button type="button" @click="copyCredentialsToClipboard(saasResetPasswordSuccess.username, saasResetPasswordSuccess.password)"
+                                        class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 transition" title="Copiar">
+                                        <i class="fa-solid fa-copy"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <button type="button" @click="copyCredentialsToClipboard(saasResetPasswordSuccess.username, saasResetPasswordSuccess.password)"
+                                        class="flex-1 py-2 px-3 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                                        <i class="fa-solid fa-clipboard text-slate-500"></i>
+                                        <span>Copiar Datos</span>
+                                    </button>
+                                    <button type="button" @click="shareCredentialsWhatsApp(saasResetPasswordSuccess.username, saasResetPasswordSuccess.password)"
+                                        class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20">
+                                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                                        <span>Enviar por WhatsApp</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- CASO 2: CREANDO NUEVO NEGOCIO -->
+                    <template v-else>
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-bold text-slate-800 dark:text-white text-sm flex items-center gap-2">
+                                        <i class="fa-solid fa-user-lock text-primary"></i> Credenciales de Primer Acceso
+                                    </h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Define el usuario y contraseña con el que este negocio ingresará a su panel.
+                                    </p>
+                                </div>
+                                <button type="button" @click="generateSecurePassword('new')"
+                                    class="px-3 py-1.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300 hover:bg-indigo-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800/50">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>Generar Segura</span>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Usuario (Login)</label>
+                                    <input v-model="saasForm.username" type="text" placeholder="Ej: tacos_el_rey"
+                                        class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Contraseña Inicial</label>
+                                    <input v-model="saasForm.password" type="text" placeholder="••••••••"
+                                        class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none transition font-mono">
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                                <i class="fa-solid fa-circle-info mt-0.5"></i>
+                                <span>Estas credenciales se registrarán junto con el negocio. Posteriormente podrás restablecerlas desde esta misma pestaña siempre que lo requieras.</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <!-- FIN TAB 2 -->
 
             </div>
 
@@ -5693,7 +6002,7 @@
                 <div class="flex gap-3">
                     <button @click="showSaasModal = false"
                         class="px-5 py-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition font-medium text-sm">
-                        Cancelar
+                        {{ editingBusiness && saasModalTab === 'security' ? 'Cerrar' : 'Cancelar' }}
                     </button>
                     <button @click="saveBusiness"
                         class="px-6 py-2.5 bg-primary hover:bg-primaryDark text-white font-bold rounded-xl shadow-lg shadow-primary/30 transition text-sm flex items-center gap-2">
